@@ -62,6 +62,22 @@ if (env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Ensure database connection is ready for API calls
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') && req.path !== '/api/health') {
+    try {
+      await connectDB();
+    } catch (dbErr) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection failed. Please check MongoDB Atlas network access (0.0.0.0/0).',
+        error: dbErr.message
+      });
+    }
+  }
+  next();
+});
+
 // Root welcome & frontend redirect
 app.get('/', (req, res) => {
   return res.send(`
