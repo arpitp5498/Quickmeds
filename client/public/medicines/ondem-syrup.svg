@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad_ondem_syrup" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Studio Background -->
+  <rect width="400" height="400" rx="24" fill="url(#bgGrad_ondem_syrup)"/>
+  <rect x="8" y="8" width="384" height="384" rx="18" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+
+  <!-- Category Tag Header -->
+  <rect x="24" y="24" width="auto" height="24" rx="12" fill="#ffffff" opacity="0.9"/>
+  <text x="32" y="40" fill="#16a34a" font-size="10" font-weight="800" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" letter-spacing="0.5">PEDIATRIC • ANTI-EMETIC</text>
+
+  <!-- Main Product Vector Art -->
+  <g>
+    
+      <!-- Small 30ml Pediatric Bottle -->
+      <rect x="145" y="125" width="110" height="165" rx="18" fill="#ffffff" stroke="#16a34a" stroke-width="2" filter="url(#dropShadow)"/>
+      <rect x="175" y="85" width="50" height="40" rx="6" fill="#16a34a"/>
+      
+      <!-- Label -->
+      <rect x="152" y="150" width="96" height="115" rx="6" fill="#f0fdf4"/>
+      <text x="160" y="175" fill="#15803d" font-size="14" font-weight="900" font-family="sans-serif">ONDEM</text>
+      <text x="160" y="192" fill="#15803d" font-size="9" font-weight="bold" font-family="sans-serif">Syrup 30ml</text>
+      <text x="160" y="210" fill="#475569" font-size="8" font-family="sans-serif">Anti-Vomiting</text>
+      <text x="160" y="245" fill="#0284c7" font-size="9" font-weight="bold" font-family="sans-serif">Alkem</text>
+    
+  </g>
+
+  <!-- Medicine Label Footer -->
+  <rect x="24" y="325" width="352" height="52" rx="14" fill="#ffffff" opacity="0.95" filter="url(#dropShadow)"/>
+  <text x="38" y="348" fill="#0f172a" font-size="14" font-weight="800" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Ondem Syrup (30ml)</text>
+  <text x="38" y="365" fill="#64748b" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Ondansetron (2mg/5ml) • Alkem</text>
+</svg>

@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <!-- Studio Lighting Background -->
+    <radialGradient id="studioLighting" cx="50%" cy="40%" r="60%" fx="50%" fy="30%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </radialGradient>
+    
+    <!-- Realistic Floor Blur -->
+    <filter id="blurFloor" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    
+    <!-- Soft Product Drop Shadow -->
+    <filter id="dropShadowSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.18"/>
+    </filter>
+    
+    <!-- Metallic Silver Foil Gradient -->
+    <linearGradient id="silverFoilGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#f1f5f9"/>
+      <stop offset="50%" stop-color="#cbd5e1"/>
+      <stop offset="75%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    
+    <!-- 3D Blister Pill Cavity Gradient -->
+    <radialGradient id="blisterPillGrad" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#f8fafc"/>
+      <stop offset="80%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </radialGradient>
+    
+    <!-- Dolo Green Box Gradient -->
+    <linearGradient id="doloFrontGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="50%" stop-color="#dcfce7"/>
+      <stop offset="100%" stop-color="#bbf7d0"/>
+    </linearGradient>
+    
+    <!-- Glass Bottle Gradient -->
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#cbd5e1" stop-opacity="0.8"/>
+      <stop offset="20%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#f1f5f9" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.9"/>
+    </linearGradient>
+    
+    <!-- Pink Pediatric Bottle Gradient -->
+    <linearGradient id="pinkBottleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="30%" stop-color="#fbcfe8"/>
+      <stop offset="70%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#db2777"/>
+    </linearGradient>
+    
+    <!-- Amber Dropper Glass Gradient -->
+    <linearGradient id="amberGlassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="30%" stop-color="#b45309"/>
+      <stop offset="70%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    
+    <!-- Digene Pink Gradient -->
+    <linearGradient id="digenePinkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="30%" stop-color="#fce7f3"/>
+      <stop offset="70%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#db2777"/>
+    </linearGradient>
+    
+    <!-- Betadine Tube Gradient -->
+    <linearGradient id="betadineTubeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="30%" stop-color="#92400e"/>
+      <stop offset="70%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    
+    <!-- Dettol Amber Gradient -->
+    <linearGradient id="dettolAmberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    
+    <!-- White Bottle Gradient -->
+    <linearGradient id="whiteBottleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="30%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    
+    <!-- Volini Tube Gradient -->
+    <linearGradient id="voliniTubeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="30%" stop-color="#fb923c"/>
+      <stop offset="70%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#c2410c"/>
+    </linearGradient>
+    
+    <!-- VWash Purple Gradient -->
+    <linearGradient id="vwashPurpleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7e22ce"/>
+      <stop offset="30%" stop-color="#a855f7"/>
+      <stop offset="70%" stop-color="#7e22ce"/>
+      <stop offset="100%" stop-color="#581c87"/>
+    </linearGradient>
+    
+    <!-- Whisper Pack Gradient -->
+    <linearGradient id="whisperPackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Clean Studio Photography White Backdrop -->
+  <rect width="600" height="600" fill="url(#studioLighting)"/>
+
+  <!-- Centered Physical Medicine Product Visual -->
+  
+      <ellipse cx="300" cy="490" rx="200" ry="22" fill="#0f172a" opacity="0.08" filter="url(#blurFloor)"/>
+      <ellipse cx="300" cy="485" rx="140" ry="15" fill="#0f172a" opacity="0.12" filter="url(#blurFloor)"/>
+      
+      <!-- 3D Ointment Squeeze Tube -->
+      <g transform="translate(190, 110) rotate(-8)" filter="url(#dropShadowSoft)">
+        <!-- Cap -->
+        <rect x="85" y="20" width="50" height="40" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+        
+        <!-- Tube Body -->
+        <path d="M40,320 L75,60 L145,60 L180,320 C180,345 150,355 110,355 C70,355 40,345 40,320 Z" fill="url(#betadineTubeGrad)" stroke="#451a03" stroke-width="2"/>
+        
+        <!-- White Label Banner -->
+        <rect x="55" y="110" width="110" height="60" fill="#ffffff"/>
+        <text x="62" y="145" fill="#78350f" font-family="'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="900">BETADINE</text>
+        <text x="62" y="160" fill="#78350f" font-family="Arial, sans-serif" font-size="9" font-weight="bold">10% Ointment</text>
+        
+        <!-- Medical Cross -->
+        <rect x="100" y="200" width="20" height="6" fill="#dc2626"/>
+        <rect x="107" y="193" width="6" height="20" fill="#dc2626"/>
+        
+        <text x="65" y="250" fill="#fef3c7" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Povidone-Iodine 20g</text>
+        <text x="75" y="290" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">Win-Medicare</text>
+      </g>
+    
+</svg>

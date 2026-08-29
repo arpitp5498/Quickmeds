@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: Medirush API
+  description: Hyperlocal Quick-Delivery System for Urgent Medicines REST API Documentation
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user (Customer, Pharmacy, Delivery Partner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, phone, role]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                phone: { type: string }
+                role: { type: string, enum: [CUSTOMER, PHARMACY, DELIVERY_PARTNER] }
+      responses:
+        201:
+          description: Registration successful
+  /auth/login:
+    post:
+      summary: Authenticate user & receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: JWT token and user profile
+  /medicines:
+    get:
+      summary: Search and filter medicine master catalog
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: requiresPrescription
+          schema: { type: boolean }
+      responses:
+        200:
+          description: List of medicines matching query
+  /pharmacies/nearby:
+    get:
+      summary: Discover nearby licensed pharmacies via geospatial 2dsphere index
+      parameters:
+        - in: query
+          name: lat
+          required: true
+          schema: { type: number }
+        - in: query
+          name: lng
+          required: true
+          schema: { type: number }
+      responses:
+        200:
+          description: List of pharmacies sorted by distance
+  /cart:
+    get:
+      summary: Get active user cart with pharmacy stock checks
+    post:
+      summary: Add medicine item to cart with pharmacy exclusivity guard
+  /orders:
+    get:
+      summary: Get customer orders list
+    post:
+      summary: Place order with delivery address & prescription reference
+  /prescriptions/upload:
+    post:
+      summary: Upload prescription file (Multipart/form-data)
+  /delivery/active:
+    get:
+      summary: Get active delivery partner task
+  /admin/stats:
+    get:
+      summary: Get aggregated platform metrics & GMV
