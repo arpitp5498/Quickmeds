@@ -196,7 +196,7 @@ const MedicineDetail = () => {
                 gap: '8px',
                 fontSize: '0.75rem',
                 color: '#9f1239',
-                marginBottom: '1rem'
+                marginBottom: '1.25rem'
               }}
             >
               <AlertTriangle size={16} color="#e11d48" style={{ minWidth: '16px', marginTop: '2px' }} />
@@ -206,116 +206,88 @@ const MedicineDetail = () => {
               </span>
             </div>
 
-            {/* Quick Add To Cart Button */}
+            {/* Best Fulfilment Price Showcase */}
+            {(() => {
+              const bestPrice =
+                pharmacies && pharmacies.length > 0
+                  ? Math.min(...pharmacies.map((p) => p.price || medicine.mrp))
+                  : medicine.mrp;
+
+              return (
+                <div
+                  style={{
+                    backgroundColor: 'var(--bg-subtle)',
+                    border: '1.5px solid var(--primary-100)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '16px 20px',
+                    marginBottom: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: '0.8125rem',
+                        fontWeight: 800,
+                        color: 'var(--primary-700)',
+                        letterSpacing: '0.04em'
+                      }}
+                    >
+                      BEST FULFILMENT PRICE
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-muted)',
+                        marginTop: '2px'
+                      }}
+                    >
+                      Based on availability, cost, delivery, ETA
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                        ₹{bestPrice}
+                      </span>
+                      {bestPrice < medicine.mrp && (
+                        <span
+                          style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--text-muted)',
+                            textDecoration: 'line-through'
+                          }}
+                        >
+                          MRP ₹{medicine.mrp}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                      Demonstration data only
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Primary Add To Cart Action */}
             <Button
               variant="primary"
               onClick={handleAddToCart}
               loading={addingToCart}
               style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
+              icon={ShoppingBag}
             >
-              <ShoppingBag size={20} /> Add to Cart (Automatic Smart Fulfilment)
+              Add to Cart
             </Button>
           </div>
         </div>
       </Card>
-
-      {/* Verified Pharmacies Stocking This Medicine (Informational Preview Only) */}
-      <div>
-        <div style={{ marginBottom: '1.25rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 800 }}>
-            Live Network Stock Availability
-          </h2>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Verified pharmacies stocking this medicine in your area. QuickMeds automatically evaluates stock, distance, ETA, and reliability to select the best fulfilment option for your complete order.
-          </p>
-        </div>
-
-        {pharmacies.length === 0 ? (
-          <Card style={{ textAlign: 'center', padding: '2.5rem 1rem' }}>
-            <Store size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
-            <h4 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '6px' }}>
-              Currently Out of Stock Nearby
-            </h4>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 1rem' }}>
-              None of the verified pharmacies in your immediate area have "{medicine.name}" in stock right now. Try searching for equivalent generic compositions.
-            </p>
-            <Button variant="primary" onClick={() => navigate('/medicines')}>
-              Search Other Medicines
-            </Button>
-          </Card>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {pharmacies.map((pharm) => (
-              <Card
-                key={pharm.pharmacyId}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '1rem',
-                  border: '1px solid var(--border-light)',
-                  backgroundColor: 'var(--bg-card)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--primary-50)',
-                      color: 'var(--primary-600)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Store size={24} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>{pharm.name}</h4>
-                      <Badge variant="verified" size="sm">Verified Partner</Badge>
-                    </div>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                      {pharm.address.street}, {pharm.address.city} • <strong>{pharm.distanceKm} km away</strong>
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', fontSize: '0.75rem' }}>
-                      <span style={{ color: 'var(--secondary-700)', fontWeight: 600 }}>
-                        ✓ {pharm.stockQuantity} units available
-                      </span>
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        ETA: ~{pharm.estimatedMinutes} mins
-                      </span>
-                      <span style={{ color: '#f59e0b', fontWeight: 600 }}>
-                        ★ {pharm.rating} ({pharm.totalRatings})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-700)' }}>
-                      ₹{pharm.price}
-                    </div>
-                    {pharm.price < pharm.mrp && (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                        MRP ₹{pharm.mrp}
-                      </span>
-                    )}
-                  </div>
-
-                  <Badge variant="info" size="md">
-                    ✓ Network Eligible
-                  </Badge>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 };
