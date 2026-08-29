@@ -15,6 +15,7 @@ const { autoAssignDeliveryPartner } = require('../services/deliveryService');
 const { sendNotification, notifyAdmins } = require('../services/notificationService');
 const { logAction } = require('../services/auditService');
 const { findNearestPharmacyWithStock } = require('../services/pharmacyMatchService');
+const { optimizeFulfilmentPlan } = require('../services/smartRoutingService');
 const { getIO } = require('../config/socket');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
@@ -37,23 +38,29 @@ const createOrder = async (req, res, next) => {
       throw ApiError.badRequest('Your cart is empty. Please add items before checking out.');
     }
 
-    // Auto-assign nearest pharmacy if none specified
-    let orderPharmacyId = pharmacyId || cart.pharmacyId;
-    let pharmacy;
+    // Automatically determine optimal pharmacy via QuickMeds Smart Fulfilment Engine
+    const customerCoords = deliveryAddress?.coordinates || null;
+    const optimization = await optimizeFulfilmentPlan(cart.items, customerCoords);
 
-    if (orderPharmacyId) {
+    let orderPharmacyId = null;
+    let pharmacy = null;
+    let routingExplanation = 'QuickMeds Smart Fulfilment Engine automatically selected the optimal licensed pharmacy.';
+
+    if (optimization?.recommended?.pharmacies?.length > 0) {
+      const recPharm = optimization.recommended.pharmacies[0];
+      orderPharmacyId = recPharm._id || recPharm.pharmacyId;
       pharmacy = await Pharmacy.findById(orderPharmacyId);
-      if (!pharmacy || pharmacy.verificationStatus !== 'VERIFIED') {
-        throw ApiError.badRequest('Selected pharmacy is currently unavailable for online orders.');
-      }
+      routingExplanation = optimization.recommended.explanation || optimization.explanation || routingExplanation;
+    } else if (pharmacyId || cart.pharmacyId) {
+      orderPharmacyId = pharmacyId || cart.pharmacyId;
+      pharmacy = await Pharmacy.findById(orderPharmacyId);
     } else {
-      // Auto-assign: find nearest verified pharmacy with stock
-      const customerCoords = deliveryAddress?.coordinates || null;
       pharmacy = await findNearestPharmacyWithStock(cart.items, customerCoords);
-      if (!pharmacy) {
-        throw ApiError.badRequest('No nearby pharmacy currently has your medicines in stock. Please try again shortly.');
-      }
-      orderPharmacyId = pharmacy._id;
+      if (pharmacy) orderPharmacyId = pharmacy._id;
+    }
+
+    if (!pharmacy || pharmacy.verificationStatus !== 'VERIFIED') {
+      throw ApiError.badRequest('No nearby verified pharmacy currently has stock to fulfil your complete order. Please try again shortly.');
     }
 
     // Check if any item in cart requires prescription

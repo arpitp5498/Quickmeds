@@ -44,53 +44,38 @@ export const CartProvider = ({ children }) => {
     fetchCart();
   }, [fetchCart]);
 
-  const addToCart = async (pharmacyIdOrMedicineId, medicineIdOrQty, quantity = 1, clearExisting = false) => {
+  const addToCart = async (medicineIdOrPharmacyId, maybeMedicineIdOrQty, quantity = 1) => {
     if (!isAuthenticated) {
       showToast('Please log in as a customer to add medicines to your cart.', 'warning');
       return false;
     }
 
-    let pharmacyId = null;
     let medicineId = null;
     let qty = 1;
 
-    // Handle both addToCart(medicineId, quantity) and addToCart(pharmacyId, medicineId, quantity)
-    if (typeof medicineIdOrQty === 'string') {
-      pharmacyId = pharmacyIdOrMedicineId;
-      medicineId = medicineIdOrQty;
-      qty = quantity;
+    // Support both addToCart(medicineId, quantity) and legacy addToCart(pharmacyId, medicineId, quantity)
+    if (typeof maybeMedicineIdOrQty === 'string') {
+      medicineId = maybeMedicineIdOrQty;
+      qty = typeof quantity === 'number' ? quantity : 1;
     } else {
-      medicineId = pharmacyIdOrMedicineId;
-      qty = typeof medicineIdOrQty === 'number' ? medicineIdOrQty : 1;
+      medicineId = medicineIdOrPharmacyId;
+      qty = typeof maybeMedicineIdOrQty === 'number' ? maybeMedicineIdOrQty : 1;
     }
 
     try {
       const payload = {
         medicineId,
-        quantity: qty,
-        clearExisting
+        quantity: qty
       };
-      if (pharmacyId) payload.pharmacyId = pharmacyId;
 
       const res = await api.post('/cart/items', payload);
 
       if (res.success && res.data) {
         setCart(res.data.cart);
-        showToast('Added to cart!', 'success');
-        setPharmacyConflictModal(null);
+        showToast('Added to cart! QuickMeds will automatically route to the best pharmacy.', 'success');
         return true;
       }
     } catch (error) {
-      if (error.requiresClearConfirmation) {
-        // Trigger conflict modal
-        setPharmacyConflictModal({
-          pharmacyId,
-          medicineId,
-          quantity,
-          message: error.message
-        });
-        return false;
-      }
       showToast(error.message || 'Failed to add item to cart', 'error');
       return false;
     }
@@ -130,16 +115,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const resolveConflict = async (proceed) => {
-    if (!pharmacyConflictModal) return;
-    if (proceed) {
-      const { pharmacyId, medicineId, quantity } = pharmacyConflictModal;
-      await addToCart(pharmacyId, medicineId, quantity, true);
-    } else {
-      setPharmacyConflictModal(null);
-    }
-  };
-
   return (
     <CartContext.Provider
       value={{
@@ -150,9 +125,7 @@ export const CartProvider = ({ children }) => {
         updateQuantity,
         removeFromCart,
         clearCart,
-        refreshCart: fetchCart,
-        pharmacyConflictModal,
-        resolveConflict
+        refreshCart: fetchCart
       }}
     >
       {children}

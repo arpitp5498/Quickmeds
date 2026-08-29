@@ -543,13 +543,13 @@ const MedicineSearch = () => {
 
                   <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
                     {med.availablePharmaciesCount > 0
-                      ? `In stock at ${med.availablePharmaciesCount} stores`
-                      : 'Check stores'}
+                      ? '✓ In stock in QuickMeds network'
+                      : 'Check availability'}
                   </div>
                 </div>
 
-                <Button variant="outline" size="sm" fullWidth icon={Store}>
-                  View Stores &amp; Prices
+                <Button variant="outline" size="sm" fullWidth icon={Pill}>
+                  View Medicine &amp; Order
                 </Button>
               </div>
             </Card>

@@ -32,7 +32,7 @@ const MedicineDetail = () => {
   const [medicine, setMedicine] = useState(null);
   const [pharmacies, setPharmacies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [addingPharmacyId, setAddingPharmacyId] = useState(null);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -53,10 +53,10 @@ const MedicineDetail = () => {
     fetchDetail();
   }, [id, location.lat, location.lng]);
 
-  const handleAddToCart = async (pharmacyId) => {
-    setAddingPharmacyId(pharmacyId);
-    const success = await addToCart(pharmacyId, medicine._id, 1);
-    setAddingPharmacyId(null);
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    const success = await addToCart(medicine._id, 1);
+    setAddingToCart(false);
     if (success) {
       navigate('/cart');
     }
@@ -209,24 +209,24 @@ const MedicineDetail = () => {
             {/* Quick Add To Cart Button */}
             <Button
               variant="primary"
-              onClick={() => handleAddToCart(null)}
-              loading={addingPharmacyId === null && false}
-              style={{ width: '100%', padding: '12px', fontSize: '1rem', fontWeight: 700 }}
+              onClick={handleAddToCart}
+              loading={addingToCart}
+              style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
             >
-              <ShoppingBag size={18} /> Add to Cart (Nearest Pharmacy Auto-Assigned)
+              <ShoppingBag size={20} /> Add to Cart (Automatic Smart Fulfilment)
             </Button>
           </div>
         </div>
       </Card>
 
-      {/* Verified Pharmacies Stocking This Medicine */}
+      {/* Verified Pharmacies Stocking This Medicine (Informational Preview Only) */}
       <div>
         <div style={{ marginBottom: '1.25rem' }}>
           <h2 style={{ fontSize: '1.35rem', fontWeight: 800 }}>
-            Nearby Verified Pharmacies Stocking This Medicine
+            Live Network Stock Availability
           </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Choose a nearby pharmacy partner to order from. Stock & prices are verified in real time.
+            Verified pharmacies stocking this medicine in your area. QuickMeds automatically evaluates stock, distance, ETA, and reliability to select the best fulfilment option for your complete order.
           </p>
         </div>
 
@@ -254,7 +254,8 @@ const MedicineDetail = () => {
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
                   gap: '1rem',
-                  border: '1px solid var(--border-light)'
+                  border: '1px solid var(--border-light)',
+                  backgroundColor: 'var(--bg-card)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -275,7 +276,7 @@ const MedicineDetail = () => {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>{pharm.name}</h4>
-                      <Badge variant="verified" size="sm">Verified</Badge>
+                      <Badge variant="verified" size="sm">Verified Partner</Badge>
                     </div>
                     <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                       {pharm.address.street}, {pharm.address.city} • <strong>{pharm.distanceKm} km away</strong>
@@ -306,14 +307,9 @@ const MedicineDetail = () => {
                     )}
                   </div>
 
-                  <Button
-                    variant="primary"
-                    onClick={() => handleAddToCart(pharm.pharmacyId)}
-                    loading={addingPharmacyId === pharm.pharmacyId}
-                    icon={ShoppingBag}
-                  >
-                    Order from this Store
-                  </Button>
+                  <Badge variant="info" size="md">
+                    ✓ Network Eligible
+                  </Badge>
                 </div>
               </Card>
             ))}

@@ -27,9 +27,7 @@ const Cart = () => {
     stockWarnings,
     updateQuantity,
     removeFromCart,
-    clearCart,
-    pharmacyConflictModal,
-    resolveConflict
+    clearCart
   } = useCart();
   const { location } = useLocation();
   const [optimizedPlan, setOptimizedPlan] = useState(null);
@@ -45,7 +43,7 @@ const Cart = () => {
         <EmptyState
           icon={ShoppingBag}
           title="Your Shopping Cart is Empty"
-          description="You haven't added any medicines yet. Search nearby pharmacies to find what you need."
+          description="You haven't added any medicines yet. Search medicines to build your basket."
           actionLabel="Find Medicines"
           onAction={() => navigate('/medicines')}
         />
@@ -58,7 +56,7 @@ const Cart = () => {
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Shopping Cart</h1>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-          Ordering from: <strong>{cart.pharmacyId?.name || 'Assigned Pharmacy Partner'}</strong>
+          Fulfilment: <strong style={{ color: 'var(--primary-700)' }}>Automatically Evaluated &amp; Selected by QuickMeds</strong>
         </p>
       </div>
 
@@ -279,27 +277,6 @@ const Cart = () => {
           </Card>
         </div>
       </div>
-
-      {/* Pharmacy Conflict Modal */}
-      {pharmacyConflictModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => resolveConflict(false)}
-          title="Different Pharmacy Selected"
-        >
-          <div style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            <p>{pharmacyConflictModal.message}</p>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
-              <Button variant="ghost" onClick={() => resolveConflict(false)}>
-                Keep Existing Cart
-              </Button>
-              <Button variant="danger" onClick={() => resolveConflict(true)}>
-                Clear & Switch Pharmacy
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };

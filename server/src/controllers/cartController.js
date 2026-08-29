@@ -92,25 +92,6 @@ const addToCart = async (req, res, next) => {
 
     let cart = await getOrCreateCart(req.user._id);
 
-    // If cart has items from a different pharmacy and pharmacy was explicitly specified
-    if (
-      pharmacyId &&
-      cart.pharmacyId &&
-      cart.items.length > 0 &&
-      cart.pharmacyId.toString() !== pharmacyId.toString() &&
-      req.body.pharmacyId // only warn if explicitly picked
-    ) {
-      if (!clearExisting) {
-        return res.status(409).json({
-          success: false,
-          requiresClearConfirmation: true,
-          message:
-            'Your cart contains medicines from another pharmacy. Would you like to clear your cart and start a new order?'
-        });
-      }
-      cart.items = [];
-    }
-
     if (pharmacyId && !cart.pharmacyId) {
       cart.pharmacyId = pharmacyId;
     }

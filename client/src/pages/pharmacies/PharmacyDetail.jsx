@@ -376,7 +376,7 @@ const PharmacyDetail = () => {
                         size="sm"
                         fullWidth
                         icon={ShoppingBag}
-                        onClick={() => addToCart(pharmacy._id, med._id, 1)}
+                        onClick={() => addToCart(med._id, 1)}
                       >
                         Add to Cart
                       </Button>
