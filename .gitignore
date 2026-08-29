@@ -30,3 +30,9 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Temp inspection / development-only artifacts
+temp_inspect/
+server/src/seed/*.ps1
+scratch_replacer.py
+update_brand.js

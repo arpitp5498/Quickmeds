@@ -1,13 +1,6 @@
 {
-  "short_name": "Medirush",
-  "name": "Medirush Hyperlocal Medicine Delivery",
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    }
-  ],
+  "short_name": "QuickMeds",
+  "name": "QuickMeds — Hyperlocal Medicine Delivery",
   "start_url": "/",
   "background_color": "#ffffff",
   "theme_color": "#0284c7",
