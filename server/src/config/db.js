@@ -61,10 +61,15 @@ const connectDB = async () => {
       console.warn('-------------------------------------------------------------\n');
     }
 
-    // Step 2: Fallback to embedded In-Memory MongoDB if available
+    // Step 2: Fallback to embedded In-Memory MongoDB if available (dev only)
     try {
       console.log('[MongoDB] Attempting to launch embedded In-Memory database engine fallback...');
-      const { MongoMemoryServer } = require('mongodb-memory-server');
+      let MongoMemoryServer;
+      try {
+        ({ MongoMemoryServer } = require('mongodb-memory-server'));
+      } catch (requireErr) {
+        throw new Error('mongodb-memory-server not installed (production mode)');
+      }
       if (!memServer) {
         memServer = await MongoMemoryServer.create({
           instance: { dbName: 'medirush' }

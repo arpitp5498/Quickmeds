@@ -132,7 +132,7 @@ app.use('/api/*', (req, res) => {
 app.use(errorHandler);
 
 // Start server
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   httpServer.listen(env.PORT, () => {
     console.log(
       `===============================================\n` +
