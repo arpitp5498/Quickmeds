@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <rect width="400" height="400" fill="#f5f3ff" rx="24"/>
+  <rect x="90" y="80" width="220" height="230" rx="16" fill="#7c3aed" opacity="0.15" stroke="#6d28d9" stroke-width="3"/>
+  <rect x="110" y="100" width="180" height="190" rx="12" fill="#ffffff" stroke="#a78bfa" stroke-width="2"/>
+  <text x="200" y="160" font-family="sans-serif" font-weight="bold" font-size="20" fill="#5b21b6" text-anchor="middle">Sirona</text>
+  <text x="200" y="195" font-family="sans-serif" font-weight="600" font-size="14" fill="#7c3aed" text-anchor="middle">Sanitary Disposal Bags</text>
+  <text x="200" y="340" font-family="sans-serif" font-weight="600" font-size="14" fill="#4c1d95" text-anchor="middle">Oxo-Biodegradable • 15 Bags</text>
+</svg>

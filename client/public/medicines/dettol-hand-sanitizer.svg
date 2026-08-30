@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <rect width="400" height="400" fill="#f0fdf4" rx="24"/>
+  <path d="M150 110 L250 110 L240 280 L160 280 Z" fill="#15803d" opacity="0.2" stroke="#166534" stroke-width="3"/>
+  <rect x="170" y="70" width="60" height="40" rx="6" fill="#15803d"/>
+  <rect x="150" y="140" width="100" height="110" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="2"/>
+  <text x="200" y="185" font-family="sans-serif" font-weight="bold" font-size="18" fill="#15803d" text-anchor="middle">Dettol</text>
+  <text x="200" y="210" font-family="sans-serif" font-weight="600" font-size="12" fill="#166534" text-anchor="middle">Hand Sanitizer</text>
+  <text x="200" y="325" font-family="sans-serif" font-weight="600" font-size="14" fill="#14532d" text-anchor="middle">Instant Gel • 100ml</text>
+</svg>

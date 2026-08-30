@@ -45,7 +45,17 @@ const medicineSchema = new mongoose.Schema(
         'Powder',
         'Strip',
         'Bottle',
-        'Device'
+        'Device',
+        'Pads',
+        'Tampon',
+        'Cup',
+        'Patch',
+        'Wipes',
+        'Tissues',
+        'Bags',
+        'Wash',
+        'Pack',
+        'Sachet'
       ],
       required: true
     },
@@ -75,9 +85,23 @@ const medicineSchema = new mongoose.Schema(
         'Respiratory',
         'Pediatric',
         'Emergency & Critical Care',
-        'General Health'
+        'General Health',
+        'Menstrual Care',
+        'Comfort & Relief',
+        'Hygiene Essentials'
       ],
       required: true,
+      index: true
+    },
+    sosEligible: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    sosCategory: {
+      type: String,
+      enum: ['MENSTRUAL_CARE', 'COMFORT_RELIEF', 'HYGIENE_ESSENTIALS', ''],
+      default: '',
       index: true
     },
     requiresPrescription: {
