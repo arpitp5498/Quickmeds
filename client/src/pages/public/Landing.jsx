@@ -28,6 +28,7 @@ import Button from '../../components/ui/Button';
 import SearchBar from '../../components/ui/SearchBar';
 import Badge from '../../components/ui/Badge';
 import { useLocation } from '../../context/LocationContext';
+import EmergencyEssentialsSection from '../../components/emergency/EmergencyEssentialsSection';
 
 const Landing = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -486,7 +487,17 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* 2. 4-STEP INTERACTIVE VISUAL WORKFLOW */}
+      {/* 2. EMERGENCY ESSENTIALS / SOS SECTION */}
+      <section className="container" style={{ scrollMarginTop: '80px' }}>
+        <EmergencyEssentialsSection
+          initialLimit={8}
+          showViewAll={true}
+          title="SOS — Emergency Essentials"
+          subtitle="Quick access to commonly searched emergency essentials across QuickMeds' verified pharmacy grid."
+        />
+      </section>
+
+      {/* 3. 4-STEP INTERACTIVE VISUAL WORKFLOW */}
       <section id="interactive-workflow" className="container" style={{ scrollMarginTop: '80px' }}>
         <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 2.5rem' }}>
           <span

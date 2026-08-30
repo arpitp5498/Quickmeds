@@ -32,6 +32,7 @@ import ResetPassword from '../pages/auth/ResetPassword';
 import MedicineSearch from '../pages/medicines/MedicineSearch';
 import MedicineDetail from '../pages/medicines/MedicineDetail';
 import MedicineCategories from '../pages/medicines/MedicineCategories';
+import EmergencyEssentials from '../pages/medicines/EmergencyEssentials';
 import NearbyPharmacies from '../pages/pharmacies/NearbyPharmacies';
 import PharmacyDetail from '../pages/pharmacies/PharmacyDetail';
 import PharmacyNetworkMap from '../pages/pharmacies/PharmacyNetworkMap';
@@ -81,6 +82,8 @@ const AppRoutes = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/medicines" element={<MedicineSearch />} />
         <Route path="/medicines/:id" element={<MedicineDetail />} />
+        <Route path="/emergency" element={<EmergencyEssentials />} />
+        <Route path="/sos" element={<EmergencyEssentials />} />
         <Route path="/categories" element={<MedicineCategories />} />
         <Route path="/pharmacies" element={<NearbyPharmacies />} />
         <Route path="/pharmacies/:id" element={<PharmacyDetail />} />

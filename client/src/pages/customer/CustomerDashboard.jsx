@@ -19,6 +19,7 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Skeleton from '../../components/ui/Skeleton';
+import EmergencyEssentialsSection from '../../components/emergency/EmergencyEssentialsSection';
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -276,7 +277,15 @@ const CustomerDashboard = () => {
         </Card>
       </div>
 
-      {/* 4. Two-Column Content: Recent Orders & Nearby Verified Pharmacies */}
+      {/* 4. SOS — Emergency Essentials Section */}
+      <EmergencyEssentialsSection
+        initialLimit={8}
+        showViewAll={true}
+        title="SOS — Emergency Essentials"
+        subtitle="Quick one-tap access to frequently needed emergency medicines & first-aid essentials"
+      />
+
+      {/* 5. Two-Column Content: Recent Orders & Nearby Verified Pharmacies */}
       <div
         style={{
           display: 'grid',

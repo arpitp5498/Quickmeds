@@ -153,6 +153,24 @@ const Navbar = () => {
           </Link>
 
           <Link
+            to="/emergency"
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: '#e11d48',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              backgroundColor: '#fff1f2',
+              padding: '4px 10px',
+              borderRadius: 'var(--radius-full)'
+            }}
+          >
+            <Zap size={15} color="#e11d48" />
+            <span>SOS Essentials</span>
+          </Link>
+
+          <Link
             to="/pharmacies"
             style={{
               fontSize: '0.875rem',
@@ -462,6 +480,14 @@ const Navbar = () => {
             style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)' }}
           >
             Search Medicines
+          </Link>
+          <Link
+            to="/emergency"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ padding: '8px', fontSize: '0.9375rem', color: '#e11d48', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Zap size={16} />
+            SOS Emergency Essentials
           </Link>
           <Link
             to="/pharmacies"

@@ -238,18 +238,26 @@ const updateNotificationSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Get SOS period products (pads, tampons, painkillers)
+// @desc    Get SOS period products (pads, hygiene, painkillers, hydration)
 // @route   GET /api/cycle/sos-products
 // @access  Private (CUSTOMER)
 const getSOSProducts = async (req, res, next) => {
   try {
-    // Find Women Care category products + pain relief medicines suitable for periods
     const sosProducts = await Medicine.find({
       active: true,
       $or: [
         { category: 'Women Care' },
-        { name: { $regex: /meftal|ibuprofen|combiflam/i } },
-        { genericName: { $regex: /mefenamic|dicyclomine/i } }
+        { name: { $in: [
+          'Whisper Ultra Clean Sanitary Pads XL (30 Pads)',
+          'VWash Plus Intimate Hygiene Wash (200ml)',
+          'Meftal Spas Tablet',
+          'Combiflam Tablet',
+          'Dolo 650mg Tablet',
+          'Electral ORS Powder (21.8g Sachet)',
+          'Volini Pain Relief Gel (50g)',
+          'Digene Acidity Relief Gel Mint (200ml)'
+        ] } },
+        { genericName: { $regex: /mefenamic|dicyclomine|ibuprofen|paracetamol/i } }
       ]
     }).sort({ category: 1, name: 1 });
 

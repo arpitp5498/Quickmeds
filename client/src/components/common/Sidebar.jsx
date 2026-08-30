@@ -16,7 +16,8 @@ import {
   Activity,
   Settings,
   Pill,
-  Heart
+  Heart,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -60,6 +61,7 @@ const Sidebar = ({ role = 'CUSTOMER' }) => {
       default:
         return [
           { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+          { to: '/emergency', label: 'Emergency Essentials', icon: Zap },
           { to: '/orders', label: 'My Orders', icon: ShoppingBag },
           { to: '/reminders', label: 'Medicine Reminders', icon: Pill },
           { to: '/cycle-tracker', label: 'Cycle Tracker & SOS', icon: Heart },

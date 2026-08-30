@@ -267,11 +267,128 @@ const updateMedicine = async (req, res, next) => {
   }
 };
 
+// @desc    Get curated SOS / Emergency Essentials catalog
+// @route   GET /api/medicines/emergency-essentials
+// @access  Public
+const getEmergencyEssentials = async (req, res, next) => {
+  try {
+    const { category } = req.query;
+
+    const emergencyMedicineNames = [
+      'Dolo 650mg Tablet',
+      'Crocin 500 Advance Tablet',
+      'Combiflam Tablet',
+      'Volini Pain Relief Gel (50g)',
+      'Asthalin 100mcg Inhaler',
+      'Otrivin Oxy Fast Relief Nasal Spray (10ml)',
+      'Benadryl Cough Formula Syrup (150ml)',
+      'Electral ORS Powder (21.8g Sachet)',
+      'Digene Acidity Relief Gel Mint (200ml)',
+      'Betadine 10% Microbicidal Ointment (20g)',
+      'Dettol Antiseptic Liquid (250ml)',
+      'Hansaplast Regular Bandage Strips (Pack of 20)',
+      'Saridon Headache Relief Tablet',
+      'Meftal Spas Tablet'
+    ];
+
+    let query = {
+      active: true,
+      name: { $in: emergencyMedicineNames }
+    };
+
+    if (category && category !== 'All') {
+      if (category === 'Fever & Pain') {
+        query.name = {
+          $in: [
+            'Dolo 650mg Tablet',
+            'Crocin 500 Advance Tablet',
+            'Combiflam Tablet',
+            'Volini Pain Relief Gel (50g)',
+            'Saridon Headache Relief Tablet',
+            'Meftal Spas Tablet'
+          ]
+        };
+      } else if (category === 'Cold & Cough') {
+        query.name = {
+          $in: [
+            'Benadryl Cough Formula Syrup (150ml)',
+            'Otrivin Oxy Fast Relief Nasal Spray (10ml)',
+            'Asthalin 100mcg Inhaler'
+          ]
+        };
+      } else if (category === 'First Aid') {
+        query.name = {
+          $in: [
+            'Betadine 10% Microbicidal Ointment (20g)',
+            'Dettol Antiseptic Liquid (250ml)',
+            'Hansaplast Regular Bandage Strips (Pack of 20)'
+          ]
+        };
+      } else if (category === 'Hydration & Digestion' || category === 'Hydration') {
+        query.name = {
+          $in: [
+            'Electral ORS Powder (21.8g Sachet)',
+            'Digene Acidity Relief Gel Mint (200ml)'
+          ]
+        };
+      } else if (category === 'Respiratory') {
+        query.name = {
+          $in: [
+            'Asthalin 100mcg Inhaler',
+            'Otrivin Oxy Fast Relief Nasal Spray (10ml)'
+          ]
+        };
+      }
+    }
+
+    const medicines = await Medicine.find(query);
+
+    const tagMap = {
+      'Dolo 650mg Tablet': { emergencyCategory: 'Fever & Pain', priority: 1 },
+      'Crocin 500 Advance Tablet': { emergencyCategory: 'Fever & Pain', priority: 2 },
+      'Combiflam Tablet': { emergencyCategory: 'Fever & Pain', priority: 3 },
+      'Volini Pain Relief Gel (50g)': { emergencyCategory: 'Fever & Pain', priority: 4 },
+      'Asthalin 100mcg Inhaler': { emergencyCategory: 'Respiratory', priority: 5 },
+      'Otrivin Oxy Fast Relief Nasal Spray (10ml)': { emergencyCategory: 'Cold & Cough', priority: 6 },
+      'Benadryl Cough Formula Syrup (150ml)': { emergencyCategory: 'Cold & Cough', priority: 7 },
+      'Electral ORS Powder (21.8g Sachet)': { emergencyCategory: 'Hydration & Digestion', priority: 8 },
+      'Digene Acidity Relief Gel Mint (200ml)': { emergencyCategory: 'Hydration & Digestion', priority: 9 },
+      'Betadine 10% Microbicidal Ointment (20g)': { emergencyCategory: 'First Aid', priority: 10 },
+      'Dettol Antiseptic Liquid (250ml)': { emergencyCategory: 'First Aid', priority: 11 },
+      'Hansaplast Regular Bandage Strips (Pack of 20)': { emergencyCategory: 'First Aid', priority: 12 },
+      'Saridon Headache Relief Tablet': { emergencyCategory: 'Fever & Pain', priority: 13 },
+      'Meftal Spas Tablet': { emergencyCategory: 'Fever & Pain', priority: 14 }
+    };
+
+    const formatted = medicines
+      .map((m) => {
+        const obj = m.toObject();
+        const meta = tagMap[m.name] || { emergencyCategory: m.category, priority: 99 };
+        return {
+          ...obj,
+          emergencyCategory: meta.emergencyCategory,
+          priority: meta.priority,
+          availabilityStatus: 'Available at nearby verified pharmacies'
+        };
+      })
+      .sort((a, b) => a.priority - b.priority);
+
+    return ApiResponse.success(
+      res,
+      { medicines: formatted, totalCount: formatted.length },
+      'Emergency essentials fetched successfully'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   searchMedicines,
   getMedicineById,
   getCategories,
   getPopularMedicines,
+  getEmergencyEssentials,
   createMedicine,
   updateMedicine
 };

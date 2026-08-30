@@ -6,6 +6,8 @@ const validate = require('../middleware/validate');
 const { authenticate, authorize } = require('../middleware/auth');
 
 router.get('/', medicineSearchValidator, validate, medicineController.searchMedicines);
+router.get('/emergency-essentials', medicineController.getEmergencyEssentials);
+router.get('/sos', medicineController.getEmergencyEssentials);
 router.get('/categories', medicineController.getCategories);
 router.get('/popular', medicineController.getPopularMedicines);
 router.get('/:id', medicineController.getMedicineById);
