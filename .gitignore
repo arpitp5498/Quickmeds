@@ -38,3 +38,4 @@ scratch_replacer.py
 update_brand.js
 
 .vercel
+.env*

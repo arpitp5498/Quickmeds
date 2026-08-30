@@ -83,12 +83,24 @@ const OrderDetail = () => {
         }
       };
 
+      const handleFallbackReassigned = (data) => {
+        if (data.orderId === id) {
+          showToast(
+            `⚡ Your order is being rerouted to ${data.newPharmacyName} for faster fulfilment.`,
+            'info'
+          );
+          fetchOrder();
+        }
+      };
+
       socket.on('order_status_changed', handleStatusChange);
       socket.on('driver_moved', handleDriverMoved);
+      socket.on('order_fallback_reassigned', handleFallbackReassigned);
 
       return () => {
         socket.off('order_status_changed', handleStatusChange);
         socket.off('driver_moved', handleDriverMoved);
+        socket.off('order_fallback_reassigned', handleFallbackReassigned);
       };
     }
   }, [id, socket]);
@@ -205,6 +217,7 @@ const OrderDetail = () => {
   });
 
   const canCancel = ['PLACED', 'PHARMACY_REVIEW'].includes(order.orderStatus);
+  const isFulfilmentUnavailable = order.orderStatus === 'FULFILMENT_UNAVAILABLE';
   const isDelivered = order.orderStatus === 'DELIVERED';
 
   return (
@@ -246,7 +259,7 @@ const OrderDetail = () => {
             variant={
               isDelivered
                 ? 'success'
-                : order.orderStatus === 'CANCELLED' || order.orderStatus === 'REJECTED'
+                : order.orderStatus === 'CANCELLED' || order.orderStatus === 'REJECTED' || order.orderStatus === 'FULFILMENT_UNAVAILABLE'
                 ? 'danger'
                 : 'primary'
             }
@@ -263,6 +276,43 @@ const OrderDetail = () => {
       </div>
 
 
+
+      {/* Fulfilment Unavailable Banner */}
+      {isFulfilmentUnavailable && (
+        <Card
+          style={{
+            marginBottom: '1.5rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderColor: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <AlertTriangle size={22} />
+          </div>
+          <div>
+            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#dc2626' }}>
+              Fulfilment Unavailable
+            </h4>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              We were unable to find an eligible pharmacy to fulfil this order after {order.fallbackAttempt || 0} attempt(s). Please try placing a new order or contact support.
+            </p>
+          </div>
+        </Card>
+      )}
 
       {/* Delivered Success Celebration Banner */}
       {isDelivered && (
@@ -296,6 +346,48 @@ const OrderDetail = () => {
             </h4>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               Your order has been handed over safely with tamper-proof seal intact. Thank you for using QuickMeds!
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Fallback Rerouting Banner */}
+      {(order.fallbackTriggered || order.fallbackAttempt > 0) && order.orderStatus !== 'DELIVERED' && (
+        <Card
+          style={{
+            marginBottom: '1.5rem',
+            backgroundColor: '#fef3c7',
+            border: '1px solid #fde68a',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              backgroundColor: '#f59e0b',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Zap size={20} />
+          </div>
+          <div>
+            <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#92400e' }}>
+              ⚡ Order Rerouted (Attempt #{order.fallbackAttempt || 1})
+            </h4>
+            <p style={{ fontSize: '0.8125rem', color: '#92400e', marginTop: '2px' }}>
+              {order.fallbackReason === 'PHARMACY_REJECTED'
+                ? 'Previous pharmacy could not fulfil this order.'
+                : 'Previous pharmacy confirmation timed out.'}
+              {' '}QuickMeds automatically reassigned your order to{' '}
+              <strong>{order.pharmacyId?.name || 'a nearby verified pharmacy'}</strong> for faster delivery.
             </p>
           </div>
         </Card>

@@ -63,6 +63,22 @@ const PharmacyOrderDetail = () => {
         rejectionReason: reason
       });
       if (res.success) {
+        // Handle fallback rerouting from pharmacy rejection
+        if (res.data?.fallback?.triggered && status === 'REJECTED') {
+          setRejectModalOpen(false);
+          if (res.data.fallback.exhausted) {
+            showToast('Order rejected. No other eligible pharmacy. Order closed.', 'warning');
+          } else {
+            showToast(
+              `⚡ Rejected → Order auto-reassigned to ${res.data.fallback.newPharmacy}. Removed from your queue.`,
+              'info'
+            );
+          }
+          // Navigate back since this order is no longer assigned to this pharmacy
+          navigate('/pharmacy/orders');
+          return;
+        }
+
         showToast(`Order status updated to ${status}`, 'success');
         setRejectModalOpen(false);
         fetchOrder();
@@ -174,7 +190,7 @@ const PharmacyOrderDetail = () => {
             <span>
               <strong>⚡ Fallback Reassigned (Attempt #{order.fallbackAttempt || 1}):</strong> Transferred from{' '}
               <em>{order.previousPharmacyId?.name || 'Previous Pharmacy Partner'}</em> to{' '}
-              <em>{order.pharmacyId?.name || 'Current Store'}</em> due to confirmation timeout.
+              <em>{order.pharmacyId?.name || 'Current Store'}</em> due to {order.fallbackReason === 'PHARMACY_REJECTED' ? 'pharmacy rejection' : 'confirmation timeout'}.
             </span>
           </div>
           <Badge variant="warning" size="sm">

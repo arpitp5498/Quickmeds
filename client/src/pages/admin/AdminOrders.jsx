@@ -62,7 +62,8 @@ const AdminOrders = () => {
           { id: 'PLACED', label: 'Placed' },
           { id: 'OUT_FOR_DELIVERY', label: 'In Transit' },
           { id: 'DELIVERED', label: 'Delivered' },
-          { id: 'CANCELLED', label: 'Cancelled' }
+          { id: 'CANCELLED', label: 'Cancelled' },
+          { id: 'FULFILMENT_UNAVAILABLE', label: 'Fulfilment Failed' }
         ]}
       />
 
@@ -112,7 +113,7 @@ const AdminOrders = () => {
                         variant={
                           o.orderStatus === 'DELIVERED'
                             ? 'success'
-                            : o.orderStatus === 'CANCELLED' || o.orderStatus === 'REJECTED'
+                            : o.orderStatus === 'CANCELLED' || o.orderStatus === 'REJECTED' || o.orderStatus === 'FULFILMENT_UNAVAILABLE'
                             ? 'danger'
                             : 'primary'
                         }

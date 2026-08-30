@@ -59,9 +59,11 @@ const PharmacyOrders = () => {
       const handleNewOrder = () => fetchOrders();
       socket.on('new_order_received', handleNewOrder);
       socket.on('order_status_changed', handleNewOrder);
+      socket.on('order_reassigned_away', handleNewOrder);
       return () => {
         socket.off('new_order_received', handleNewOrder);
         socket.off('order_status_changed', handleNewOrder);
+        socket.off('order_reassigned_away', handleNewOrder);
       };
     }
   }, [statusFilter, socket]);
@@ -71,7 +73,19 @@ const PharmacyOrders = () => {
       setUpdatingId(orderId);
       const res = await api.patch(`/orders/${orderId}/status`, { status: newStatus, note });
       if (res.success) {
-        showToast(`Order status updated to ${newStatus.replace(/_/g, ' ')}`, 'success');
+        // Detect fallback rerouting response from pharmacy rejection
+        if (res.data?.fallback?.triggered && newStatus === 'REJECTED') {
+          if (res.data.fallback.exhausted) {
+            showToast('Order rejected. No other eligible pharmacy available.', 'warning');
+          } else {
+            showToast(
+              `⚡ Order rejected → automatically reassigned to ${res.data.fallback.newPharmacy} (Attempt #${res.data.fallback.attempt})`,
+              'info'
+            );
+          }
+        } else {
+          showToast(`Order status updated to ${newStatus.replace(/_/g, ' ')}`, 'success');
+        }
         fetchOrders();
       }
     } catch (err) {
@@ -172,7 +186,7 @@ const PharmacyOrders = () => {
                       <span>
                         <strong>⚡ Fallback Reassigned (Attempt #{order.fallbackAttempt || 1}):</strong> Reassigned from{' '}
                         <em>{order.previousPharmacyId?.name || 'Previous Pharmacy'}</em> to{' '}
-                        <em>{order.pharmacyId?.name || 'Current Store'}</em> due to confirmation timeout.
+                        <em>{order.pharmacyId?.name || 'Current Store'}</em> due to {order.fallbackReason === 'PHARMACY_REJECTED' ? 'pharmacy rejection' : 'confirmation timeout'}.
                       </span>
                     </div>
                     <Badge variant="warning" size="sm">

@@ -336,17 +336,149 @@ const updateOrderStatus = async (req, res, next) => {
       throw ApiError.notFound('Order not found');
     }
 
-    // Validate state transition
+    // ─── PHARMACY REJECTION → AUTOMATIC FALLBACK REROUTING ───
+    // When a pharmacy rejects, DO NOT finalize the order as REJECTED.
+    // Instead, record the rejection event and trigger fallback routing.
+    if (status === 'REJECTED') {
+      // Validate the transition is allowed from current state
+      validateStatusTransition(order.orderStatus, status);
+
+      // Authorization: verify the rejecting user is linked to the assigned pharmacy
+      if (req.user.role === 'PHARMACY') {
+        const assignedPharmacyId = (order.pharmacyId?._id || order.pharmacyId).toString();
+        const userPharmacy = await Pharmacy.findOne({ userId: req.user._id });
+        if (!userPharmacy || userPharmacy._id.toString() !== assignedPharmacyId) {
+          throw ApiError.forbidden('You can only reject orders assigned to your pharmacy.');
+        }
+      }
+
+      const rejectingPharmacyName = order.pharmacyId?.name || 'Pharmacy';
+      const rejectingPharmacyId = order.pharmacyId?._id || order.pharmacyId;
+      const reason = rejectionReason || 'Rejected by pharmacy';
+
+      // Record the rejection as a STATUS HISTORY EVENT (not a final orderStatus change)
+      order.rejectionReason = reason;
+      order.statusHistory.push({
+        status: 'PHARMACY_REJECTED',
+        timestamp: new Date(),
+        note: `${rejectingPharmacyName} rejected this order: ${reason}`,
+        updatedBy: req.user._id
+      });
+      await order.save();
+
+      // Log the rejection in audit trail
+      await logAction({
+        actorId: req.user._id,
+        actorRole: req.user.role,
+        action: 'PHARMACY_REJECTED',
+        entity: 'ORDER',
+        entityId: order._id.toString(),
+        description: `${rejectingPharmacyName} rejected order ${order.orderId}: ${reason}`,
+        metadata: {
+          rejectedPharmacyId: rejectingPharmacyId.toString(),
+          rejectedPharmacyName: rejectingPharmacyName,
+          rejectionReason: reason
+        }
+      });
+
+      // Attempt fallback rerouting using the EXISTING engine
+      try {
+        const updatedOrder = await executeFallbackReassignment(order._id, 'PHARMACY_REJECTED');
+
+        // Fallback succeeded — order has been reassigned to a new pharmacy
+        const newPharmacy = await Pharmacy.findById(updatedOrder.pharmacyId);
+        const newPharmacyName = newPharmacy?.name || 'Next Pharmacy';
+
+        return ApiResponse.success(
+          res,
+          {
+            order: updatedOrder,
+            fallback: {
+              triggered: true,
+              previousPharmacy: rejectingPharmacyName,
+              previousPharmacyId: rejectingPharmacyId,
+              newPharmacy: newPharmacyName,
+              newPharmacyId: updatedOrder.pharmacyId,
+              attempt: updatedOrder.fallbackAttempt,
+              reason: 'PHARMACY_REJECTED'
+            }
+          },
+          `Pharmacy rejected the order. QuickMeds automatically reassigned it to ${newPharmacyName}.`
+        );
+      } catch (fallbackErr) {
+        // Fallback FAILED — no eligible pharmacy available
+        // NOW restore inventory for the rejecting pharmacy and finalize the order
+        await restoreInventory(rejectingPharmacyId, order.items);
+
+        // Reload the order (fallback may have partially modified it)
+        const failedOrder = await Order.findById(order._id)
+          .populate('customerId')
+          .populate('pharmacyId');
+
+        failedOrder.orderStatus = 'FULFILMENT_UNAVAILABLE';
+        failedOrder.statusHistory.push({
+          status: 'FULFILMENT_UNAVAILABLE',
+          timestamp: new Date(),
+          note: `No eligible pharmacy could fulfil this order after ${failedOrder.fallbackAttempt || 0} fallback attempt(s). Last rejection by ${rejectingPharmacyName}.`,
+          updatedBy: req.user._id
+        });
+        failedOrder.fallbackLock = false;
+        await failedOrder.save();
+
+        // Emit socket event for customer
+        try {
+          const io = getIO();
+          io.to(`order:${failedOrder._id}`).emit('order_status_changed', {
+            orderId: failedOrder._id,
+            orderNumber: failedOrder.orderId,
+            status: 'FULFILMENT_UNAVAILABLE',
+            note: 'No eligible pharmacy could fulfil this order.'
+          });
+        } catch (socketErr) { /* non-critical */ }
+
+        // Notify customer
+        try {
+          await sendNotification({
+            userId: failedOrder.customerId?._id || failedOrder.customerId,
+            type: 'ORDER_FULFILMENT_UNAVAILABLE',
+            title: `Order ${failedOrder.orderId} — Fulfilment Unavailable`,
+            message: `We were unable to find an eligible pharmacy to fulfil your order. Please try again or contact support.`,
+            link: `/orders/${failedOrder._id}`
+          });
+        } catch (notifErr) { /* non-critical */ }
+
+        // Audit log
+        await logAction({
+          actorId: req.user._id,
+          actorRole: 'SYSTEM',
+          action: 'ORDER_FULFILMENT_UNAVAILABLE',
+          entity: 'ORDER',
+          entityId: failedOrder._id.toString(),
+          description: `Order ${failedOrder.orderId} marked FULFILMENT_UNAVAILABLE after all fallback attempts exhausted.`
+        });
+
+        return ApiResponse.success(
+          res,
+          {
+            order: failedOrder,
+            fallback: {
+              triggered: true,
+              exhausted: true,
+              previousPharmacy: rejectingPharmacyName,
+              reason: 'NO_ELIGIBLE_PHARMACY'
+            }
+          },
+          `Pharmacy rejected. No other eligible pharmacy available. Order marked as fulfilment unavailable.`
+        );
+      }
+    }
+    // ─── END PHARMACY REJECTION FALLBACK FLOW ───
+
+    // ─── ALL OTHER STATUS TRANSITIONS (ACCEPTED, PREPARING, etc.) ───
     validateStatusTransition(order.orderStatus, status);
 
     const prevStatus = order.orderStatus;
     order.orderStatus = status;
-
-    if (status === 'REJECTED') {
-      order.rejectionReason = rejectionReason || 'Rejected by pharmacy';
-      // Restore stock
-      await restoreInventory(order.pharmacyId._id, order.items);
-    }
 
     if (status === 'CANCELLED') {
       order.cancellationReason = note || 'Cancelled';
@@ -401,8 +533,7 @@ const updateOrderStatus = async (req, res, next) => {
       PREPARING: 'The pharmacist is now preparing and packaging your medicines.',
       READY_FOR_PICKUP: 'Your medicines are packaged and ready for pickup by the delivery agent.',
       OUT_FOR_DELIVERY: 'Your order is out for delivery! The delivery partner is on the way.',
-      DELIVERED: 'Your order has been successfully delivered. Please take medicines as directed.',
-      REJECTED: `Your order could not be fulfilled: ${rejectionReason}`
+      DELIVERED: 'Your order has been successfully delivered. Please take medicines as directed.'
     };
 
     if (statusMessages[status]) {

@@ -126,7 +126,8 @@ const orderSchema = new mongoose.Schema(
         'OUT_FOR_DELIVERY',
         'DELIVERED',
         'REJECTED',
-        'CANCELLED'
+        'CANCELLED',
+        'FULFILMENT_UNAVAILABLE'
       ],
       default: 'PLACED',
       index: true

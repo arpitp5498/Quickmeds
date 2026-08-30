@@ -119,7 +119,7 @@ const OrderList = () => {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {orders.map((order) => {
-            const isActive = !['DELIVERED', 'REJECTED', 'CANCELLED'].includes(order.orderStatus);
+            const isActive = !['DELIVERED', 'REJECTED', 'CANCELLED', 'FULFILMENT_UNAVAILABLE'].includes(order.orderStatus);
 
             return (
               <Card
@@ -152,7 +152,7 @@ const OrderList = () => {
                       variant={
                         order.orderStatus === 'DELIVERED'
                           ? 'success'
-                          : order.orderStatus === 'CANCELLED' || order.orderStatus === 'REJECTED'
+                          : order.orderStatus === 'CANCELLED' || order.orderStatus === 'REJECTED' || order.orderStatus === 'FULFILMENT_UNAVAILABLE'
                           ? 'danger'
                           : 'primary'
                       }
