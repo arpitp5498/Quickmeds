@@ -638,6 +638,10 @@ const OrderDetail = () => {
                 <span>₹{order.deliveryFee}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                <span>Safety & Packaging</span>
+                <span>₹{order.platformFee || 5}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                 <span>Payment Mode</span>
                 <span style={{ fontWeight: 600 }}>{order.paymentMethod}</span>
               </div>

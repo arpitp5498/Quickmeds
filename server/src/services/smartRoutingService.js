@@ -18,6 +18,7 @@ const SCORING_WEIGHTS = {
 
 const DEFAULT_MAX_DISTANCE_KM = 15.0;
 const MAX_ETA_MINUTES_HORIZON = 60.0;
+const PLATFORM_FEE = 5; // Safety & Packaging charge
 const BASE_PREP_MINUTES = 5;
 
 /**
@@ -402,12 +403,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
       scoreBreakdown: top.scoreBreakdown,
       etaMinutes: top.etaMinutes,
       etaText: top.etaText,
-      totalOrderValue: top.basketPrice + top.deliveryFee,
+      totalOrderValue: top.basketPrice + top.deliveryFee + PLATFORM_FEE,
       priceBreakdown: {
         itemsSubtotal: top.basketPrice,
         deliveryFee: top.deliveryFee,
-        platformFee: 0,
-        totalOrderValue: top.basketPrice + top.deliveryFee,
+        platformFee: PLATFORM_FEE,
+        totalOrderValue: top.basketPrice + top.deliveryFee + PLATFORM_FEE,
         label: 'Estimated pricing'
       },
       explanation: ''
@@ -434,12 +435,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
         scoreBreakdown: second.scoreBreakdown,
         etaMinutes: second.etaMinutes,
         etaText: second.etaText,
-        totalOrderValue: second.basketPrice + second.deliveryFee,
+        totalOrderValue: second.basketPrice + second.deliveryFee + PLATFORM_FEE,
         priceBreakdown: {
           itemsSubtotal: second.basketPrice,
           deliveryFee: second.deliveryFee,
-          platformFee: 0,
-          totalOrderValue: second.basketPrice + second.deliveryFee,
+          platformFee: PLATFORM_FEE,
+          totalOrderValue: second.basketPrice + second.deliveryFee + PLATFORM_FEE,
           label: 'Estimated pricing'
         },
         explanation: generateExplanation({
@@ -492,12 +493,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
         },
         etaMinutes: maxEta,
         etaText: `${maxEta} mins (Target - Split Dispatch)`,
-        totalOrderValue: combinedSubtotal + combinedDeliveryFee,
+        totalOrderValue: combinedSubtotal + combinedDeliveryFee + PLATFORM_FEE,
         priceBreakdown: {
           itemsSubtotal: combinedSubtotal,
           deliveryFee: combinedDeliveryFee,
-          platformFee: 0,
-          totalOrderValue: combinedSubtotal + combinedDeliveryFee,
+          platformFee: PLATFORM_FEE,
+          totalOrderValue: combinedSubtotal + combinedDeliveryFee + PLATFORM_FEE,
           label: 'Estimated pricing'
         },
         explanation: ''
@@ -522,12 +523,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
         scoreBreakdown: bestPartial.scoreBreakdown,
         etaMinutes: bestPartial.etaMinutes,
         etaText: bestPartial.etaText,
-        totalOrderValue: bestPartial.basketPrice + bestPartial.deliveryFee,
+        totalOrderValue: bestPartial.basketPrice + bestPartial.deliveryFee + PLATFORM_FEE,
         priceBreakdown: {
           itemsSubtotal: bestPartial.basketPrice,
           deliveryFee: bestPartial.deliveryFee,
-          platformFee: 0,
-          totalOrderValue: bestPartial.basketPrice + bestPartial.deliveryFee,
+          platformFee: PLATFORM_FEE,
+          totalOrderValue: bestPartial.basketPrice + bestPartial.deliveryFee + PLATFORM_FEE,
           label: 'Estimated pricing'
         },
         explanation: `Single store partial fulfillment covering ${bestPartial.availableCount} of ${totalItemsCount} items.`
@@ -554,12 +555,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
       scoreBreakdown: singlePartial.scoreBreakdown,
       etaMinutes: singlePartial.etaMinutes,
       etaText: singlePartial.etaText,
-      totalOrderValue: singlePartial.basketPrice + singlePartial.deliveryFee,
+      totalOrderValue: singlePartial.basketPrice + singlePartial.deliveryFee + PLATFORM_FEE,
       priceBreakdown: {
         itemsSubtotal: singlePartial.basketPrice,
         deliveryFee: singlePartial.deliveryFee,
-        platformFee: 0,
-        totalOrderValue: singlePartial.basketPrice + singlePartial.deliveryFee,
+        platformFee: PLATFORM_FEE,
+        totalOrderValue: singlePartial.basketPrice + singlePartial.deliveryFee + PLATFORM_FEE,
         label: 'Estimated pricing'
       },
       explanation: `Partial single-store fulfilment (${singlePartial.availableCount}/${totalItemsCount} items available).`
@@ -583,12 +584,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
         scoreBreakdown: secondPartial.scoreBreakdown,
         etaMinutes: secondPartial.etaMinutes,
         etaText: secondPartial.etaText,
-        totalOrderValue: secondPartial.basketPrice + secondPartial.deliveryFee,
+        totalOrderValue: secondPartial.basketPrice + secondPartial.deliveryFee + PLATFORM_FEE,
         priceBreakdown: {
           itemsSubtotal: secondPartial.basketPrice,
           deliveryFee: secondPartial.deliveryFee,
-          platformFee: 0,
-          totalOrderValue: secondPartial.basketPrice + secondPartial.deliveryFee,
+          platformFee: PLATFORM_FEE,
+          totalOrderValue: secondPartial.basketPrice + secondPartial.deliveryFee + PLATFORM_FEE,
           label: 'Estimated pricing'
         },
         explanation: `Alternative partial fulfilment (${secondPartial.availableCount}/${totalItemsCount} items).`

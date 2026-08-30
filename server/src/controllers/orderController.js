@@ -81,8 +81,9 @@ const createOrder = async (req, res, next) => {
 
     const deliveryFee = calculateDeliveryFee(distanceKm);
     const eta = estimateDeliveryTime(distanceKm);
+    const platformFee = 5; // Safety & Packaging charge
     const subtotal = cart.subtotal;
-    const total = subtotal + deliveryFee;
+    const total = subtotal + deliveryFee + platformFee;
 
     // Validate and atomically decrement inventory stock
     await decrementInventory(orderPharmacyId, cart.items);
@@ -98,6 +99,7 @@ const createOrder = async (req, res, next) => {
       items: cart.items,
       subtotal,
       deliveryFee,
+      platformFee,
       total,
       deliveryAddress,
       prescriptionId: prescriptionId || null,
