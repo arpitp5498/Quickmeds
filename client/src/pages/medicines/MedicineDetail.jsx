@@ -53,9 +53,14 @@ const MedicineDetail = () => {
     fetchDetail();
   }, [id, location.lat, location.lng]);
 
+  const bestPrice =
+    pharmacies && pharmacies.length > 0
+      ? Math.min(...pharmacies.map((p) => p.price || medicine?.mrp))
+      : medicine?.mrp;
+
   const handleAddToCart = async () => {
     setAddingToCart(true);
-    const success = await addToCart(medicine._id, 1);
+    const success = await addToCart(medicine._id, 1, bestPrice);
     setAddingToCart(false);
     if (success) {
       navigate('/cart');

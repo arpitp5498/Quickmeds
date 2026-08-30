@@ -44,7 +44,7 @@ export const CartProvider = ({ children }) => {
     fetchCart();
   }, [fetchCart]);
 
-  const addToCart = async (medicineIdOrPharmacyId, maybeMedicineIdOrQty, quantity = 1) => {
+  const addToCart = async (medicineIdOrPharmacyId, maybeMedicineIdOrQty, quantity = 1, unitPrice = null) => {
     if (!isAuthenticated) {
       showToast('Please log in as a customer to add medicines to your cart.', 'warning');
       return false;
@@ -52,14 +52,17 @@ export const CartProvider = ({ children }) => {
 
     let medicineId = null;
     let qty = 1;
+    let price = null;
 
-    // Support both addToCart(medicineId, quantity) and legacy addToCart(pharmacyId, medicineId, quantity)
+    // Support addToCart(medicineId, quantity, unitPrice) and legacy addToCart(pharmacyId, medicineId, quantity)
     if (typeof maybeMedicineIdOrQty === 'string') {
       medicineId = maybeMedicineIdOrQty;
       qty = typeof quantity === 'number' ? quantity : 1;
+      price = typeof unitPrice === 'number' ? unitPrice : null;
     } else {
       medicineId = medicineIdOrPharmacyId;
       qty = typeof maybeMedicineIdOrQty === 'number' ? maybeMedicineIdOrQty : 1;
+      price = typeof quantity === 'number' ? quantity : (typeof unitPrice === 'number' ? unitPrice : null);
     }
 
     try {
@@ -67,6 +70,9 @@ export const CartProvider = ({ children }) => {
         medicineId,
         quantity: qty
       };
+      if (price && price > 0) {
+        payload.price = price;
+      }
 
       const res = await api.post('/cart/items', payload);
 

@@ -66,16 +66,24 @@ const addToCart = async (req, res, next) => {
       pharmacy = await Pharmacy.findById(pharmacyId);
       inventory = await PharmacyInventory.findOne({ pharmacyId, medicineId, isAvailable: true });
     } else {
-      // Auto-find first verified pharmacy with stock for this medicine
-      const invMatch = await PharmacyInventory.findOne({
+      // Auto-find verified pharmacy with stock for this medicine, sorted by lowest price first
+      const invMatches = await PharmacyInventory.find({
         medicineId,
         isAvailable: true,
         stockQuantity: { $gte: parseInt(quantity, 10) }
-      }).populate('pharmacyId');
+      })
+        .populate('pharmacyId')
+        .sort({ price: 1 });
 
-      if (invMatch && invMatch.pharmacyId && invMatch.pharmacyId.verificationStatus === 'VERIFIED') {
-        inventory = invMatch;
-        pharmacy = invMatch.pharmacyId;
+      const validMatch = invMatches.find(
+        (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED' && i.pharmacyId.isOpen
+      ) || invMatches.find(
+        (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED'
+      );
+
+      if (validMatch) {
+        inventory = validMatch;
+        pharmacy = validMatch.pharmacyId;
         pharmacyId = pharmacy._id;
       } else {
         // Fallback to any verified open pharmacy
@@ -87,7 +95,11 @@ const addToCart = async (req, res, next) => {
       }
     }
 
-    const itemPrice = inventory?.price || medicine.mrp;
+    // Client price input (e.g. displayed best price on product page) or lowest inventory price
+    const clientPrice = req.body.price || req.body.unitPrice;
+    const itemPrice = typeof clientPrice === 'number' && clientPrice > 0
+      ? clientPrice
+      : (inventory?.price !== undefined ? inventory.price : medicine.mrp);
     const availableStock = inventory?.stockQuantity || 50;
 
     let cart = await getOrCreateCart(req.user._id);
@@ -107,7 +119,10 @@ const addToCart = async (req, res, next) => {
         throw ApiError.badRequest(`Cannot add more. Max stock is ${availableStock}.`);
       }
       cart.items[existingIndex].quantity = newQty;
-      cart.items[existingIndex].price = itemPrice;
+      // Preserve original unit price when increasing quantity
+      if (!cart.items[existingIndex].price) {
+        cart.items[existingIndex].price = itemPrice;
+      }
     } else {
       cart.items.push({
         medicineId: medicine._id,

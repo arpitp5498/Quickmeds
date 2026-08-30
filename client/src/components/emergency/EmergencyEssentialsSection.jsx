@@ -78,7 +78,8 @@ const EmergencyEssentialsSection = ({
     e.stopPropagation();
     try {
       setAddingId(medicine._id);
-      const success = await addToCart(medicine._id, 1);
+      const unitPrice = medicine.lowestPrice || medicine.mrp;
+      const success = await addToCart(medicine._id, 1, unitPrice);
       if (success) {
         setAddedIds((prev) => ({ ...prev, [medicine._id]: true }));
         setTimeout(() => {

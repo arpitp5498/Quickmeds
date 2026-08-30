@@ -299,7 +299,7 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
       const stock = inv ? (inv.stockQuantity !== undefined ? inv.stockQuantity : (inv.stock || 0)) : 0;
 
       if (medIdStr && inv && stock >= reqQty) {
-        const unitPrice = inv.price !== undefined ? inv.price : (item.price || 50);
+        const unitPrice = (item.price !== undefined && item.price > 0) ? item.price : (inv.price !== undefined ? inv.price : 50);
         const itemTotal = unitPrice * reqQty;
         basketPrice += itemTotal;
         availableItems.push({
