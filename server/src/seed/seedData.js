@@ -576,7 +576,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Soft cottony cover sanitary napkins designed for comfort and leak protection during regular flow.",
     "mrp": 35,
-    "image": "/medicines/whisper-choice-regular-pads.svg",
+    "image": "/medicines/whisper-choice-regular-pads.png",
     "sosEligible": true,
     "sosCategory": "MENSTRUAL_CARE"
   },
@@ -592,7 +592,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Extra-long sanitary napkins with 360-degree leakage protection and odour lock gel technology.",
     "mrp": 140,
-    "image": "/medicines/whisper-ultra-xl-pads.svg",
+    "image": "/medicines/whisper-ultra-xl-pads.png",
     "sosEligible": true,
     "sosCategory": "MENSTRUAL_CARE"
   },
@@ -608,7 +608,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "FluidLock grooves and SilkTouch cover for smooth insertion and reliable leak protection.",
     "mrp": 195,
-    "image": "/medicines/ob-tampons-regular.svg",
+    "image": "/medicines/ob-tampons-regular.png",
     "sosEligible": true,
     "sosCategory": "MENSTRUAL_CARE"
   },
@@ -624,7 +624,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Eco-friendly, 100% medical-grade silicone cup providing up to 8-12 hours of leakproof protection.",
     "mrp": 299,
-    "image": "/medicines/sirona-menstrual-cup.svg",
+    "image": "/medicines/sirona-menstrual-cup.png",
     "sosEligible": true,
     "sosCategory": "MENSTRUAL_CARE"
   },
@@ -640,7 +640,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Thermostatically controlled electric heating pad providing targeted warmth for menstrual cramp and muscle relief.",
     "mrp": 350,
-    "image": "/medicines/flamingo-heating-pad.svg",
+    "image": "/medicines/flamingo-heating-pad.png",
     "sosEligible": true,
     "sosCategory": "COMFORT_RELIEF"
   },
@@ -656,7 +656,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Natural air-activated heating patches providing soothing 8-hour heat therapy for abdominal cramps.",
     "mrp": 199,
-    "image": "/medicines/nua-heat-patch.svg",
+    "image": "/medicines/nua-heat-patch.png",
     "sosEligible": true,
     "sosCategory": "COMFORT_RELIEF"
   },
@@ -672,7 +672,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Alcohol-free, unscented gentle cleansing wet wipes enriched with Aloe Vera and Lotus extracts.",
     "mrp": 125,
-    "image": "/medicines/himalaya-wet-wipes.svg",
+    "image": "/medicines/himalaya-wet-wipes.png",
     "sosEligible": true,
     "sosCategory": "HYGIENE_ESSENTIALS"
   },
@@ -688,7 +688,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Ultra-soft, 100% virgin pulp 2-ply facial tissues for hygienic daily comfort.",
     "mrp": 85,
-    "image": "/medicines/paseo-facial-tissues.svg",
+    "image": "/medicines/paseo-facial-tissues.png",
     "sosEligible": true,
     "sosCategory": "HYGIENE_ESSENTIALS"
   },
@@ -704,7 +704,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Tamper-proof, odour-concealing oxo-biodegradable bags for hygienic disposal of sanitary products.",
     "mrp": 99,
-    "image": "/medicines/sirona-disposal-bags.svg",
+    "image": "/medicines/sirona-disposal-bags.png",
     "sosEligible": true,
     "sosCategory": "HYGIENE_ESSENTIALS"
   },
@@ -720,7 +720,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Rinse-free instant hand sanitizer gel killing 99.99% of germs without water.",
     "mrp": 50,
-    "image": "/medicines/dettol-hand-sanitizer.svg",
+    "image": "/medicines/dettol-hand-sanitizer.png",
     "sosEligible": true,
     "sosCategory": "HYGIENE_ESSENTIALS"
   }

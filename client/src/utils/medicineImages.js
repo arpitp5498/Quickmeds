@@ -126,13 +126,39 @@ export const MEDICINE_IMAGE_MAP = {
   'hansaplast regular bandage strips': '/medicines/hansaplast-regular-bandage-strips.png',
   'hansaplast': '/medicines/hansaplast-regular-bandage-strips.png',
 
-  // 8. Women Care & Hygiene
+  // 8. Women Care & Hygiene & Emergency Essentials
   'whisper ultra clean sanitary pads xl (30 pads)': '/medicines/whisper-ultra-clean-sanitary-pads.png',
   'whisper ultra clean sanitary pads': '/medicines/whisper-ultra-clean-sanitary-pads.png',
   'whisper': '/medicines/whisper-ultra-clean-sanitary-pads.png',
   'vwash plus intimate hygiene wash (200ml)': '/medicines/vwash-plus-intimate-hygiene-wash.png',
   'vwash plus intimate hygiene wash': '/medicines/vwash-plus-intimate-hygiene-wash.png',
-  'vwash': '/medicines/vwash-plus-intimate-hygiene-wash.png'
+  'vwash': '/medicines/vwash-plus-intimate-hygiene-wash.png',
+
+  // 9. SOS Emergency Essentials Specific Mappings
+  'sanitary pads – regular (whisper choice)': '/medicines/whisper-choice-regular-pads.png',
+  'sanitary pads – regular': '/medicines/whisper-choice-regular-pads.png',
+  'sanitary pads regular': '/medicines/whisper-choice-regular-pads.png',
+  'sanitary pads – xl (whisper ultra clean)': '/medicines/whisper-ultra-xl-pads.png',
+  'sanitary pads – xl': '/medicines/whisper-ultra-xl-pads.png',
+  'sanitary pads xl': '/medicines/whisper-ultra-xl-pads.png',
+  'tampons (o.b. procomfort regular)': '/medicines/ob-tampons-regular.png',
+  'tampons': '/medicines/ob-tampons-regular.png',
+  'menstrual cup (sirona reusable medium)': '/medicines/sirona-menstrual-cup.png',
+  'menstrual cup': '/medicines/sirona-menstrual-cup.png',
+  'heating pad / hot water bottle (flamingo)': '/medicines/flamingo-heating-pad.png',
+  'heating pad / hot water bottle': '/medicines/flamingo-heating-pad.png',
+  'heating pad': '/medicines/flamingo-heating-pad.png',
+  'heat patch (nua cramp comfort 3 patches)': '/medicines/nua-heat-patch.png',
+  'heat patch': '/medicines/nua-heat-patch.png',
+  'unscented wet wipes (himalaya gentle 72s)': '/medicines/himalaya-wet-wipes.png',
+  'unscented wet wipes': '/medicines/himalaya-wet-wipes.png',
+  'wet wipes': '/medicines/himalaya-wet-wipes.png',
+  'tissues (paseo soft facial tissue box)': '/medicines/paseo-facial-tissues.png',
+  'tissues': '/medicines/paseo-facial-tissues.png',
+  'disposable sanitary-waste bags (sirona 15s)': '/medicines/sirona-disposal-bags.png',
+  'disposable sanitary-waste bags': '/medicines/sirona-disposal-bags.png',
+  'hand sanitizer (dettol instant 100ml)': '/medicines/dettol-hand-sanitizer.png',
+  'hand sanitizer': '/medicines/dettol-hand-sanitizer.png'
 };
 
 /**
