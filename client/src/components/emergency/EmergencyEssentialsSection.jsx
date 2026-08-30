@@ -306,8 +306,8 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: '12px'
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+                    gap: '14px'
                   }}
                 >
                   {items.map((item) => {
@@ -329,7 +329,8 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
                           userSelect: 'none',
-                          boxShadow: isSelected ? `0 3px 12px ${meta.color}22` : 'none'
+                          boxShadow: isSelected ? `0 3px 12px ${meta.color}22` : 'none',
+                          minHeight: '84px'
                         }}
                       >
                         {/* Checkbox Control */}
@@ -351,11 +352,11 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                           {isSelected && <Check size={16} strokeWidth={3} />}
                         </div>
 
-                        {/* Visual Thumbnail */}
+                        {/* Slightly Larger Visual Thumbnail (58px) */}
                         <div
                           style={{
-                            width: '48px',
-                            height: '48px',
+                            width: '58px',
+                            height: '58px',
                             borderRadius: 'var(--radius-md)',
                             backgroundColor: '#ffffff',
                             border: '1px solid var(--border-light)',
@@ -364,7 +365,7 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
-                            padding: '4px'
+                            padding: '3px'
                           }}
                         >
                           <img
@@ -374,37 +375,39 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                           />
                         </div>
 
-                        {/* Item Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <h4
-                              style={{
-                                fontSize: '0.875rem',
-                                fontWeight: 700,
-                                color: 'var(--text-main)',
-                                margin: 0,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}
-                            >
-                              {item.name}
-                            </h4>
-                          </div>
+                        {/* Item Info with Up To 2-Line Title */}
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <h4
+                            style={{
+                              fontSize: '0.875rem',
+                              fontWeight: 700,
+                              color: 'var(--text-main)',
+                              margin: 0,
+                              lineHeight: 1.25,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              minHeight: '2.25em'
+                            }}
+                          >
+                            {item.name}
+                          </h4>
 
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {item.strength || item.genericName}
-                          </span>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '8px', marginTop: '4px' }}>
                             <span style={{ fontSize: '0.875rem', fontWeight: 800, color: meta.color }}>
                               ₹{itemPrice}
                             </span>
-                            {item.requiresPrescription ? (
-                              <Badge variant="prescription" size="sm">Rx</Badge>
-                            ) : (
-                              <Badge variant="success" size="sm">OTC</Badge>
-                            )}
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {item.strength || item.genericName}
+                            </span>
+                            <div style={{ marginLeft: 'auto' }}>
+                              {item.requiresPrescription ? (
+                                <Badge variant="prescription" size="sm">Rx</Badge>
+                              ) : (
+                                <Badge variant="success" size="sm">OTC</Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
