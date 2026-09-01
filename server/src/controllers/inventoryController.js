@@ -214,17 +214,12 @@ const deleteInventoryItem = async (req, res, next) => {
 // @access  Private (PHARMACY)
 const uploadAndPreviewCSV = async (req, res, next) => {
   try {
-    if (!req.file) {
-      throw ApiError.badRequest('Please upload a CSV or Excel spreadsheet file.');
+    if (!req.file || !req.file.buffer) {
+      throw ApiError.badRequest('Please upload a valid CSV or Excel spreadsheet file.');
     }
 
-    const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
+    const fileBuffer = req.file.buffer;
     const result = await parseAndMatchSpreadsheet(fileBuffer, req.file.originalname);
-
-    // Clean up temp file if written to disk
-    if (req.file.path && fs.existsSync(req.file.path)) {
-      try { fs.unlinkSync(req.file.path); } catch (e) {}
-    }
 
     return ApiResponse.success(res, result, 'Spreadsheet parsed and reconciled with master catalog.');
   } catch (error) {
@@ -275,17 +270,12 @@ const confirmCSVImport = async (req, res, next) => {
 // @access  Private (PHARMACY)
 const uploadAndPreviewOCR = async (req, res, next) => {
   try {
-    if (!req.file) {
-      throw ApiError.badRequest('Please upload a purchase invoice image (JPG, PNG) or PDF document.');
+    if (!req.file || !req.file.buffer) {
+      throw ApiError.badRequest('Please upload a valid purchase invoice image (JPG, PNG) or PDF document.');
     }
 
-    const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
+    const fileBuffer = req.file.buffer;
     const result = await parseInvoiceOCR(fileBuffer, req.file.mimetype, req.file.originalname);
-
-    // Clean up temp file
-    if (req.file.path && fs.existsSync(req.file.path)) {
-      try { fs.unlinkSync(req.file.path); } catch (e) {}
-    }
 
     return ApiResponse.success(res, result, 'Purchase invoice extracted successfully with AI/OCR.');
   } catch (error) {

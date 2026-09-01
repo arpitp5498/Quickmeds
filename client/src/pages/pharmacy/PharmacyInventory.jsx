@@ -294,7 +294,8 @@ const PharmacyInventory = () => {
         showToast(`Spreadsheet read: ${res.data.totalRows} rows detected.`, 'success');
       }
     } catch (err) {
-      showToast(err.message || 'Failed to parse spreadsheet file', 'error');
+      const errMsg = err.response?.data?.message || err.message || 'File processing failed. Please check the file format and try again.';
+      showToast(errMsg, 'error');
       setCsvPreview(null);
     } finally {
       setCsvLoading(false);
@@ -316,7 +317,8 @@ const PharmacyInventory = () => {
         fetchStats();
       }
     } catch (err) {
-      showToast(err.message || 'Failed to commit CSV import', 'error');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to commit CSV import.';
+      showToast(errMsg, 'error');
     } finally {
       setCsvLoading(false);
     }
@@ -342,7 +344,8 @@ const PharmacyInventory = () => {
         showToast(`OCR Completed: Extracted ${res.data.totalItemsCount} line items (${res.data.overallConfidence}% confidence).`, 'success');
       }
     } catch (err) {
-      showToast(err.message || 'Failed to extract invoice details', 'error');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to extract invoice details. Please try another image or PDF.';
+      showToast(errMsg, 'error');
       setOcrPreview(null);
     } finally {
       setOcrLoading(false);

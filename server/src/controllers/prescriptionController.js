@@ -18,7 +18,9 @@ const uploadPrescription = async (req, res, next) => {
 
     const { patientName, doctorName, customerNotes, pharmacyId, orderId } = req.body;
 
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileUrl = req.file.buffer
+      ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+      : `/uploads/${req.file.filename || req.file.originalname}`;
 
     const prescription = await Prescription.create({
       customerId: req.user._id,

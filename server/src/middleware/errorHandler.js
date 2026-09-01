@@ -33,10 +33,16 @@ const errorHandler = (err, req, res, next) => {
     // Multer file upload errors
     if (err.name === 'MulterError') {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        message = 'File size is too large. Maximum allowed size is 5MB.';
+        message = 'File is too large. Please upload a file within the allowed size (max 15MB).';
       } else {
         message = `Upload error: ${err.message}`;
       }
+      statusCode = 400;
+    }
+
+    // Filesystem / EROFS runtime error sanitization
+    if (err.code === 'EROFS' || /read-only file system|var\/task/i.test(err.message || '')) {
+      message = 'Unable to process this file on the server. Please try again or use a supported CSV/XLSX/XLS file.';
       statusCode = 400;
     }
 
