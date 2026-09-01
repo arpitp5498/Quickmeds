@@ -1,8 +1,17 @@
+const fs = require('fs');
 const PharmacyInventory = require('../models/PharmacyInventory');
 const Pharmacy = require('../models/Pharmacy');
 const Medicine = require('../models/Medicine');
+const InventoryActivity = require('../models/InventoryActivity');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const {
+  syncSingleItem,
+  bulkSyncInventory,
+  parseAndMatchSpreadsheet,
+  parseInvoiceOCR,
+  getInventoryStats
+} = require('../services/inventorySyncService');
 
 // Helper to get pharmacy ID for current user
 const getPharmacyIdForUser = async (user) => {
@@ -18,17 +27,20 @@ const getPharmacyIdForUser = async (user) => {
 const getMyInventory = async (req, res, next) => {
   try {
     const pharmacyId = await getPharmacyIdForUser(req.user);
-    const { search, category, lowStockOnly, page = 1, limit = 50 } = req.query;
+    const { search, category, status, source, page = 1, limit = 100 } = req.query;
 
     const query = { pharmacyId };
 
-    if (lowStockOnly === 'true') {
-      query.$expr = { $lte: ['$stockQuantity', '$lowStockThreshold'] };
+    if (source && source !== 'ALL') {
+      query.source = source;
     }
 
     const inventoryItems = await PharmacyInventory.find(query)
       .populate('medicineId')
       .sort({ updatedAt: -1 });
+
+    const now = new Date();
+    const sixtyDaysAhead = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
 
     // Client-side search/category filter on populated medicine if provided
     let filtered = inventoryItems.filter((item) => item.medicineId);
@@ -37,13 +49,29 @@ const getMyInventory = async (req, res, next) => {
       filtered = filtered.filter((item) => item.medicineId.category === category);
     }
 
+    if (status && status !== 'ALL') {
+      if (status === 'IN_STOCK') {
+        filtered = filtered.filter(i => i.stockQuantity > (i.lowStockThreshold || 5));
+      } else if (status === 'LOW_STOCK') {
+        filtered = filtered.filter(i => i.stockQuantity > 0 && i.stockQuantity <= (i.lowStockThreshold || 5));
+      } else if (status === 'OUT_OF_STOCK') {
+        filtered = filtered.filter(i => i.stockQuantity === 0);
+      } else if (status === 'EXPIRING_SOON') {
+        filtered = filtered.filter(i => i.expiryDate && new Date(i.expiryDate) > now && new Date(i.expiryDate) <= sixtyDaysAhead);
+      } else if (status === 'EXPIRED') {
+        filtered = filtered.filter(i => i.expiryDate && new Date(i.expiryDate) <= now);
+      }
+    }
+
     if (search) {
       const s = search.toLowerCase();
       filtered = filtered.filter(
         (item) =>
           item.medicineId.name.toLowerCase().includes(s) ||
           item.medicineId.genericName.toLowerCase().includes(s) ||
-          item.medicineId.brand.toLowerCase().includes(s)
+          item.medicineId.brand.toLowerCase().includes(s) ||
+          (item.batchNumber && item.batchNumber.toLowerCase().includes(s)) ||
+          (item.sku && item.sku.toLowerCase().includes(s))
       );
     }
 
@@ -51,6 +79,19 @@ const getMyInventory = async (req, res, next) => {
       inventory: filtered,
       total: filtered.length
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get pharmacy inventory summary statistics
+// @route   GET /api/inventory/stats
+// @access  Private (PHARMACY)
+const getInventoryStatsEndpoint = async (req, res, next) => {
+  try {
+    const pharmacyId = await getPharmacyIdForUser(req.user);
+    const stats = await getInventoryStats(pharmacyId);
+    return ApiResponse.success(res, stats);
   } catch (error) {
     next(error);
   }
@@ -70,39 +111,30 @@ const addInventoryItem = async (req, res, next) => {
       lowStockThreshold,
       batchNumber,
       expiryDate,
-      isAvailable
+      source = 'MASTER_CATALOG',
+      sku,
+      manufacturer,
+      mrp
     } = req.body;
 
-    // Check if medicine exists
-    const medicine = await Medicine.findById(medicineId);
-    if (!medicine) {
-      throw ApiError.notFound('Medicine not found in master catalog.');
-    }
-
-    // Check if already in inventory
-    const existing = await PharmacyInventory.findOne({ pharmacyId, medicineId });
-    if (existing) {
-      existing.stockQuantity += parseInt(stockQuantity, 10) || 0;
-      if (price) existing.price = price;
-      if (isAvailable !== undefined) existing.isAvailable = isAvailable;
-      await existing.save();
-      const populated = await PharmacyInventory.findById(existing._id).populate('medicineId');
-      return ApiResponse.success(res, { item: populated }, 'Inventory stock updated');
-    }
-
-    const newItem = await PharmacyInventory.create({
+    const populated = await syncSingleItem({
       pharmacyId,
       medicineId,
-      stockQuantity: stockQuantity || 10,
-      price: price || medicine.mrp,
-      discountPercentage: discountPercentage || 0,
-      lowStockThreshold: lowStockThreshold || 5,
-      batchNumber: batchNumber || `BATCH-${Date.now().toString().slice(-6)}`,
-      expiryDate: expiryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      isAvailable: isAvailable !== undefined ? isAvailable : true
+      quantity: stockQuantity,
+      price,
+      discountPercentage,
+      lowStockThreshold,
+      batchNumber,
+      expiryDate,
+      source,
+      operationType: 'ADD',
+      sku,
+      manufacturer,
+      mrp,
+      userId: req.user._id,
+      description: `Added medicine from ${source}`
     });
 
-    const populated = await PharmacyInventory.findById(newItem._id).populate('medicineId');
     return ApiResponse.created(res, { item: populated }, 'Medicine added to pharmacy inventory');
   } catch (error) {
     next(error);
@@ -121,19 +153,24 @@ const updateInventoryItem = async (req, res, next) => {
       throw ApiError.notFound('Inventory item not found');
     }
 
-    const { stockQuantity, price, discountPercentage, isAvailable, lowStockThreshold } = req.body;
+    const { stockQuantity, price, discountPercentage, isAvailable, lowStockThreshold, batchNumber, expiryDate, sku } = req.body;
 
-    if (stockQuantity !== undefined) {
-      item.stockQuantity = stockQuantity;
-      item.isAvailable = stockQuantity > 0;
-    }
-    if (price !== undefined) item.price = price;
-    if (discountPercentage !== undefined) item.discountPercentage = discountPercentage;
-    if (isAvailable !== undefined) item.isAvailable = isAvailable;
-    if (lowStockThreshold !== undefined) item.lowStockThreshold = lowStockThreshold;
+    const populated = await syncSingleItem({
+      pharmacyId,
+      medicineId: item.medicineId,
+      quantity: stockQuantity !== undefined ? stockQuantity : item.stockQuantity,
+      price: price !== undefined ? price : item.price,
+      discountPercentage: discountPercentage !== undefined ? discountPercentage : item.discountPercentage,
+      lowStockThreshold: lowStockThreshold !== undefined ? lowStockThreshold : item.lowStockThreshold,
+      batchNumber: batchNumber || item.batchNumber,
+      expiryDate: expiryDate || item.expiryDate,
+      source: 'MANUAL',
+      operationType: stockQuantity !== undefined ? 'SET' : 'ADD',
+      sku: sku !== undefined ? sku : item.sku,
+      userId: req.user._id,
+      description: 'Manual stock update via dashboard'
+    });
 
-    await item.save();
-    const populated = await PharmacyInventory.findById(item._id).populate('medicineId');
     return ApiResponse.success(res, { item: populated }, 'Inventory updated successfully');
   } catch (error) {
     next(error);
@@ -146,11 +183,25 @@ const updateInventoryItem = async (req, res, next) => {
 const deleteInventoryItem = async (req, res, next) => {
   try {
     const pharmacyId = await getPharmacyIdForUser(req.user);
-    const item = await PharmacyInventory.findOneAndDelete({ _id: req.params.id, pharmacyId });
+    const item = await PharmacyInventory.findOneAndDelete({ _id: req.params.id, pharmacyId }).populate('medicineId');
 
     if (!item) {
       throw ApiError.notFound('Inventory item not found');
     }
+
+    await InventoryActivity.create({
+      pharmacyId,
+      medicineId: item.medicineId?._id,
+      medicineName: item.medicineId?.name || 'Unknown',
+      changeType: 'ITEM_REMOVED',
+      previousStock: item.stockQuantity,
+      newStock: 0,
+      quantityDelta: -item.stockQuantity,
+      source: 'MANUAL',
+      batchNumber: item.batchNumber,
+      actorId: req.user._id,
+      description: `Item '${item.medicineId?.name}' removed from inventory.`
+    });
 
     return ApiResponse.success(res, null, 'Item removed from inventory');
   } catch (error) {
@@ -158,9 +209,154 @@ const deleteInventoryItem = async (req, res, next) => {
   }
 };
 
+// @desc    Upload CSV/Excel and return preview with catalog reconciliation
+// @route   POST /api/inventory/upload-csv
+// @access  Private (PHARMACY)
+const uploadAndPreviewCSV = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw ApiError.badRequest('Please upload a CSV or Excel spreadsheet file.');
+    }
+
+    const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
+    const result = await parseAndMatchSpreadsheet(fileBuffer, req.file.originalname);
+
+    // Clean up temp file if written to disk
+    if (req.file.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+
+    return ApiResponse.success(res, result, 'Spreadsheet parsed and reconciled with master catalog.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Confirm bulk CSV import
+// @route   POST /api/inventory/confirm-csv-import
+// @access  Private (PHARMACY)
+const confirmCSVImport = async (req, res, next) => {
+  try {
+    const pharmacyId = await getPharmacyIdForUser(req.user);
+    const { items = [], referenceName = '' } = req.body;
+
+    if (!items || items.length === 0) {
+      throw ApiError.badRequest('No items provided for import.');
+    }
+
+    const validItems = items.filter(i => i.matchedMedicineId || i.medicineId).map(i => ({
+      medicineId: i.matchedMedicineId || i.medicineId,
+      quantity: i.quantity,
+      price: i.price,
+      mrp: i.mrp,
+      batchNumber: i.batchNumber,
+      expiryDate: i.expiryDate,
+      sku: i.sku,
+      manufacturer: i.manufacturer,
+      operationType: 'ADD'
+    }));
+
+    const result = await bulkSyncInventory({
+      pharmacyId,
+      items: validItems,
+      source: 'CSV_IMPORT',
+      userId: req.user._id,
+      referenceId: referenceName || `CSV-${Date.now().toString().slice(-6)}`
+    });
+
+    return ApiResponse.success(res, result, `Bulk import completed: ${result.successCount} medicines ingested.`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload purchase invoice and run OCR extraction with confidence rating
+// @route   POST /api/inventory/ocr-invoice
+// @access  Private (PHARMACY)
+const uploadAndPreviewOCR = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw ApiError.badRequest('Please upload a purchase invoice image (JPG, PNG) or PDF document.');
+    }
+
+    const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
+    const result = await parseInvoiceOCR(fileBuffer, req.file.mimetype, req.file.originalname);
+
+    // Clean up temp file
+    if (req.file.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+
+    return ApiResponse.success(res, result, 'Purchase invoice extracted successfully with AI/OCR.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Confirm OCR invoice line items
+// @route   POST /api/inventory/confirm-ocr-import
+// @access  Private (PHARMACY)
+const confirmOCRImport = async (req, res, next) => {
+  try {
+    const pharmacyId = await getPharmacyIdForUser(req.user);
+    const { items = [], invoiceNumber = '', distributorName = '' } = req.body;
+
+    if (!items || items.length === 0) {
+      throw ApiError.badRequest('No line items provided for confirmation.');
+    }
+
+    const validItems = items.filter(i => i.matchedMedicineId || i.medicineId).map(i => ({
+      medicineId: i.matchedMedicineId || i.medicineId,
+      quantity: i.quantity,
+      price: i.sellingPrice || i.purchasePrice,
+      mrp: i.mrp,
+      batchNumber: i.batchNumber,
+      expiryDate: i.expiryDate,
+      operationType: 'ADD'
+    }));
+
+    const result = await bulkSyncInventory({
+      pharmacyId,
+      items: validItems,
+      source: 'INVOICE_OCR',
+      userId: req.user._id,
+      referenceId: invoiceNumber || `INV-${Date.now().toString().slice(-6)}`
+    });
+
+    return ApiResponse.success(res, result, `Purchase invoice committed: ${result.successCount} line items added to stock.`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get pharmacy inventory activity log
+// @route   GET /api/inventory/activities
+// @access  Private (PHARMACY)
+const getInventoryActivities = async (req, res, next) => {
+  try {
+    const pharmacyId = await getPharmacyIdForUser(req.user);
+    const { limit = 50 } = req.query;
+
+    const activities = await InventoryActivity.find({ pharmacyId })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit, 10))
+      .populate('actorId', 'name email role');
+
+    return ApiResponse.success(res, { activities, count: activities.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMyInventory,
+  getInventoryStatsEndpoint,
   addInventoryItem,
   updateInventoryItem,
-  deleteInventoryItem
+  deleteInventoryItem,
+  uploadAndPreviewCSV,
+  confirmCSVImport,
+  uploadAndPreviewOCR,
+  confirmOCRImport,
+  getInventoryActivities
 };

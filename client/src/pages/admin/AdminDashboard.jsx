@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [pendingPharmacies, setPendingPharmacies] = useState([]);
+  const [syncOverview, setSyncOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -31,10 +32,11 @@ const AdminDashboard = () => {
     const fetchAdminStats = async () => {
       try {
         setLoading(true);
-        const [statsRes, ordersRes, pharmRes] = await Promise.all([
+        const [statsRes, ordersRes, pharmRes, syncRes] = await Promise.all([
           api.get('/admin/stats'),
           api.get('/admin/orders?limit=5'),
-          api.get('/admin/pharmacies?status=PENDING')
+          api.get('/admin/pharmacies?status=PENDING'),
+          api.get('/admin/inventory-sync-overview')
         ]);
 
         if (statsRes.success && statsRes.data) {
@@ -45,6 +47,9 @@ const AdminDashboard = () => {
         }
         if (pharmRes.success && pharmRes.data) {
           setPendingPharmacies(pharmRes.data.pharmacies || []);
+        }
+        if (syncRes.success && syncRes.data) {
+          setSyncOverview(syncRes.data);
         }
       } catch (err) {
         console.warn('Admin stats error:', err);
@@ -250,6 +255,55 @@ const AdminDashboard = () => {
           )}
         </Card>
       </div>
+
+      {/* Network Inventory Sync Health Overview */}
+      <Card>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '8px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>Pharmacy Inventory Sync Health</h3>
+              <Badge variant="success">LIVE RECONCILIATION ACTIVE</Badge>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+              Real-time POS billing integrations, OCR wholesale invoice extractions, and bulk spreadsheet ingestions.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '1.25rem' }}>
+          <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-subtle)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>CONNECTED POS BILLING</span>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, marginTop: '2px', color: 'var(--secondary-600)' }}>
+              {syncOverview?.connectedIntegrations || 0} / {syncOverview?.totalPharmacies || 0}
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Marg ERP, Busy, Vyapar</span>
+          </div>
+
+          <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-subtle)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>TOTAL SYNCED STOCK</span>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, marginTop: '2px', color: 'var(--primary-600)' }}>
+              {syncOverview?.totalInventoryRecords || 0}
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Store-medicine links</span>
+          </div>
+
+          <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-subtle)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>INVOICE OCR INGESTIONS</span>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, marginTop: '2px', color: 'var(--accent-600)' }}>
+              {syncOverview?.ocrImportsCount || 0}
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Tax invoices scanned</span>
+          </div>
+
+          <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-subtle)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>CSV / EXCEL IMPORTS</span>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, marginTop: '2px' }}>
+              {syncOverview?.csvImportsCount || 0}
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Bulk spreadsheet files</span>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -378,6 +378,51 @@ const assignDeliveryPartnerManual = async (req, res, next) => {
   }
 };
 
+// @desc    Get network-wide inventory sync overview for admin
+// @route   GET /api/admin/inventory-sync-overview
+// @access  Private (ADMIN)
+const getInventorySyncOverview = async (req, res, next) => {
+  try {
+    const BillingIntegration = require('../models/BillingIntegration');
+    const PharmacyInventory = require('../models/PharmacyInventory');
+    const InventoryActivity = require('../models/InventoryActivity');
+    const WebhookEvent = require('../models/WebhookEvent');
+
+    const [
+      totalPharmacies,
+      connectedIntegrations,
+      totalInventoryRecords,
+      csvImportsCount,
+      ocrImportsCount,
+      billingSyncEventsCount,
+      recentActivities,
+      recentWebhooks
+    ] = await Promise.all([
+      Pharmacy.countDocuments({ verificationStatus: 'VERIFIED' }),
+      BillingIntegration.countDocuments({ status: 'CONNECTED' }),
+      PharmacyInventory.countDocuments(),
+      InventoryActivity.countDocuments({ source: 'CSV_IMPORT' }),
+      InventoryActivity.countDocuments({ source: 'INVOICE_OCR' }),
+      InventoryActivity.countDocuments({ source: 'BILLING_SYNC' }),
+      InventoryActivity.find().sort({ createdAt: -1 }).limit(10).populate('pharmacyId', 'name address'),
+      WebhookEvent.find().sort({ createdAt: -1 }).limit(5).populate('pharmacyId', 'name')
+    ]);
+
+    return ApiResponse.success(res, {
+      totalPharmacies,
+      connectedIntegrations,
+      totalInventoryRecords,
+      csvImportsCount,
+      ocrImportsCount,
+      billingSyncEventsCount,
+      recentActivities,
+      recentWebhooks
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -387,5 +432,6 @@ module.exports = {
   getAllOrders,
   getAllPrescriptions,
   getAuditLogs,
-  assignDeliveryPartnerManual
+  assignDeliveryPartnerManual,
+  getInventorySyncOverview
 };

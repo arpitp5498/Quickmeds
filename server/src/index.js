@@ -29,6 +29,7 @@ const reminderRoutes = require('./routes/reminderRoutes');
 const cycleRoutes = require('./routes/cycleRoutes');
 const routingRoutes = require('./routes/routingRoutes');
 const researchRoutes = require('./routes/researchRoutes');
+const integrationRoutes = require('./routes/integrationRoutes');
 
 // Initialize express app
 const app = express();
@@ -135,6 +136,7 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/cycle', cycleRoutes);
 app.use('/api/routing', routingRoutes);
 app.use('/api/research', researchRoutes);
+app.use('/api/integrations', integrationRoutes);
 
 // Catch-all 404 for undefined API routes
 app.use('/api/*', (req, res) => {

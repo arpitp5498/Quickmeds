@@ -46,6 +46,28 @@ const pharmacyInventorySchema = new mongoose.Schema(
     isAvailable: {
       type: Boolean,
       default: true
+    },
+    source: {
+      type: String,
+      enum: ['MANUAL', 'CSV_IMPORT', 'MASTER_CATALOG', 'INVOICE_OCR', 'BILLING_SYNC'],
+      default: 'MANUAL',
+      index: true
+    },
+    sku: {
+      type: String,
+      default: ''
+    },
+    manufacturer: {
+      type: String,
+      default: ''
+    },
+    mrp: {
+      type: Number,
+      default: 0
+    },
+    lastSyncedAt: {
+      type: Date,
+      default: Date.now
     }
   },
   {

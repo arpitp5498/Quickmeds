@@ -26,22 +26,30 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter: JPG, JPEG, PNG, PDF, WEBP
+// File filter: JPG, JPEG, PNG, PDF, WEBP, CSV, XLSX, XLS
 const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/webp',
-    'application/pdf'
+    'application/pdf',
+    'text/csv',
+    'text/plain',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/octet-stream' // fallback for some spreadsheet uploads
   ];
 
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.csv', '.xlsx', '.xls'];
+
+  if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
     cb(
       ApiError.badRequest(
-        'Invalid file type. Only JPG, JPEG, PNG, WEBP, and PDF files are allowed.'
+        'Invalid file type. Supported formats: CSV, XLSX, XLS, JPG, PNG, WEBP, and PDF.'
       ),
       false
     );
@@ -52,7 +60,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: env.MAX_FILE_SIZE // 5MB
+    fileSize: Math.max(env.MAX_FILE_SIZE || 5 * 1024 * 1024, 15 * 1024 * 1024) // up to 15MB
   }
 });
 

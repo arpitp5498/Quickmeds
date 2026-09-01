@@ -297,8 +297,9 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
       }) : null;
       const reqQty = Math.max(1, parseInt(item?.quantity, 10) || 1);
       const stock = inv ? (inv.stockQuantity !== undefined ? inv.stockQuantity : (inv.stock || 0)) : 0;
+      const isExpired = inv?.expiryDate ? new Date(inv.expiryDate) <= new Date() : false;
 
-      if (medIdStr && inv && stock >= reqQty) {
+      if (medIdStr && inv && stock >= reqQty && !isExpired) {
         const unitPrice = (item.price !== undefined && item.price > 0) ? item.price : (inv.price !== undefined ? inv.price : 50);
         const itemTotal = unitPrice * reqQty;
         basketPrice += itemTotal;
@@ -315,7 +316,8 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
           medicineId: medIdStr || 'unknown',
           name: item.name || 'Medicine',
           requestedQty: reqQty,
-          stockAvailable: stock
+          stockAvailable: stock,
+          isExpired
         });
       }
     }

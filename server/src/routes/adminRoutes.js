@@ -15,5 +15,6 @@ router.get('/orders', adminController.getAllOrders);
 router.post('/orders/:id/assign-delivery', adminController.assignDeliveryPartnerManual);
 router.get('/prescriptions', adminController.getAllPrescriptions);
 router.get('/audit-logs', adminController.getAuditLogs);
+router.get('/inventory-sync-overview', adminController.getInventorySyncOverview);
 
 module.exports = router;
