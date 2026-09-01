@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LocationProvider } from './context/LocationContext';
 import { SocketProvider } from './context/SocketContext';
 import { CartProvider } from './context/CartContext';
+import { ReminderProvider } from './context/ReminderContext';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -17,7 +18,9 @@ function App() {
             <LocationProvider>
               <SocketProvider>
                 <CartProvider>
-                  <AppRoutes />
+                  <ReminderProvider>
+                    <AppRoutes />
+                  </ReminderProvider>
                 </CartProvider>
               </SocketProvider>
             </LocationProvider>
@@ -29,3 +32,4 @@ function App() {
 }
 
 export default App;
+

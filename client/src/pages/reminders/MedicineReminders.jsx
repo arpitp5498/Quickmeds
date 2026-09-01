@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Clock, Plus, Pill, Bell, BellOff, Trash2, Edit3, ToggleLeft, ToggleRight,
-  Sun, Sunrise, Sunset, Moon, Calendar, CheckCircle2, AlertCircle, X
+  Sun, Sunrise, Sunset, Moon, Calendar, CheckCircle2, AlertCircle, X, Volume2
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useReminders } from '../../context/ReminderContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -19,8 +20,13 @@ const timeLabels = [
 
 const MedicineReminders = () => {
   const { showToast } = useToast();
-  const [reminders, setReminders] = useState([]);
-  const [todaySchedule, setTodaySchedule] = useState([]);
+  const {
+    reminders,
+    todaySchedule,
+    fetchReminders,
+    testReminderSound
+  } = useReminders();
+
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -37,18 +43,9 @@ const MedicineReminders = () => {
   });
 
   useEffect(() => {
-    fetchReminders();
+    loadReminders();
     requestNotificationPermission();
   }, []);
-
-  // Setup Socket.IO listener for real-time reminder alerts
-  useEffect(() => {
-    // Browser notification check every minute
-    const interval = setInterval(() => {
-      checkDueReminders();
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [reminders]);
 
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -56,35 +53,10 @@ const MedicineReminders = () => {
     }
   };
 
-  const checkDueReminders = () => {
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const currentDay = now.getDay();
-
-    for (const reminder of reminders) {
-      if (!reminder.isActive) continue;
-      if (!reminder.daysOfWeek.includes(currentDay)) continue;
-
-      for (const timing of reminder.timings) {
-        if (timing.time === currentTime && 'Notification' in window && Notification.permission === 'granted') {
-          new Notification(`💊 Time to take ${reminder.medicineName}`, {
-            body: `Dosage: ${reminder.dosage} — ${timing.label || 'Scheduled'}`,
-            icon: '/pill-icon.png',
-            tag: `reminder-${reminder._id}-${timing.time}`
-          });
-        }
-      }
-    }
-  };
-
-  const fetchReminders = async () => {
+  const loadReminders = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/reminders');
-      if (res.success && res.data) {
-        setReminders(res.data.reminders || []);
-        setTodaySchedule(res.data.todaySchedule || []);
-      }
+      await fetchReminders();
     } catch (err) {
       showToast(err.message || 'Failed to load reminders', 'error');
     } finally {
@@ -198,10 +170,18 @@ const MedicineReminders = () => {
             Never miss a dose. Set reminders and get notified on time.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <Badge variant={notifStatus === 'granted' ? 'success' : notifStatus === 'denied' ? 'danger' : 'warning'}>
             {notifStatus === 'granted' ? '🔔 Notifications On' : notifStatus === 'denied' ? '🔕 Blocked' : '⚠️ Not Enabled'}
           </Badge>
+          <Button
+            variant="ghost"
+            onClick={testReminderSound}
+            title="Test the reminder alert sound"
+            style={{ fontSize: '0.8rem', padding: '6px 12px', gap: '4px' }}
+          >
+            <Volume2 size={15} /> Test Sound
+          </Button>
           <Button onClick={() => { setEditingId(null); setShowForm(!showForm); }}>
             {showForm ? <><X size={16} /> Cancel</> : <><Plus size={16} /> Add Reminder</>}
           </Button>
