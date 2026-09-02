@@ -14,9 +14,11 @@ const VALID_TRANSITIONS = {
   PHARMACY_REVIEW: ['ACCEPTED', 'REJECTED', 'CANCELLED', 'FULFILMENT_UNAVAILABLE'],
   ACCEPTED: ['PREPARING', 'CANCELLED'],
   PREPARING: ['READY_FOR_PICKUP', 'CANCELLED'],
-  READY_FOR_PICKUP: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'CANCELLED'],
-  DELIVERY_ASSIGNED: ['OUT_FOR_DELIVERY', 'CANCELLED'],
-  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  READY_FOR_PICKUP: ['DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  DELIVERY_ASSIGNED: ['ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  ARRIVED_AT_PHARMACY: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['ARRIVED_NEAR_CUSTOMER', 'DELIVERED', 'CANCELLED'],
+  ARRIVED_NEAR_CUSTOMER: ['DELIVERED', 'CANCELLED'],
   DELIVERED: [], // Final
   REJECTED: [], // Final
   CANCELLED: [], // Final
@@ -188,6 +190,7 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
     }
 
     order.pharmacyId = newPharmacyId;
+    order.deliveryPartnerId = null; // Clear any old pharmacy rider assignment
     order.fallbackTriggered = true;
     order.fallbackAttempt = (order.fallbackAttempt || 0) + 1;
     order.fallbackReason = reason;

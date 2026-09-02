@@ -47,17 +47,40 @@ const autoAssignDeliveryPartner = async (orderId) => {
 
     const io = getIO();
 
-    // Broadcast to order tracking room
+    const partnerPayload = {
+      name: partner.userId.name,
+      phone: partner.userId.phone,
+      vehicleType: partner.vehicleType,
+      vehicleNumber: partner.vehicleNumber,
+      rating: partner.rating || 4.8,
+      currentLocation: partner.currentLocation?.coordinates || [77.209, 28.6139]
+    };
+
+    // Broadcast to order tracking room, pharmacy room, and delivery user
     io.to(`order:${order._id}`).emit('order_status_changed', {
       orderId: order._id,
       orderNumber: order.orderId,
       status: 'DELIVERY_ASSIGNED',
-      deliveryPartner: {
-        name: partner.userId.name,
-        phone: partner.userId.phone,
-        vehicleType: partner.vehicleType,
-        vehicleNumber: partner.vehicleNumber
-      }
+      note: `Assigned to delivery partner ${partner.userId.name}`,
+      deliveryPartner: partnerPayload
+    });
+
+    const pharmId = order.pharmacyId?._id || order.pharmacyId;
+    if (pharmId) {
+      io.to(`pharmacy:${pharmId}`).emit('order_status_changed', {
+        orderId: order._id,
+        orderNumber: order.orderId,
+        status: 'DELIVERY_ASSIGNED',
+        note: `Assigned to delivery partner ${partner.userId.name}`,
+        deliveryPartner: partnerPayload
+      });
+    }
+
+    io.to(`user:${partner.userId._id}`).emit('new_delivery_assigned', {
+      orderId: order._id,
+      orderNumber: order.orderId,
+      pharmacyName: order.pharmacyId?.name || 'Pharmacy',
+      deliveryAddress: order.deliveryAddress?.fullAddress || ''
     });
 
     // Notify Customer

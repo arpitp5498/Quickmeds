@@ -46,7 +46,20 @@ const DeliveryActive = () => {
 
   useEffect(() => {
     fetchActive();
-  }, []);
+
+    if (socket) {
+      const handleStatusChange = () => fetchActive();
+      const handleNewDelivery = () => fetchActive();
+
+      socket.on('order_status_changed', handleStatusChange);
+      socket.on('new_delivery_assigned', handleNewDelivery);
+
+      return () => {
+        socket.off('order_status_changed', handleStatusChange);
+        socket.off('new_delivery_assigned', handleNewDelivery);
+      };
+    }
+  }, [socket]);
 
   const handleUpdateDelivery = async (status, note = '') => {
     if (!activeOrder) return;
@@ -110,7 +123,9 @@ const DeliveryActive = () => {
   }
 
   const isAssigned = activeOrder.orderStatus === 'DELIVERY_ASSIGNED' || activeOrder.orderStatus === 'READY_FOR_PICKUP';
+  const isArrivedAtPharmacy = activeOrder.orderStatus === 'ARRIVED_AT_PHARMACY';
   const isOutForDelivery = activeOrder.orderStatus === 'OUT_FOR_DELIVERY';
+  const isArrivedNearCustomer = activeOrder.orderStatus === 'ARRIVED_NEAR_CUSTOMER';
 
   return (
     <div style={{ maxWidth: '850px', margin: '0 auto' }}>
@@ -160,8 +175,8 @@ const DeliveryActive = () => {
         <MapView
           pharmacyLocation={{
             name: activeOrder.pharmacyId?.name,
-            lat: activeOrder.pharmacyId?.location?.coordinates[1] || 28.6328,
-            lng: activeOrder.pharmacyId?.location?.coordinates[0] || 77.2195
+            lat: activeOrder.pharmacyId?.location?.coordinates?.[1] || 28.6328,
+            lng: activeOrder.pharmacyId?.location?.coordinates?.[0] || 77.2195
           }}
           customerLocation={{
             name: activeOrder.deliveryAddress?.fullAddress,
@@ -185,23 +200,37 @@ const DeliveryActive = () => {
               Step 1: Pickup from Pharmacy
             </h4>
           </div>
-          {isOutForDelivery && <Badge variant="success" size="sm">Picked Up ✓</Badge>}
+          {(isOutForDelivery || isArrivedNearCustomer) && <Badge variant="success" size="sm">Picked Up ✓</Badge>}
+          {isArrivedAtPharmacy && <Badge variant="warning" size="sm">At Counter</Badge>}
         </div>
 
         <p style={{ fontWeight: 700, fontSize: '0.875rem' }}>{activeOrder.pharmacyId?.name}</p>
         <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-          {activeOrder.pharmacyId?.address?.fullAddress}
+          {activeOrder.pharmacyId?.address?.fullAddress || 'Pharmacy counter pickup location'}
         </span>
 
         {isAssigned && (
-          <div style={{ marginTop: '1rem' }}>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <Button
               variant="primary"
               fullWidth
               loading={updating}
+              onClick={() => handleUpdateDelivery('ARRIVED_AT_PHARMACY', 'Rider arrived at pharmacy counter')}
+            >
+              1. I Have Arrived at Pharmacy Counter
+            </Button>
+          </div>
+        )}
+
+        {isArrivedAtPharmacy && (
+          <div style={{ marginTop: '1rem' }}>
+            <Button
+              variant="secondary"
+              fullWidth
+              loading={updating}
               onClick={() => handleUpdateDelivery('OUT_FOR_DELIVERY', 'Rider picked up medicines and started transit')}
             >
-              Confirm Medicines Picked Up & Start Delivery
+              2. Confirm Package Picked Up & Start Delivery
             </Button>
           </div>
         )}
@@ -216,10 +245,11 @@ const DeliveryActive = () => {
               Step 2: Deliver to Customer
             </h4>
           </div>
+          {isArrivedNearCustomer && <Badge variant="warning" size="sm">At Destination</Badge>}
         </div>
 
         <p style={{ fontWeight: 700, fontSize: '0.875rem' }}>
-          {activeOrder.customerId?.name} ({activeOrder.customerId?.phone})
+          {activeOrder.customerId?.name} ({activeOrder.customerId?.phone || 'Customer'})
         </p>
         <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
           {activeOrder.deliveryAddress?.fullAddress}
@@ -234,6 +264,20 @@ const DeliveryActive = () => {
         {isOutForDelivery && (
           <div style={{ marginTop: '1rem' }}>
             <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={updating}
+              onClick={() => handleUpdateDelivery('ARRIVED_NEAR_CUSTOMER', 'Rider reached customer address')}
+            >
+              3. I Have Arrived at Customer Location / Gate
+            </Button>
+          </div>
+        )}
+
+        {isArrivedNearCustomer && (
+          <div style={{ marginTop: '1rem' }}>
+            <Button
               variant="secondary"
               size="lg"
               fullWidth
@@ -241,7 +285,7 @@ const DeliveryActive = () => {
               icon={CheckCircle2}
               onClick={() => handleUpdateDelivery('DELIVERED', 'Delivered safely to customer doorstep')}
             >
-              Confirm Order Delivered to Customer
+              4. Complete Handover & Mark Delivered
             </Button>
           </div>
         )}

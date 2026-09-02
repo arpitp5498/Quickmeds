@@ -141,61 +141,91 @@ const OrderDetail = () => {
     );
   }
 
-  // Full 8-State Delivery Progression Definition
-  const ALL_8_STATES = [
+  // Unified 10-Stage Order Delivery Progression Definition
+  const UNIFIED_ORDER_STATES = [
     {
       key: 'PLACED',
       title: '1. Order Placed',
       desc: 'Hyperlocal order received & routed to nearest licensed chemist'
     },
-    {
-      key: 'PHARMACY_REVIEW',
-      title: '2. Pharmacy Review',
-      desc: 'Pharmacist validating prescription authenticity & inventory batch'
-    },
+    ...(order.prescriptionId || order.prescriptionStatus === 'PENDING_REVIEW'
+      ? [
+          {
+            key: 'PHARMACY_REVIEW',
+            title: '2. Prescription Review',
+            desc: 'Registered pharmacist validating prescription authenticity & batch'
+          }
+        ]
+      : []),
     {
       key: 'ACCEPTED',
-      title: '3. Pharmacy Confirmed',
-      desc: 'Dispensation approved and reserved at pharmacy'
+      title: order.prescriptionId ? '3. Pharmacy Confirmed' : '2. Pharmacy Confirmed',
+      desc: 'Dispensation approved and reserved at chemist counter'
     },
     {
       key: 'PREPARING',
-      title: '4. Medicines Packed',
+      title: order.prescriptionId ? '4. Medicines Packed' : '3. Medicines Packed',
       desc: 'Assembled in tamper-proof seal with temperature safety strip'
     },
     {
       key: 'READY_FOR_PICKUP',
-      title: '5. Ready for Dispatch',
+      title: order.prescriptionId ? '5. Ready for Dispatch' : '4. Ready for Dispatch',
       desc: 'Package staged for pickup at pharmacy counter'
     },
     {
       key: 'DELIVERY_ASSIGNED',
-      title: '6. Rider Assigned',
-      desc: 'Nearest delivery partner dispatched to pickup location'
+      title: order.prescriptionId ? '6. Rider Dispatched' : '5. Rider Dispatched',
+      desc: 'Nearest delivery partner assigned and en route to chemist'
+    },
+    {
+      key: 'ARRIVED_AT_PHARMACY',
+      title: order.prescriptionId ? '7. Rider at Chemist' : '6. Rider at Chemist',
+      desc: 'Delivery partner has reached the pharmacy counter for pickup'
     },
     {
       key: 'OUT_FOR_DELIVERY',
-      title: '7. Out for Delivery',
-      desc: 'Rider en route with real-time waypoint tracking'
+      title: order.prescriptionId ? '8. Out for Delivery' : '7. Out for Delivery',
+      desc: 'Package collected; rider navigating to your delivery address'
+    },
+    {
+      key: 'ARRIVED_NEAR_CUSTOMER',
+      title: order.prescriptionId ? '9. Rider Arrived' : '8. Rider Arrived',
+      desc: 'Delivery partner has arrived at your address / gate'
     },
     {
       key: 'DELIVERED',
-      title: '8. Order Delivered',
+      title: order.prescriptionId ? '10. Order Delivered' : '9. Order Delivered',
       desc: 'Handed over securely to customer with digital confirmation'
     }
   ];
 
-  const statusOrderKeys = ALL_8_STATES.map((s) => s.key);
+  const statusOrderKeys = [
+    'PLACED',
+    'PHARMACY_REVIEW',
+    'ACCEPTED',
+    'PREPARING',
+    'READY_FOR_PICKUP',
+    'DELIVERY_ASSIGNED',
+    'ARRIVED_AT_PHARMACY',
+    'OUT_FOR_DELIVERY',
+    'ARRIVED_NEAR_CUSTOMER',
+    'DELIVERED'
+  ];
   const currentIndex = statusOrderKeys.indexOf(order.orderStatus);
 
-  const timelineSteps = ALL_8_STATES.map((step, idx) => {
+  const timelineSteps = UNIFIED_ORDER_STATES.map((step) => {
+    const stepGlobalIndex = statusOrderKeys.indexOf(step.key);
     const isCompleted =
-      currentIndex >= idx &&
+      currentIndex >= stepGlobalIndex &&
       order.orderStatus !== 'CANCELLED' &&
-      order.orderStatus !== 'REJECTED';
+      order.orderStatus !== 'REJECTED' &&
+      order.orderStatus !== 'FULFILMENT_UNAVAILABLE';
     const isCurrent = order.orderStatus === step.key;
     const isRejected =
-      (order.orderStatus === 'CANCELLED' || order.orderStatus === 'REJECTED') && isCurrent;
+      (order.orderStatus === 'CANCELLED' ||
+        order.orderStatus === 'REJECTED' ||
+        order.orderStatus === 'FULFILMENT_UNAVAILABLE') &&
+      isCurrent;
 
     // Find timestamp in history if present
     const historyItem = order.statusHistory?.find((h) => h.status === step.key);
@@ -438,10 +468,10 @@ const OrderDetail = () => {
               }}
             >
               <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>
-                8-State Delivery Lifecycle
+                Delivery Progression & Timeline
               </h3>
               <Badge variant="primary" size="sm">
-                Live GPS Sync
+                Live State Sync
               </Badge>
             </div>
             <Timeline steps={timelineSteps} currentStatus={order.orderStatus} />
@@ -475,15 +505,30 @@ const OrderDetail = () => {
                     <Truck size={22} />
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>
-                      {deliveryPartner.name}
-                    </h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>
-                      {deliveryPartner.vehicleType || 'Electric Scooter'} •{' '}
-                      <strong>{deliveryPartner.vehicleNumber || 'DL 01 QM 8822'}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>
+                        {deliveryPartner.name}
+                      </h4>
+                      <Badge variant="info" size="sm">
+                        {order.orderStatus === 'DELIVERY_ASSIGNED'
+                          ? 'En route to pharmacy'
+                          : order.orderStatus === 'ARRIVED_AT_PHARMACY'
+                          ? 'At chemist counter'
+                          : order.orderStatus === 'OUT_FOR_DELIVERY'
+                          ? 'En route to you'
+                          : order.orderStatus === 'ARRIVED_NEAR_CUSTOMER'
+                          ? 'Arrived at your address'
+                          : order.orderStatus === 'DELIVERED'
+                          ? 'Delivered'
+                          : 'Assigned'}
+                      </Badge>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                      {deliveryPartner.vehicleType || 'Bike'} •{' '}
+                      <strong>{deliveryPartner.vehicleNumber || 'Registered Rider'}</strong>
                     </span>
                     <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600 }}>
-                      ★ {deliveryPartner.rating || 4.9} Rider Rating
+                      ★ {deliveryPartner.rating || 4.8} Rider Rating
                     </span>
                   </div>
                 </div>

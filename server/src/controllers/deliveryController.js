@@ -25,14 +25,20 @@ const getActiveDelivery = async (req, res, next) => {
         .populate('pharmacyId');
     }
 
-    // Also look for any assigned order if activeOrderId is unset
-    if (!activeOrder) {
+    // Also look for any assigned order if activeOrderId is unset or needs refresh
+    if (!activeOrder || ['DELIVERED', 'CANCELLED', 'REJECTED'].includes(activeOrder.orderStatus)) {
       activeOrder = await Order.findOne({
         deliveryPartnerId: req.user._id,
-        orderStatus: { $in: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY'] }
+        orderStatus: { $in: ['DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'ARRIVED_NEAR_CUSTOMER'] }
       })
         .populate('customerId', 'name phone')
         .populate('pharmacyId');
+
+      if (activeOrder && partner.activeOrderId?.toString() !== activeOrder._id.toString()) {
+        partner.activeOrderId = activeOrder._id;
+        partner.status = 'BUSY';
+        await partner.save();
+      }
     }
 
     return ApiResponse.success(res, {
@@ -44,7 +50,7 @@ const getActiveDelivery = async (req, res, next) => {
   }
 };
 
-// @desc    Update status of active delivery (e.g. Out for delivery, Delivered)
+// @desc    Update status of active delivery (e.g. Arrived at pharmacy, Out for delivery, Arrived near customer, Delivered)
 // @route   POST /api/delivery/status
 // @access  Private (DELIVERY_PARTNER)
 const updateDeliveryTaskStatus = async (req, res, next) => {
@@ -66,30 +72,58 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
       throw ApiError.forbidden('You are not assigned to this delivery.');
     }
 
-    if (!['OUT_FOR_DELIVERY', 'DELIVERED'].includes(status)) {
-      throw ApiError.badRequest('Invalid status for delivery partner update.');
+    const ALLOWED_RIDER_STATUSES = [
+      'ARRIVED_AT_PHARMACY',
+      'OUT_FOR_DELIVERY',
+      'ARRIVED_NEAR_CUSTOMER',
+      'DELIVERED'
+    ];
+
+    if (!ALLOWED_RIDER_STATUSES.includes(status)) {
+      throw ApiError.badRequest(`Invalid status for delivery partner update: ${status}`);
     }
 
+    // Server-side state machine guard validation
+    const { validateStatusTransition } = require('../services/orderService');
+    validateStatusTransition(order.orderStatus, status);
+
+    const prevStatus = order.orderStatus;
     order.orderStatus = status;
+
+    const defaultNotes = {
+      ARRIVED_AT_PHARMACY: 'Delivery partner has reached the pharmacy counter for pickup.',
+      OUT_FOR_DELIVERY: 'Delivery partner collected the package and is en route to customer destination.',
+      ARRIVED_NEAR_CUSTOMER: 'Delivery partner has arrived at customer delivery location / entrance.',
+      DELIVERED: 'Order successfully delivered and handed over to customer with digital confirmation.'
+    };
+
+    const statusNote = note || defaultNotes[status] || `Driver updated delivery state to ${status}`;
+
     order.statusHistory.push({
       status,
       timestamp: new Date(),
-      note: note || `Driver updated delivery state to ${status}`,
+      note: statusNote,
       updatedBy: req.user._id
     });
     await order.save();
 
-    const partner = await DeliveryPartner.findOne({ userId: req.user._id });
+    const partner = await DeliveryPartner.findOne({ userId: req.user._id }).populate('userId', 'name phone');
 
     if (status === 'DELIVERED') {
       if (partner) {
         partner.status = 'AVAILABLE';
         partner.activeOrderId = null;
-        partner.completedDeliveriesCount += 1;
-        partner.totalEarnings += 40;
+        partner.completedDeliveriesCount = (partner.completedDeliveriesCount || 0) + 1;
+        partner.totalEarnings = (partner.totalEarnings || 0) + 40;
         await partner.save();
       }
-    } else if (status === 'OUT_FOR_DELIVERY') {
+
+      if (order.pharmacyId?._id) {
+        await Pharmacy.findByIdAndUpdate(order.pharmacyId._id, {
+          $inc: { totalOrdersCompleted: 1 }
+        });
+      }
+    } else {
       if (partner) {
         partner.status = 'BUSY';
         partner.activeOrderId = order._id;
@@ -97,28 +131,66 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
       }
     }
 
+    const partnerPayload = partner
+      ? {
+          name: partner.userId?.name || 'QuickMeds Rider',
+          phone: partner.userId?.phone || '+91 98765 43210',
+          vehicleType: partner.vehicleType || 'Bike',
+          vehicleNumber: partner.vehicleNumber || '',
+          rating: partner.rating || 4.8,
+          currentLocation: partner.currentLocation?.coordinates || [77.209, 28.6139]
+        }
+      : null;
+
     const io = getIO();
-    io.to(`order:${order._id}`).emit('order_status_changed', {
+
+    // Multi-room broadcasting to Order Room, Pharmacy Room, Customer User Room, and Admin Room
+    const eventPayload = {
       orderId: order._id,
       orderNumber: order.orderId,
       status,
-      note
-    });
+      previousStatus: prevStatus,
+      note: statusNote,
+      deliveryPartner: partnerPayload
+    };
 
-    // Send customer notification
-    await sendNotification({
-      userId: order.customerId._id,
-      type: `ORDER_${status}`,
-      title:
-        status === 'OUT_FOR_DELIVERY'
-          ? 'Medicines Out for Delivery!'
-          : 'Order Delivered Successfully',
-      message:
-        status === 'OUT_FOR_DELIVERY'
-          ? 'Your delivery partner has picked up your medicine and is on the way.'
-          : 'Your order has been delivered. Thank you for choosing QuickMeds!',
-      link: `/orders/${order._id}`
-    });
+    io.to(`order:${order._id}`).emit('order_status_changed', eventPayload);
+
+    const pharmId = order.pharmacyId?._id || order.pharmacyId;
+    if (pharmId) {
+      io.to(`pharmacy:${pharmId}`).emit('order_status_changed', eventPayload);
+    }
+
+    if (order.customerId?._id) {
+      io.to(`user:${order.customerId._id}`).emit('order_status_changed', eventPayload);
+    }
+
+    io.to('admin:room').emit('order_status_changed', eventPayload);
+
+    // Contextual notifications
+    const notifTitles = {
+      ARRIVED_AT_PHARMACY: 'Rider Reached Pharmacy',
+      OUT_FOR_DELIVERY: 'Medicines Out for Delivery!',
+      ARRIVED_NEAR_CUSTOMER: 'Rider Arrived at Your Location',
+      DELIVERED: 'Order Delivered Successfully'
+    };
+
+    const notifMessages = {
+      ARRIVED_AT_PHARMACY: 'Your delivery partner has arrived at the chemist counter to collect your medicines.',
+      OUT_FOR_DELIVERY: 'Your delivery partner has collected the package and is navigating to your address.',
+      ARRIVED_NEAR_CUSTOMER: 'Your rider is at your gate / entrance with your medicine package.',
+      DELIVERED: 'Your order has been delivered. Thank you for choosing QuickMeds!'
+    };
+
+    if (order.customerId?._id) {
+      await sendNotification({
+        userId: order.customerId._id,
+        type: `ORDER_${status}`,
+        title: notifTitles[status] || `Order ${status.replace(/_/g, ' ')}`,
+        message: notifMessages[status] || statusNote,
+        link: `/orders/${order._id}`
+      });
+    }
 
     return ApiResponse.success(res, { order, partner }, `Delivery marked as ${status}`);
   } catch (error) {

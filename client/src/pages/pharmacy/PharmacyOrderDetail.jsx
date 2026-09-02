@@ -15,6 +15,7 @@ import {
   Zap
 } from 'lucide-react';
 import api from '../../services/api';
+import { useSocket } from '../../context/SocketContext';
 import { useToast } from '../../context/ToastContext';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -26,10 +27,12 @@ import { getMedicineImage } from '../../utils/medicineImages';
 
 const PharmacyOrderDetail = () => {
   const { id } = useParams();
+  const { socket, trackOrder } = useSocket();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
+  const [deliveryPartner, setDeliveryPartner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -42,6 +45,8 @@ const PharmacyOrderDetail = () => {
       const res = await api.get(`/orders/${id}`);
       if (res.success && res.data) {
         setOrder(res.data.order);
+        setDeliveryPartner(res.data.deliveryPartner || null);
+        trackOrder(id);
       }
     } catch (err) {
       showToast('Could not load order', 'error');
@@ -52,7 +57,34 @@ const PharmacyOrderDetail = () => {
 
   useEffect(() => {
     fetchOrder();
-  }, [id]);
+
+    if (socket) {
+      const handleStatusChange = (data) => {
+        if (data.orderId === id) {
+          showToast(`Order update: ${data.status.replace(/_/g, ' ')}`, 'info');
+          if (data.deliveryPartner) {
+            setDeliveryPartner(data.deliveryPartner);
+          }
+          fetchOrder();
+        }
+      };
+
+      const handleReassigned = (data) => {
+        if (data.orderId === id) {
+          showToast('Order was reassigned to another pharmacy.', 'warning');
+          navigate('/pharmacy/orders');
+        }
+      };
+
+      socket.on('order_status_changed', handleStatusChange);
+      socket.on('order_reassigned_away', handleReassigned);
+
+      return () => {
+        socket.off('order_status_changed', handleStatusChange);
+        socket.off('order_reassigned_away', handleReassigned);
+      };
+    }
+  }, [id, socket]);
 
   const handleUpdateStatus = async (status, note = '', reason = '') => {
     try {
@@ -343,6 +375,47 @@ const PharmacyOrderDetail = () => {
                     Approve Rx
                   </Button>
                 )}
+              </div>
+            </Card>
+          )}
+
+          {/* Assigned Delivery Partner Card */}
+          {deliveryPartner && (
+            <Card style={{ borderLeft: '4px solid var(--primary-600)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '10px' }}>
+                Assigned Delivery Partner
+              </h3>
+              <div style={{ fontSize: '0.875rem', lineHeight: 1.6 }}>
+                <p><strong>Name:</strong> {deliveryPartner.name}</p>
+                <p><strong>Phone:</strong> {deliveryPartner.phone}</p>
+                <p><strong>Vehicle:</strong> {deliveryPartner.vehicleType} ({deliveryPartner.vehicleNumber})</p>
+                <p style={{ marginTop: '8px' }}>
+                  <strong>Rider Status:</strong>{' '}
+                  <Badge
+                    variant={
+                      order.orderStatus === 'ARRIVED_AT_PHARMACY'
+                        ? 'warning'
+                        : order.orderStatus === 'OUT_FOR_DELIVERY'
+                        ? 'primary'
+                        : order.orderStatus === 'DELIVERED'
+                        ? 'success'
+                        : 'info'
+                    }
+                    size="sm"
+                  >
+                    {order.orderStatus === 'DELIVERY_ASSIGNED'
+                      ? 'En route to store for pickup'
+                      : order.orderStatus === 'ARRIVED_AT_PHARMACY'
+                      ? 'At Chemist Counter for Pickup'
+                      : order.orderStatus === 'OUT_FOR_DELIVERY'
+                      ? 'Package Picked Up — In Transit'
+                      : order.orderStatus === 'ARRIVED_NEAR_CUSTOMER'
+                      ? 'Arrived at Customer Location'
+                      : order.orderStatus === 'DELIVERED'
+                      ? 'Order Delivered'
+                      : 'Assigned'}
+                  </Badge>
+                </p>
               </div>
             </Card>
           )}

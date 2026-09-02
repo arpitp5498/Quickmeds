@@ -498,13 +498,22 @@ const updateOrderStatus = async (req, res, next) => {
 
     const io = getIO();
 
-    // Broadcast status change to order room
-    io.to(`order:${order._id}`).emit('order_status_changed', {
+    const statusPayload = {
       orderId: order._id,
       orderNumber: order.orderId,
       status,
-      note
-    });
+      previousStatus: prevStatus,
+      note: note || `Status updated from ${prevStatus} to ${status}`
+    };
+
+    // Broadcast status change across all relevant channels
+    io.to(`order:${order._id}`).emit('order_status_changed', statusPayload);
+    io.to(`pharmacy:${order.pharmacyId._id}`).emit('order_status_changed', statusPayload);
+    io.to(`user:${order.customerId._id}`).emit('order_status_changed', statusPayload);
+    if (order.deliveryPartnerId) {
+      io.to(`user:${order.deliveryPartnerId}`).emit('order_status_changed', statusPayload);
+    }
+    io.to('admin:room').emit('order_status_changed', statusPayload);
 
     // If order is marked READY_FOR_PICKUP or ACCEPTED, auto-assign delivery partner
     if (status === 'READY_FOR_PICKUP' || (status === 'ACCEPTED' && !order.deliveryPartnerId)) {
