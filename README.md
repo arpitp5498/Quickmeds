@@ -3,8 +3,11 @@
 > **Zero-Inventory Hyperlocal Emergency-Medicine Fulfilment Platform**  
 > *Nearest Medicine. Fastest Help.*
 
+🔗 **Live Production App**: [https://quickmedss.vercel.app](https://quickmedss.vercel.app)
+
+[![Live Demo](https://img.shields.io/badge/demo-quickmedss.vercel.app-success.svg)](https://quickmedss.vercel.app)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com)
-[![Test Suite](https://img.shields.io/badge/tests-62%20passed%20%7C%20100%25-brightgreen.svg)](https://github.com)
+[![Test Suite](https://img.shields.io/badge/tests-88%20passed%20%7C%20100%25-brightgreen.svg)](https://github.com)
 [![Tech Stack](https://img.shields.io/badge/stack-MERN%20%2B%20Socket.IO-blue.svg)](https://github.com)
 [![Architecture](https://img.shields.io/badge/architecture-Zero--Inventory%20Hyperlocal-teal.svg)](https://github.com)
 
