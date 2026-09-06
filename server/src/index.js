@@ -138,6 +138,12 @@ app.use('/api/routing', routingRoutes);
 app.use('/api/research', researchRoutes);
 app.use('/api/integrations', integrationRoutes);
 
+// SIH DEMO MODE ONLY - REMOVE AFTER SIH
+if (env.ENABLE_DEMO_MODE) {
+  const demoRoutes = require('./routes/demoRoutes');
+  app.use('/api/demo', demoRoutes);
+}
+
 // Catch-all 404 for undefined API routes
 app.use('/api/*', (req, res) => {
   return res.status(404).json({

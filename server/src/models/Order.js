@@ -193,6 +193,12 @@ const orderSchema = new mongoose.Schema(
     fallbackLock: {
       type: Boolean,
       default: false
+    },
+    // SIH DEMO MODE ONLY: Identify isolated demonstration orders
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true
     }
   },
   {

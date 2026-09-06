@@ -7,10 +7,12 @@ const api = axios.create({
   }
 });
 
-// Request interceptor: Attach JWT token from localStorage
+// Request interceptor: Attach JWT token (checks tab-isolated demo token first)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('quickmeds_token');
+    // SIH DEMO MODE ONLY: Support tab-isolated demo sessions without collisions
+    const demoToken = sessionStorage.getItem('quickmeds_demo_token');
+    const token = demoToken || localStorage.getItem('quickmeds_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,6 +28,10 @@ api.interceptors.response.use(
     if (error.response) {
       // If 401 Unauthorized and not already on /login, purge stale token
       if (error.response.status === 401) {
+        // Clear demo session if active in this tab
+        sessionStorage.removeItem('quickmeds_demo_token');
+        sessionStorage.removeItem('quickmeds_demo_user');
+
         const isAuthRoute =
           window.location.pathname === '/login' || window.location.pathname === '/register';
         if (!isAuthRoute && localStorage.getItem('quickmeds_token')) {

@@ -26,12 +26,17 @@ import { useTheme } from '../../context/ThemeContext';
 import LocationPicker from './LocationPicker';
 import NotificationBell from './NotificationBell';
 
+// SIH DEMO MODE ONLY - REMOVE AFTER SIH
+import DemoControlPanel from '../../demo/DemoControlPanel';
+const isDemoEnabled = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
+
 const Navbar = () => {
   const { user, isAuthenticated, isCustomer, isPharmacy, isDelivery, isAdmin, logout } = useAuth();
   const { cart } = useCart();
   const { isDark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -221,6 +226,31 @@ const Navbar = () => {
 
         {/* Right Actions: Cart, Notifications, Theme, Auth */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+
+          {/* SIH DEMO MODE ONLY: Quick Launch Button */}
+          {isDemoEnabled && (
+            <button
+              type="button"
+              onClick={() => setDemoModalOpen(true)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                backgroundColor: '#0284c7',
+                color: '#ffffff',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <span>🚀 Demo Mode</span>
+            </button>
+          )}
 
           {/* Theme Toggle */}
           <button
@@ -519,7 +549,43 @@ const Navbar = () => {
               Go to Dashboard
             </Link>
           )}
+
+          {/* SIH DEMO MODE ONLY: Mobile Drawer Button */}
+          {isDemoEnabled && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setDemoModalOpen(true);
+              }}
+              style={{
+                marginTop: '8px',
+                padding: '10px 16px',
+                borderRadius: '8px',
+                backgroundColor: '#0284c7',
+                color: '#ffffff',
+                fontSize: '0.9375rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <span>🚀 Launch SIH Demo Mode</span>
+            </button>
+          )}
         </div>
+      )}
+
+      {/* SIH DEMO MODE ONLY: Control Panel Modal */}
+      {isDemoEnabled && (
+        <DemoControlPanel
+          isOpen={demoModalOpen}
+          onClose={() => setDemoModalOpen(false)}
+        />
       )}
     </header>
   );

@@ -5,10 +5,22 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
+    // SIH DEMO MODE ONLY: Check tab-isolated demo session user
+    const demoUser = sessionStorage.getItem('quickmeds_demo_user');
+    if (demoUser) {
+      try {
+        return JSON.parse(demoUser);
+      } catch (e) {
+        // Fallback to localStorage
+      }
+    }
     const saved = localStorage.getItem('quickmeds_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('quickmeds_token') || null);
+  const [token, setToken] = useState(() => {
+    // SIH DEMO MODE ONLY: Check tab-isolated demo session token
+    return sessionStorage.getItem('quickmeds_demo_token') || localStorage.getItem('quickmeds_token') || null;
+  });
   const [loading, setLoading] = useState(true);
 
   // Validate active token on initial load
@@ -19,7 +31,11 @@ export const AuthProvider = ({ children }) => {
           const res = await api.get('/auth/me');
           if (res.success && res.data.user) {
             setUser(res.data.user);
-            localStorage.setItem('quickmeds_user', JSON.stringify(res.data.user));
+            if (sessionStorage.getItem('quickmeds_demo_token')) {
+              sessionStorage.setItem('quickmeds_demo_user', JSON.stringify(res.data.user));
+            } else {
+              localStorage.setItem('quickmeds_user', JSON.stringify(res.data.user));
+            }
           }
         } catch (error) {
           console.warn('Session verification failed:', error);
@@ -61,8 +77,18 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
+    sessionStorage.removeItem('quickmeds_demo_token');
+    sessionStorage.removeItem('quickmeds_demo_user');
     localStorage.removeItem('quickmeds_token');
     localStorage.removeItem('quickmeds_user');
+  };
+
+  // SIH DEMO MODE ONLY: Directly activate tab-scoped demo credentials
+  const setDemoSession = (demoUserData, demoJwtToken) => {
+    sessionStorage.setItem('quickmeds_demo_user', JSON.stringify(demoUserData));
+    sessionStorage.setItem('quickmeds_demo_token', demoJwtToken);
+    setUser(demoUserData);
+    setToken(demoJwtToken);
   };
 
   const updateProfile = async (data) => {
@@ -95,7 +121,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        updateProfile
+        updateProfile,
+        setDemoSession
       }}
     >
       {children}

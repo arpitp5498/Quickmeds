@@ -74,9 +74,23 @@ import AdminPrescriptions from '../pages/admin/AdminPrescriptions';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
 import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 
+// SIH DEMO MODE ONLY - REMOVE AFTER SIH
+import DemoLauncher from '../demo/DemoLauncher';
+import DemoCockpit from '../demo/DemoCockpit';
+
+const isDemoEnabled = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
+
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* SIH DEMO MODE ONLY - REMOVE AFTER SIH */}
+      {isDemoEnabled && (
+        <>
+          <Route path="/demo/launch/:role" element={<DemoLauncher />} />
+          <Route path="/demo/cockpit" element={<DemoCockpit />} />
+        </>
+      )}
+
       {/* 1. Public Marketing & Informational Routes (MainLayout) */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Landing />} />

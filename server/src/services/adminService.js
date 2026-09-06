@@ -24,12 +24,13 @@ const getDashboardStats = async () => {
     Pharmacy.countDocuments({ verificationStatus: 'VERIFIED' }),
     Pharmacy.countDocuments({ verificationStatus: 'PENDING' }),
     DeliveryPartner.countDocuments(),
-    Order.countDocuments(),
-    Order.countDocuments({ orderStatus: 'DELIVERED' }),
-    Order.countDocuments({ orderStatus: 'CANCELLED' }),
+    // Exclude demo orders from production analytics
+    Order.countDocuments({ isDemo: { $ne: true } }),
+    Order.countDocuments({ orderStatus: 'DELIVERED', isDemo: { $ne: true } }),
+    Order.countDocuments({ orderStatus: 'CANCELLED', isDemo: { $ne: true } }),
     Prescription.countDocuments({ status: 'UNDER_REVIEW' }),
     Order.aggregate([
-      { $match: { orderStatus: 'DELIVERED' } },
+      { $match: { orderStatus: 'DELIVERED', isDemo: { $ne: true } } },
       { $group: { _id: null, totalRevenue: { $sum: '$total' }, avgOrderValue: { $avg: '$total' } } }
     ])
   ]);
@@ -37,12 +38,12 @@ const getDashboardStats = async () => {
   const totalRevenue = revenueData[0] ? Math.round(revenueData[0].totalRevenue) : 0;
   const avgOrderValue = revenueData[0] ? Math.round(revenueData[0].avgOrderValue) : 0;
 
-  // Recent 7 days order volume trend
+  // Recent 7 days order volume trend (excluding demo)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   const orderTrends = await Order.aggregate([
-    { $match: { createdAt: { $gte: sevenDaysAgo } } },
+    { $match: { createdAt: { $gte: sevenDaysAgo }, isDemo: { $ne: true } } },
     {
       $group: {
         _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -53,8 +54,9 @@ const getDashboardStats = async () => {
     { $sort: { _id: 1 } }
   ]);
 
-  // Order status breakdown
+  // Order status breakdown (excluding demo)
   const statusDistribution = await Order.aggregate([
+    { $match: { isDemo: { $ne: true } } },
     {
       $group: {
         _id: '$orderStatus',
