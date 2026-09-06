@@ -3,6 +3,14 @@
   "buildCommand": "cd client && npm install --include=dev && npm run build",
   "outputDirectory": "client/dist",
   "framework": null,
+  "env": {
+    "ENABLE_DEMO_MODE": "true"
+  },
+  "build": {
+    "env": {
+      "VITE_ENABLE_DEMO_MODE": "true"
+    }
+  },
   "functions": {
     "api/index.js": {
       "includeFiles": "server/**",

@@ -77,8 +77,9 @@ import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 // SIH DEMO MODE ONLY - REMOVE AFTER SIH
 import DemoLauncher from '../demo/DemoLauncher';
 import DemoCockpit from '../demo/DemoCockpit';
+import { isDemoModeEnabled } from '../demo/demoApi';
 
-const isDemoEnabled = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
+const isDemoEnabled = isDemoModeEnabled();
 
 const AppRoutes = () => {
   return (
