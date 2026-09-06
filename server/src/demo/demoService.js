@@ -174,6 +174,8 @@ const resetDemo = async () => {
     order.fallbackReason = '';
     order.previousPharmacyId = null;
     order.previousPharmacyIds = [];
+    order.deliveryOtp = '4829';
+    order.deliveryOtpVerified = false;
     order.statusHistory = [
       {
         status: 'PLACED',

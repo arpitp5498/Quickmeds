@@ -423,6 +423,76 @@ const OrderDetail = () => {
         </Card>
       )}
 
+      {/* Secure Delivery Handover OTP Card */}
+      {order.deliveryOtp &&
+        order.orderStatus !== 'DELIVERED' &&
+        order.orderStatus !== 'CANCELLED' &&
+        order.orderStatus !== 'REJECTED' && (
+          <Card
+            style={{
+              marginBottom: '1.5rem',
+              backgroundColor: '#f0fdf4',
+              border: '1.5px solid #86efac',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+              padding: '16px 20px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: '#16a34a',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', letterSpacing: '0.04em' }}>
+                  SECURE DELIVERY VERIFICATION OTP
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#15803d', margin: '2px 0 0 0' }}>
+                  Share this 4-digit code with your delivery rider at your doorstep to verify package handover.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                backgroundColor: '#ffffff',
+                border: '2px dashed #16a34a',
+                borderRadius: 'var(--radius-md)',
+                padding: '8px 20px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.6875rem', color: '#166534', fontWeight: 700 }}>
+                HANDOVER OTP
+              </div>
+              <div
+                style={{
+                  fontSize: '1.75rem',
+                  fontWeight: 900,
+                  letterSpacing: '6px',
+                  color: '#15803d'
+                }}
+              >
+                {order.deliveryOtp}
+              </div>
+            </div>
+          </Card>
+        )}
+
       {/* Live Map Tracking Component */}
       <div style={{ marginBottom: '2rem' }}>
         <MapView

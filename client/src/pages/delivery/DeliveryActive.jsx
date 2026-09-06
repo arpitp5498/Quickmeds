@@ -24,6 +24,7 @@ const DeliveryActive = () => {
   const [activeOrder, setActiveOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
 
   const { socket } = useSocket();
   const { showToast } = useToast();
@@ -48,27 +49,29 @@ const DeliveryActive = () => {
     fetchActive();
 
     if (socket) {
-      const handleStatusChange = () => fetchActive();
-      const handleNewDelivery = () => fetchActive();
+      const handleStatusUpdate = (data) => {
+        fetchActive();
+      };
 
-      socket.on('order_status_changed', handleStatusChange);
-      socket.on('new_delivery_assigned', handleNewDelivery);
+      socket.on('order_status_changed', handleStatusUpdate);
+      socket.on('delivery_assigned', handleStatusUpdate);
 
       return () => {
-        socket.off('order_status_changed', handleStatusChange);
-        socket.off('new_delivery_assigned', handleNewDelivery);
+        socket.off('order_status_changed', handleStatusUpdate);
+        socket.off('delivery_assigned', handleStatusUpdate);
       };
     }
   }, [socket]);
 
-  const handleUpdateDelivery = async (status, note = '') => {
+  const handleUpdateDelivery = async (status, note = '', otp = '') => {
     if (!activeOrder) return;
     try {
       setUpdating(true);
       const res = await api.post('/delivery/status', {
         orderId: activeOrder._id,
         status,
-        note
+        note,
+        otp: otp || otpInput
       });
 
       if (res.success) {
@@ -276,16 +279,60 @@ const DeliveryActive = () => {
         )}
 
         {isArrivedNearCustomer && (
-          <div style={{ marginTop: '1rem' }}>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px'
+              }}
+            >
+              <label
+                style={{
+                  fontSize: '0.8125rem',
+                  fontWeight: 800,
+                  display: 'block',
+                  marginBottom: '6px',
+                  color: 'var(--text-main)'
+                }}
+              >
+                🔐 Customer Handover Verification OTP
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="Enter 4-digit code"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    fontSize: '1.25rem',
+                    fontWeight: 800,
+                    letterSpacing: '4px',
+                    textAlign: 'center',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1.5px solid var(--primary-300)',
+                    backgroundColor: '#ffffff'
+                  }}
+                />
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0 0' }}>
+                Ask the customer to read out the 4-digit delivery verification OTP from their order screen.
+              </p>
+            </div>
+
             <Button
               variant="secondary"
               size="lg"
               fullWidth
               loading={updating}
               icon={CheckCircle2}
-              onClick={() => handleUpdateDelivery('DELIVERED', 'Delivered safely to customer doorstep')}
+              onClick={() => handleUpdateDelivery('DELIVERED', 'Delivered safely with OTP verification', otpInput)}
             >
-              4. Complete Handover & Mark Delivered
+              4. Verify OTP & Complete Handover
             </Button>
           </div>
         )}

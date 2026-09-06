@@ -229,6 +229,8 @@ const initDemoEnvironment = async () => {
         coordinates: [77.214, 28.629]
       },
       orderStatus: 'PLACED',
+      deliveryOtp: '4829',
+      deliveryOtpVerified: false,
       statusHistory: [
         {
           status: 'PLACED',

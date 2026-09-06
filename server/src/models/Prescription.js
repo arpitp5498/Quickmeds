@@ -65,7 +65,27 @@ const prescriptionSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
-    reviewedAt: Date
+    reviewedAt: Date,
+    // AI-Generated Image Authenticity & Fraud Risk Screening
+    authenticityCheck: {
+      riskLevel: {
+        type: String,
+        enum: ['LOW RISK', 'MEDIUM RISK', 'HIGH RISK', 'PENDING'],
+        default: 'PENDING'
+      },
+      signals: [
+        {
+          name: String,
+          category: String,
+          status: String,
+          evidence: String
+        }
+      ],
+      evaluatedAt: Date,
+      summary: { type: String, default: '' },
+      recommendation: { type: String, default: '' },
+      disclaimer: { type: String, default: '' }
+    }
   },
   {
     timestamps: true

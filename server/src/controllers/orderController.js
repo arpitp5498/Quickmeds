@@ -109,6 +109,8 @@ const createOrder = async (req, res, next) => {
       orderStatus: initialStatus,
       distanceKm,
       estimatedDeliveryMinutes: eta.totalMinutes,
+      deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
+      deliveryOtpVerified: false,
       statusHistory: [
         {
           status: initialStatus,

@@ -87,6 +87,16 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
     const { validateStatusTransition } = require('../services/orderService');
     validateStatusTransition(order.orderStatus, status);
 
+    if (status === 'DELIVERED' && order.deliveryOtp) {
+      const providedOtp = (req.body.otp || '').toString().trim();
+      if (!providedOtp || providedOtp !== order.deliveryOtp) {
+        throw ApiError.badRequest(
+          'Invalid Delivery Verification OTP. Please ask the customer for their 4-digit code shown on their tracking screen.'
+        );
+      }
+      order.deliveryOtpVerified = true;
+    }
+
     const prevStatus = order.orderStatus;
     order.orderStatus = status;
 
@@ -506,9 +516,80 @@ const simulateDeliveryStep = async (req, res, next) => {
   }
 };
 
+// @desc    Verify delivery OTP and mark order delivered
+// @route   POST /api/delivery/verify-otp
+// @access  Private (DELIVERY_PARTNER)
+const verifyDeliveryOtp = async (req, res, next) => {
+  try {
+    const { orderId, otp } = req.body;
+    if (!orderId || !otp) {
+      throw ApiError.badRequest('Order ID and 4-digit OTP are required.');
+    }
+
+    const order = await Order.findById(orderId).populate('customerId').populate('pharmacyId');
+    if (!order) {
+      throw ApiError.notFound('Order not found');
+    }
+
+    if (!order.deliveryPartnerId || order.deliveryPartnerId.toString() !== req.user._id.toString()) {
+      throw ApiError.forbidden('You are not assigned to this delivery.');
+    }
+
+    if (order.deliveryOtp && otp.toString().trim() !== order.deliveryOtp) {
+      throw ApiError.badRequest('Invalid Delivery Verification OTP. Please check code with customer.');
+    }
+
+    order.deliveryOtpVerified = true;
+    order.orderStatus = 'DELIVERED';
+    order.statusHistory.push({
+      status: 'DELIVERED',
+      timestamp: new Date(),
+      note: 'Order successfully delivered and handed over to customer with OTP verification.',
+      updatedBy: req.user._id
+    });
+    await order.save();
+
+    const partner = await DeliveryPartner.findOne({ userId: req.user._id });
+    if (partner) {
+      partner.status = 'AVAILABLE';
+      partner.activeOrderId = null;
+      partner.completedDeliveriesCount = (partner.completedDeliveriesCount || 0) + 1;
+      partner.totalEarnings = (partner.totalEarnings || 0) + 40;
+      await partner.save();
+    }
+
+    if (order.pharmacyId?._id) {
+      await Pharmacy.findByIdAndUpdate(order.pharmacyId._id, {
+        $inc: { totalOrdersCompleted: 1 }
+      });
+    }
+
+    const io = getIO();
+    io.to(`order:${order._id}`).emit('order_status_changed', {
+      orderId: order._id,
+      status: 'DELIVERED',
+      note: 'Order delivered safely with OTP verification.'
+    });
+
+    await logAction({
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      action: 'DELIVERY_COMPLETED_WITH_OTP',
+      entity: 'ORDER',
+      entityId: order._id.toString(),
+      description: `Rider delivered order ${order.orderId} with verified OTP.`
+    });
+
+    return ApiResponse.success(res, { order }, 'Delivery verified and completed successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getActiveDelivery,
   updateDeliveryTaskStatus,
+  verifyDeliveryOtp,
   toggleAvailability,
   updateDriverLocation,
   getDeliveryHistory,

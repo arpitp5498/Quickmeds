@@ -4,6 +4,7 @@ const Pharmacy = require('../models/Pharmacy');
 const { sendNotification } = require('../services/notificationService');
 const { getIO } = require('../config/socket');
 const { logAction } = require('../services/auditService');
+const { analyzePrescriptionAuthenticity } = require('../services/prescriptionAuthenticityService');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 
@@ -22,6 +23,14 @@ const uploadPrescription = async (req, res, next) => {
       ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
       : `/uploads/${req.file.filename || req.file.originalname}`;
 
+    // Run automated AI authenticity & fraud risk screening
+    const authenticityCheck = analyzePrescriptionAuthenticity(
+      req.file.buffer || fileUrl,
+      req.file.mimetype,
+      req.file.originalname,
+      { patientName, doctorName, customerNotes }
+    );
+
     const prescription = await Prescription.create({
       customerId: req.user._id,
       orderId: orderId || null,
@@ -33,7 +42,8 @@ const uploadPrescription = async (req, res, next) => {
       patientName: patientName || req.user.name,
       doctorName: doctorName || '',
       customerNotes: customerNotes || '',
-      status: 'UPLOADED'
+      status: 'UPLOADED',
+      authenticityCheck
     });
 
     // Notify pharmacy if order or pharmacy ID is linked
@@ -100,7 +110,16 @@ const getPrescriptionById = async (req, res, next) => {
       throw ApiError.forbidden('You are not authorized to view this prescription document.');
     }
 
-    return ApiResponse.success(res, { prescription });
+    const prescriptionData = prescription.toObject();
+    // Privacy protection: Shield raw forensic risk signals from patient view
+    if (!isPharmacist && !isAdmin && prescriptionData.authenticityCheck) {
+      prescriptionData.authenticityCheck = {
+        riskLevel: prescriptionData.authenticityCheck.riskLevel || 'LOW RISK',
+        evaluatedAt: prescriptionData.authenticityCheck.evaluatedAt
+      };
+    }
+
+    return ApiResponse.success(res, { prescription: prescriptionData });
   } catch (error) {
     next(error);
   }

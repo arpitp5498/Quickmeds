@@ -149,6 +149,15 @@ const orderSchema = new mongoose.Schema(
       default: 30
     },
     estimatedDeliveryTime: Date,
+    // Secure Handover Verification
+    deliveryOtp: {
+      type: String,
+      default: null
+    },
+    deliveryOtpVerified: {
+      type: Boolean,
+      default: false
+    },
     cancellationReason: {
       type: String,
       default: ''

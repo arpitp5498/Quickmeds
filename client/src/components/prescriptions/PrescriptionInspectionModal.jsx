@@ -324,6 +324,103 @@ const PrescriptionInspectionModal = ({
               )}
             </div>
 
+            {/* AI-Generated Image Authenticity & Fraud Risk Screening (Pharmacist Decision Support) */}
+            {prescription.authenticityCheck && (
+              <div
+                style={{
+                  backgroundColor:
+                    prescription.authenticityCheck.riskLevel === 'HIGH RISK'
+                      ? '#fef2f2'
+                      : prescription.authenticityCheck.riskLevel === 'MEDIUM RISK'
+                      ? '#fffbeb'
+                      : '#f0fdf4',
+                  border: `1px solid ${
+                    prescription.authenticityCheck.riskLevel === 'HIGH RISK'
+                      ? '#fca5a5'
+                      : prescription.authenticityCheck.riskLevel === 'MEDIUM RISK'
+                      ? '#fde68a'
+                      : '#86efac'
+                  }`,
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck
+                      size={16}
+                      color={
+                        prescription.authenticityCheck.riskLevel === 'HIGH RISK'
+                          ? '#dc2626'
+                          : prescription.authenticityCheck.riskLevel === 'MEDIUM RISK'
+                          ? '#d97706'
+                          : '#16a34a'
+                      }
+                    />
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 800 }}>
+                      Image Authenticity & Fraud Screening
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.6875rem',
+                      fontWeight: 800,
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      backgroundColor:
+                        prescription.authenticityCheck.riskLevel === 'HIGH RISK'
+                          ? '#dc2626'
+                          : prescription.authenticityCheck.riskLevel === 'MEDIUM RISK'
+                          ? '#d97706'
+                          : '#16a34a',
+                      color: '#ffffff'
+                    }}
+                  >
+                    {prescription.authenticityCheck.riskLevel}
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-main)', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                  {prescription.authenticityCheck.summary}
+                </p>
+
+                {prescription.authenticityCheck.signals && prescription.authenticityCheck.signals.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                    {prescription.authenticityCheck.signals.map((sig, sIdx) => (
+                      <div
+                        key={sIdx}
+                        style={{
+                          fontSize: '0.6875rem',
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: '6px',
+                          color: sig.status === 'FLAG' ? '#b91c1c' : sig.status === 'PASS' ? '#15803d' : '#6b7280'
+                        }}
+                      >
+                        <span style={{ fontWeight: 700 }}>
+                          {sig.status === 'FLAG' ? '⚠️' : sig.status === 'PASS' ? '✓' : 'ℹ'} {sig.name}:
+                        </span>
+                        <span>{sig.evidence}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p
+                  style={{
+                    fontSize: '0.6875rem',
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    fontStyle: 'italic',
+                    borderTop: '1px solid rgba(0,0,0,0.06)',
+                    paddingTop: '6px'
+                  }}
+                >
+                  Statutory Rule: Automated screening provides fraud-risk indicators. The licensed pharmacist remains the sole authorized clinical decision maker.
+                </p>
+              </div>
+            )}
+
             {/* Pharmacist Action Form (If in pharmacy verification mode) */}
             {isPharmacist && prescription.status !== 'APPROVED' && prescription.status !== 'REJECTED' ? (
               <form
