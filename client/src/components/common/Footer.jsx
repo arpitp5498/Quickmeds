@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pill, ShieldCheck, HeartHandshake, PhoneCall, AlertCircle, Cpu, Lock, BarChart3, Map } from 'lucide-react';
+import { Pill, ShieldCheck, HeartHandshake, PhoneCall, AlertCircle, Cpu, Lock, BarChart3, Map, Smartphone } from 'lucide-react';
+import AppDownloadModal from './AppDownloadModal';
 
 const Footer = () => {
+  const [appModalOpen, setAppModalOpen] = useState(false);
   return (
     <footer
       style={{
@@ -80,6 +82,27 @@ const Footer = () => {
                 <Link to="/orders" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                   Track Active Orders
                 </Link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setAppModalOpen(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: '0.875rem',
+                    color: 'var(--primary-600)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: 600
+                  }}
+                >
+                  <Smartphone size={14} />
+                  <span>Download Mobile App</span>
+                </button>
               </li>
             </ul>
           </div>
@@ -179,6 +202,12 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile App Download Modal */}
+      <AppDownloadModal
+        isOpen={appModalOpen}
+        onClose={() => setAppModalOpen(false)}
+      />
     </footer>
   );
 };

@@ -22,18 +22,23 @@ import {
   Sparkles,
   Info,
   Activity,
-  HeartPulse
+  HeartPulse,
+  Smartphone,
+  Download,
+  QrCode
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import SearchBar from '../../components/ui/SearchBar';
 import Badge from '../../components/ui/Badge';
 import { useLocation } from '../../context/LocationContext';
 import EmergencyEssentialsSection from '../../components/emergency/EmergencyEssentialsSection';
+import AppDownloadModal from '../../components/common/AppDownloadModal';
 
 const Landing = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeWorkflowStep, setActiveWorkflowStep] = useState(0);
   const [activeFaq, setActiveFaq] = useState(null);
+  const [appDownloadModalOpen, setAppDownloadModalOpen] = useState(false);
   const { location } = useLocation();
   const navigate = useNavigate();
 
@@ -1012,6 +1017,182 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* 6.5 MOBILE APP DOWNLOAD SHOWCASE */}
+      <section className="container" id="mobile-app" style={{ scrollMarginTop: '80px', marginBottom: '3rem' }}>
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%)',
+            color: '#ffffff',
+            borderRadius: 'var(--radius-xl)',
+            padding: '3rem 2.5rem',
+            boxShadow: 'var(--shadow-xl)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Background decorative glow */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '-100px',
+              right: '-100px',
+              width: '320px',
+              height: '320px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(2, 132, 199, 0.35) 0%, transparent 70%)',
+              pointerEvents: 'none'
+            }}
+          />
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '2.5rem',
+              alignItems: 'center',
+              position: 'relative',
+              zIndex: 1
+            }}
+          >
+            {/* Left: Heading, Value Props & Actions */}
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255, 255, 255, 0.12)', padding: '6px 14px', borderRadius: '20px', marginBottom: '14px' }}>
+                <Smartphone size={16} color="#38bdf8" />
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#e0f2fe' }}>
+                  Mobile App & Instant PWA
+                </span>
+              </div>
+
+              <h2 style={{ fontSize: '2.125rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.25, marginBottom: '1rem' }}>
+                Get QuickMeds on Your Phone
+              </h2>
+
+              <p style={{ fontSize: '1rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '1.75rem', maxWidth: '520px' }}>
+                Order emergency medicines in seconds, receive audible 10-second dispatch alerts, track rider GPS in real time, and verify handovers securely with 4-digit OTP.
+              </p>
+
+              {/* 4 Feature Bullet Grid */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '12px',
+                  marginBottom: '2rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <CheckCircle2 size={18} color="#38bdf8" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.875rem', color: '#f1f5f9' }}>1-Tap Instant Install (0 MB)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <CheckCircle2 size={18} color="#38bdf8" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.875rem', color: '#f1f5f9' }}>Audible 10s Sound Alarms</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <CheckCircle2 size={18} color="#38bdf8" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.875rem', color: '#f1f5f9' }}>Live Rider GPS Tracking</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <CheckCircle2 size={18} color="#38bdf8" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.875rem', color: '#f1f5f9' }}>Works Offline & On Low Network</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  icon={Download}
+                  onClick={() => setAppDownloadModalOpen(true)}
+                  style={{
+                    backgroundColor: '#0284c7',
+                    boxShadow: '0 4px 16px rgba(2, 132, 199, 0.5)',
+                    fontWeight: 700
+                  }}
+                >
+                  Download / Install App
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => setAppDownloadModalOpen(true)}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    color: '#ffffff',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span>🍏 iPhone (Add to Home)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right: QR Scan Card */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center'
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: '#ffffff',
+                  color: '#0f172a',
+                  borderRadius: '20px',
+                  padding: '24px',
+                  textAlign: 'center',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+                  maxWidth: '280px',
+                  width: '100%',
+                  border: '3px solid rgba(255, 255, 255, 0.9)'
+                }}
+              >
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#f0f9ff', color: '#0284c7', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '12px' }}>
+                  <QrCode size={14} />
+                  <span>Scan to Open App</span>
+                </div>
+
+                <div
+                  style={{
+                    padding: '12px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    display: 'inline-block',
+                    marginBottom: '12px'
+                  }}
+                >
+                  <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fquickmedss.vercel.app&color=0284c7"
+                    alt="Scan QuickMeds App"
+                    width={160}
+                    height={160}
+                    style={{ display: 'block', borderRadius: '6px' }}
+                  />
+                </div>
+
+                <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+                  Point your camera here
+                </p>
+                <p style={{ fontSize: '0.6875rem', color: '#64748b', margin: 0 }}>
+                  Instantly open or install QuickMeds on any smartphone
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 7. PARTNER & EXPLORE CTA SECTION */}
       <section className="container" style={{ marginBottom: '1rem' }}>
         <div
@@ -1067,6 +1248,12 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Mobile App Download Modal */}
+      <AppDownloadModal
+        isOpen={appDownloadModalOpen}
+        onClose={() => setAppDownloadModalOpen(false)}
+      />
     </div>
   );
 };

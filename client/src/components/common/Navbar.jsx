@@ -18,13 +18,15 @@ import {
   Cpu,
   ShieldCheck,
   BarChart3,
-  Zap
+  Zap,
+  Smartphone
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import LocationPicker from './LocationPicker';
 import NotificationBell from './NotificationBell';
+import AppDownloadModal from './AppDownloadModal';
 
 // SIH DEMO MODE ONLY - REMOVE AFTER SIH
 import DemoControlPanel from '../../demo/DemoControlPanel';
@@ -38,6 +40,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [appModalOpen, setAppModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -227,6 +230,30 @@ const Navbar = () => {
 
         {/* Right Actions: Cart, Notifications, Theme, Auth */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+
+          {/* Download App Button */}
+          <button
+            type="button"
+            onClick={() => setAppModalOpen(true)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '20px',
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-medium)',
+              color: 'var(--text-main)',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            title="Download QuickMeds Mobile App"
+          >
+            <Smartphone size={15} color="var(--primary-600)" />
+            <span>App</span>
+          </button>
 
           {/* SIH DEMO MODE ONLY: Quick Launch Button */}
           {isDemoEnabled && (
@@ -552,6 +579,33 @@ const Navbar = () => {
             </Link>
           )}
 
+          {/* Mobile Download App Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setAppModalOpen(true);
+            }}
+            style={{
+              padding: '10px 14px',
+              fontSize: '0.9375rem',
+              color: 'var(--primary-700)',
+              fontWeight: 700,
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              marginTop: '4px'
+            }}
+          >
+            <Smartphone size={18} color="var(--primary-600)" />
+            <span>📱 Download QuickMeds App</span>
+          </button>
+
           {/* SIH DEMO MODE ONLY: Mobile Drawer Button */}
           {isDemoEnabled && (
             <button
@@ -628,6 +682,12 @@ const Navbar = () => {
           onClose={() => setDemoModalOpen(false)}
         />
       )}
+
+      {/* Download App Modal */}
+      <AppDownloadModal
+        isOpen={appModalOpen}
+        onClose={() => setAppModalOpen(false)}
+      />
     </header>
   );
 };
