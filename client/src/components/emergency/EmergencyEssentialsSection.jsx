@@ -168,10 +168,11 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
         <div
           style={{
             position: 'absolute',
-            top: '-20px',
-            right: '-20px',
+            top: 0,
+            right: 0,
             width: '140px',
             height: '140px',
+            transform: 'translate(15%, -15%)',
             background: 'radial-gradient(circle, rgba(244,63,94,0.25) 0%, rgba(0,0,0,0) 70%)',
             pointerEvents: 'none'
           }}

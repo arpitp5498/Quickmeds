@@ -63,10 +63,15 @@ const OrderDetail = () => {
   useEffect(() => {
     fetchOrder();
 
+    const handleFocus = () => {
+      fetchOrder();
+    };
+    window.addEventListener('focus', handleFocus);
+
     if (socket) {
       const handleStatusChange = (data) => {
-        if (data.orderId === id) {
-          showToast(`Order status updated to: ${data.status.replace(/_/g, ' ')}`, 'info');
+        if (data.orderId === id || data.order?._id === id) {
+          showToast(`Order status updated to: ${(data.status || data.order?.orderStatus || '').replace(/_/g, ' ')}`, 'info');
           if (data.deliveryPartner) {
             setDeliveryPartner(data.deliveryPartner);
           }
@@ -94,15 +99,24 @@ const OrderDetail = () => {
       };
 
       socket.on('order_status_changed', handleStatusChange);
+      socket.on('new_delivery_assigned', handleStatusChange);
       socket.on('driver_moved', handleDriverMoved);
       socket.on('order_fallback_reassigned', handleFallbackReassigned);
+      socket.on('connect', fetchOrder);
 
       return () => {
+        window.removeEventListener('focus', handleFocus);
         socket.off('order_status_changed', handleStatusChange);
+        socket.off('new_delivery_assigned', handleStatusChange);
         socket.off('driver_moved', handleDriverMoved);
         socket.off('order_fallback_reassigned', handleFallbackReassigned);
+        socket.off('connect', fetchOrder);
       };
     }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [id, socket]);
 
   const handleCancelOrder = async () => {
@@ -548,7 +562,7 @@ const OrderDetail = () => {
           </Card>
 
           {/* Delivery Executive Card */}
-          {deliveryPartner && (
+          {deliveryPartner ? (
             <Card>
               <div
                 style={{
@@ -622,6 +636,36 @@ const OrderDetail = () => {
                 </a>
               </div>
             </Card>
+          ) : (
+            (order.orderStatus === 'READY_FOR_PICKUP' || order.orderStatus === 'DELIVERY_ASSIGNED') && (
+              <Card style={{ backgroundColor: 'var(--primary-50)', border: '1.5px dashed var(--primary-300)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--primary-100)',
+                      color: 'var(--primary-700)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}
+                  >
+                    <Truck size={22} />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--primary-900)' }}>
+                      Assigning Nearby Delivery Partner...
+                    </h4>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Medicines are packaged and sealed. Dispatching the nearest QuickMeds fleet partner for pickup.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )
           )}
 
           {/* Prescription Status Banner */}

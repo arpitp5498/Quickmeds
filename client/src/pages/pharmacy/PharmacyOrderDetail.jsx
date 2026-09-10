@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   ExternalLink,
   Timer,
-  Zap
+  Zap,
+  Truck
 } from 'lucide-react';
 import api from '../../services/api';
 import { useSocket } from '../../context/SocketContext';
@@ -38,6 +39,7 @@ const PharmacyOrderDetail = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [updating, setUpdating] = useState(false);
   const [simulatingTimeout, setSimulatingTimeout] = useState(false);
+  const [assigningRider, setAssigningRider] = useState(false);
 
   const fetchOrder = async () => {
     try {
@@ -58,6 +60,11 @@ const PharmacyOrderDetail = () => {
   useEffect(() => {
     fetchOrder();
 
+    const handleFocus = () => {
+      fetchOrder();
+    };
+    window.addEventListener('focus', handleFocus);
+
     if (socket) {
       const handleStatusChange = (data) => {
         if (data.orderId === id) {
@@ -76,15 +83,50 @@ const PharmacyOrderDetail = () => {
         }
       };
 
+      const handleRiderAssigned = (data) => {
+        if (data.orderId === id || data.order?._id === id) {
+          showToast('🛵 Delivery partner assigned to this order!', 'success');
+          fetchOrder();
+        }
+      };
+
       socket.on('order_status_changed', handleStatusChange);
       socket.on('order_reassigned_away', handleReassigned);
+      socket.on('new_delivery_assigned', handleRiderAssigned);
+      socket.on('connect', fetchOrder);
 
       return () => {
+        window.removeEventListener('focus', handleFocus);
         socket.off('order_status_changed', handleStatusChange);
         socket.off('order_reassigned_away', handleReassigned);
+        socket.off('new_delivery_assigned', handleRiderAssigned);
+        socket.off('connect', fetchOrder);
       };
     }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [id, socket]);
+
+  const handleAssignRider = async () => {
+    try {
+      setAssigningRider(true);
+      const res = await api.post(`/orders/${id}/assign-rider`);
+      if (res.success) {
+        if (res.data?.assigned) {
+          showToast(`🛵 Delivery partner ${res.data.partner?.name || ''} assigned successfully!`, 'success');
+        } else {
+          showToast('No nearby riders currently available. System will auto-assign when a rider goes online.', 'warning');
+        }
+        fetchOrder();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to assign rider', 'error');
+    } finally {
+      setAssigningRider(false);
+    }
+  };
 
   const handleUpdateStatus = async (status, note = '', reason = '') => {
     try {
@@ -304,6 +346,18 @@ const PharmacyOrderDetail = () => {
               Mark Ready for Pickup
             </Button>
           )}
+
+          {order.orderStatus === 'READY_FOR_PICKUP' && !deliveryPartner && (
+            <Button
+              variant="primary"
+              size="sm"
+              icon={Truck}
+              loading={assigningRider}
+              onClick={handleAssignRider}
+            >
+              Assign / Retry Rider
+            </Button>
+          )}
         </div>
       </div>
 
@@ -380,7 +434,7 @@ const PharmacyOrderDetail = () => {
           )}
 
           {/* Assigned Delivery Partner Card */}
-          {deliveryPartner && (
+          {deliveryPartner ? (
             <Card style={{ borderLeft: '4px solid var(--primary-600)' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '10px' }}>
                 Assigned Delivery Partner
@@ -418,6 +472,30 @@ const PharmacyOrderDetail = () => {
                 </p>
               </div>
             </Card>
+          ) : (
+            (order.orderStatus === 'READY_FOR_PICKUP' || order.orderStatus === 'DELIVERY_ASSIGNED') && (
+              <Card style={{ backgroundColor: 'var(--primary-50)', border: '1.5px dashed var(--primary-300)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--primary-900)' }}>
+                      Finding Delivery Partner...
+                    </h4>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Package staged at counter. Searching nearby fleet riders.
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={Truck}
+                    loading={assigningRider}
+                    onClick={handleAssignRider}
+                  >
+                    Dispatch Rider
+                  </Button>
+                </div>
+              </Card>
+            )
           )}
         </div>
 

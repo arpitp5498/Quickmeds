@@ -48,19 +48,33 @@ const DeliveryActive = () => {
   useEffect(() => {
     fetchActive();
 
+    const handleFocus = () => {
+      fetchActive();
+    };
+    window.addEventListener('focus', handleFocus);
+
     if (socket) {
-      const handleStatusUpdate = (data) => {
+      const handleStatusUpdate = () => {
         fetchActive();
       };
 
       socket.on('order_status_changed', handleStatusUpdate);
-      socket.on('delivery_assigned', handleStatusUpdate);
+      socket.on('new_delivery_assigned', handleStatusUpdate);
+      socket.on('notification', handleStatusUpdate);
+      socket.on('connect', fetchActive);
 
       return () => {
+        window.removeEventListener('focus', handleFocus);
         socket.off('order_status_changed', handleStatusUpdate);
-        socket.off('delivery_assigned', handleStatusUpdate);
+        socket.off('new_delivery_assigned', handleStatusUpdate);
+        socket.off('notification', handleStatusUpdate);
+        socket.off('connect', fetchActive);
       };
     }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [socket]);
 
   const handleUpdateDelivery = async (status, note = '', otp = '') => {

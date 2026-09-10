@@ -47,14 +47,37 @@ const DeliveryDashboard = () => {
   useEffect(() => {
     fetchDeliveryData();
 
+    const handleFocus = () => {
+      fetchDeliveryData();
+    };
+    window.addEventListener('focus', handleFocus);
+
     if (socket) {
       const handleTask = () => {
         showToast('🛵 New delivery task assigned!', 'success');
         fetchDeliveryData();
       };
+      const handleStatusChange = () => {
+        fetchDeliveryData();
+      };
+
       socket.on('notification', handleTask);
-      return () => socket.off('notification', handleTask);
+      socket.on('new_delivery_assigned', handleTask);
+      socket.on('order_status_changed', handleStatusChange);
+      socket.on('connect', fetchDeliveryData);
+
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+        socket.off('notification', handleTask);
+        socket.off('new_delivery_assigned', handleTask);
+        socket.off('order_status_changed', handleStatusChange);
+        socket.off('connect', fetchDeliveryData);
+      };
     }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [socket]);
 
   const toggleAvailability = async () => {
@@ -63,7 +86,12 @@ const DeliveryDashboard = () => {
       const res = await api.put('/delivery/availability');
       if (res.success && res.data) {
         setPartner(res.data.partner);
-        showToast(`Status updated to ${res.data.partner.status}`, 'info');
+        if (res.data.activeOrder) {
+          setActiveOrder(res.data.activeOrder);
+          showToast('🛵 Online! Priority delivery task automatically assigned.', 'success');
+        } else {
+          showToast(`Status updated to ${res.data.partner.status}`, 'info');
+        }
       }
     } catch (err) {
       showToast('Failed to toggle status', 'error');

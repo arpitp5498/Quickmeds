@@ -229,7 +229,7 @@ const Navbar = () => {
         </nav>
 
         {/* Right Actions: Cart, Notifications, Theme, Auth */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="navbar-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 
           {/* Download App Button */}
           <button
@@ -243,12 +243,12 @@ const Navbar = () => {
               color: 'var(--text-main)',
               fontSize: '0.8125rem',
               fontWeight: 700,
-              display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
               cursor: 'pointer',
               transition: 'all 0.2s ease'
             }}
+            className="desktop-only-btn"
             title="Download QuickMeds Mobile App"
           >
             <Smartphone size={15} color="var(--primary-600)" />
@@ -267,7 +267,6 @@ const Navbar = () => {
                 color: '#ffffff',
                 fontSize: '0.8125rem',
                 fontWeight: 700,
-                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
@@ -275,6 +274,7 @@ const Navbar = () => {
                 boxShadow: '0 2px 10px rgba(2, 132, 199, 0.4)',
                 transition: 'all 0.2s ease'
               }}
+              className="desktop-only-btn"
               title="SIH Multi-Role Demo Launcher"
             >
               <span>🚀 Demo Mode</span>
@@ -487,6 +487,7 @@ const Navbar = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Link
                 to="/login"
+                className="nav-login-btn"
                 style={{
                   padding: '6px 14px',
                   fontSize: '0.875rem',
@@ -509,7 +510,8 @@ const Navbar = () => {
               padding: '6px',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-main)',
-              display: 'none'
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
             className="mobile-hamburger-btn"
             aria-label="Toggle menu"
@@ -646,6 +648,7 @@ const Navbar = () => {
             bottom: '24px',
             right: '24px',
             zIndex: 9998,
+            maxWidth: 'calc(100vw - 32px)',
             padding: '12px 22px',
             borderRadius: '9999px',
             background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',

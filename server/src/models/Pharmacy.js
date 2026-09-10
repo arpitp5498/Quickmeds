@@ -106,6 +106,11 @@ const pharmacySchema = new mongoose.Schema(
     isOpen: {
       type: Boolean,
       default: true
+    },
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true
     }
   },
   {

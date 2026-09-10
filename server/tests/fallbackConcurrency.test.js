@@ -130,7 +130,7 @@ describe('Adversarial Fallback Routing & Concurrency Verification', () => {
     if (testMedicine) {
       await Medicine.findByIdAndDelete(testMedicine._id);
     }
-  });
+  }, 60000);
 
   // Helper to reset stock on all test pharmacies
   const resetAllStocks = async () => {

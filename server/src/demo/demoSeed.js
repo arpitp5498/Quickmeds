@@ -36,8 +36,12 @@ const initDemoEnvironment = async () => {
       email: DEMO_EMAILS.CUSTOMER,
       phone: '9800000001',
       password: DEMO_CREDENTIALS.PASSWORD,
-      role: 'CUSTOMER'
+      role: 'CUSTOMER',
+      isDemo: true
     });
+  } else if (!customer.isDemo) {
+    customer.isDemo = true;
+    await customer.save();
   }
 
   // 2. Demo Pharmacy A
@@ -48,8 +52,12 @@ const initDemoEnvironment = async () => {
       email: DEMO_EMAILS.PHARMACY_A,
       phone: '9800000002',
       password: DEMO_CREDENTIALS.PASSWORD,
-      role: 'PHARMACY'
+      role: 'PHARMACY',
+      isDemo: true
     });
+  } else if (!pharmacyUserA.isDemo) {
+    pharmacyUserA.isDemo = true;
+    await pharmacyUserA.save();
   }
 
   let pharmacyA = await Pharmacy.findOne({ userId: pharmacyUserA._id });
@@ -69,15 +77,38 @@ const initDemoEnvironment = async () => {
       },
       location: {
         type: 'Point',
-        coordinates: [77.2195, 28.6328]
+        coordinates: [77.214, 28.629]
       },
       verificationStatus: 'VERIFIED',
       isActive: true,
       isOpen: true,
-      operatingHours: { open: '00:00', close: '23:59', is24x7: true }
+      operatingHours: { open: '00:00', close: '23:59', is24x7: true },
+      rating: 4.9,
+      totalRatings: 500,
+      totalOrdersCompleted: 1200,
+      isDemo: true
     });
     pharmacyUserA.pharmacyId = pharmacyA._id;
     await pharmacyUserA.save();
+  } else {
+    // Update existing pharmacy to ensure isDemo, rating, and proximity are active
+    pharmacyA.name = 'QuickMeds Demo Pharmacy 1';
+    pharmacyA.isDemo = true;
+    pharmacyA.rating = 4.9;
+    pharmacyA.totalRatings = 500;
+    pharmacyA.totalOrdersCompleted = 1200;
+    pharmacyA.verificationStatus = 'VERIFIED';
+    pharmacyA.isActive = true;
+    pharmacyA.isOpen = true;
+    pharmacyA.location = {
+      type: 'Point',
+      coordinates: [77.214, 28.629]
+    };
+    await pharmacyA.save();
+    if (!pharmacyUserA.pharmacyId) {
+      pharmacyUserA.pharmacyId = pharmacyA._id;
+      await pharmacyUserA.save();
+    }
   }
 
   // 3. Demo Pharmacy B (For Rerouting Demonstration)
@@ -88,8 +119,12 @@ const initDemoEnvironment = async () => {
       email: DEMO_EMAILS.PHARMACY_B,
       phone: '9800000003',
       password: DEMO_CREDENTIALS.PASSWORD,
-      role: 'PHARMACY'
+      role: 'PHARMACY',
+      isDemo: true
     });
+  } else if (!pharmacyUserB.isDemo) {
+    pharmacyUserB.isDemo = true;
+    await pharmacyUserB.save();
   }
 
   let pharmacyB = await Pharmacy.findOne({ userId: pharmacyUserB._id });
@@ -114,10 +149,32 @@ const initDemoEnvironment = async () => {
       verificationStatus: 'VERIFIED',
       isActive: true,
       isOpen: true,
-      operatingHours: { open: '00:00', close: '23:59', is24x7: true }
+      operatingHours: { open: '00:00', close: '23:59', is24x7: true },
+      rating: 4.8,
+      totalRatings: 350,
+      totalOrdersCompleted: 800,
+      isDemo: true
     });
     pharmacyUserB.pharmacyId = pharmacyB._id;
     await pharmacyUserB.save();
+  } else {
+    pharmacyB.name = 'QuickMeds Demo Pharmacy 2 (Fallback Store)';
+    pharmacyB.isDemo = true;
+    pharmacyB.rating = 4.8;
+    pharmacyB.totalRatings = 350;
+    pharmacyB.totalOrdersCompleted = 800;
+    pharmacyB.verificationStatus = 'VERIFIED';
+    pharmacyB.isActive = true;
+    pharmacyB.isOpen = true;
+    pharmacyB.location = {
+      type: 'Point',
+      coordinates: [77.227, 28.631]
+    };
+    await pharmacyB.save();
+    if (!pharmacyUserB.pharmacyId) {
+      pharmacyUserB.pharmacyId = pharmacyB._id;
+      await pharmacyUserB.save();
+    }
   }
 
   // 4. Demo Rider
@@ -128,8 +185,12 @@ const initDemoEnvironment = async () => {
       email: DEMO_EMAILS.RIDER,
       phone: '9800000004',
       password: DEMO_CREDENTIALS.PASSWORD,
-      role: 'DELIVERY_PARTNER'
+      role: 'DELIVERY_PARTNER',
+      isDemo: true
     });
+  } else if (!riderUser.isDemo) {
+    riderUser.isDemo = true;
+    await riderUser.save();
   }
 
   let rider = await DeliveryPartner.findOne({ userId: riderUser._id });
@@ -144,13 +205,22 @@ const initDemoEnvironment = async () => {
         type: 'Point',
         coordinates: [77.218, 28.632]
       },
-      rating: 4.9
+      rating: 4.9,
+      isDemo: true
     });
     riderUser.deliveryPartnerId = rider._id;
     await riderUser.save();
+  } else {
+    rider.isDemo = true;
+    rider.status = 'AVAILABLE';
+    await rider.save();
+    if (!riderUser.deliveryPartnerId) {
+      riderUser.deliveryPartnerId = rider._id;
+      await riderUser.save();
+    }
   }
 
-  // 5. Ensure Demo Medicines exist for clean stock deduction testing
+  // 5. Ensure Demo Medicines & Full Catalog Inventory in Pharmacy A & B
   let doloMed = await Medicine.findOne({ name: 'Dolo 650mg Tablet' });
   if (!doloMed) {
     doloMed = await Medicine.findOne({ name: /dolo/i });
@@ -172,32 +242,50 @@ const initDemoEnvironment = async () => {
     });
   }
 
-  // Ensure inventory in Pharmacy A & B
-  await PharmacyInventory.findOneAndUpdate(
-    { pharmacyId: pharmacyA._id, medicineId: doloMed._id },
-    {
-      pharmacyId: pharmacyA._id,
-      medicineId: doloMed._id,
-      stockQuantity: 10,
-      price: 30.5,
-      mrp: 35.0,
-      isAvailable: true
-    },
-    { upsert: true, new: true }
-  );
+  // Seed inventory for ALL active master medicines in Pharmacy A & B
+  const allMeds = await Medicine.find({ active: true });
+  const bulkOps = [];
+  for (const med of allMeds) {
+    const isDolo = /dolo/i.test(med.name) || (doloMed && med._id.toString() === doloMed._id.toString());
+    const stockA = isDolo ? 10 : 50;
+    const stockB = isDolo ? 20 : 50;
 
-  await PharmacyInventory.findOneAndUpdate(
-    { pharmacyId: pharmacyB._id, medicineId: doloMed._id },
-    {
-      pharmacyId: pharmacyB._id,
-      medicineId: doloMed._id,
-      stockQuantity: 20,
-      price: 30.5,
-      mrp: 35.0,
-      isAvailable: true
-    },
-    { upsert: true, new: true }
-  );
+    bulkOps.push({
+      updateOne: {
+        filter: { pharmacyId: pharmacyA._id, medicineId: med._id },
+        update: {
+          $set: {
+            pharmacyId: pharmacyA._id,
+            medicineId: med._id,
+            stockQuantity: stockA,
+            price: med.price || 30,
+            mrp: med.mrp || 35,
+            isAvailable: true
+          }
+        },
+        upsert: true
+      }
+    });
+    bulkOps.push({
+      updateOne: {
+        filter: { pharmacyId: pharmacyB._id, medicineId: med._id },
+        update: {
+          $set: {
+            pharmacyId: pharmacyB._id,
+            medicineId: med._id,
+            stockQuantity: stockB,
+            price: med.price || 30,
+            mrp: med.mrp || 35,
+            isAvailable: true
+          }
+        },
+        upsert: true
+      }
+    });
+  }
+  if (bulkOps.length > 0) {
+    await PharmacyInventory.bulkWrite(bulkOps);
+  }
 
   // 6. Ensure Master Demo Order QM-DEMO-001 exists
   let demoOrder = await Order.findOne({ orderId: DEMO_ORDER_ID });
@@ -239,6 +327,12 @@ const initDemoEnvironment = async () => {
         }
       ]
     });
+  } else {
+    if (!demoOrder.isDemo || demoOrder.pharmacyId.toString() !== pharmacyA._id.toString()) {
+      demoOrder.isDemo = true;
+      demoOrder.pharmacyId = pharmacyA._id;
+      await demoOrder.save();
+    }
   }
 
   return {

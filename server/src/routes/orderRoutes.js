@@ -15,6 +15,7 @@ router.post('/:id/cancel', orderController.cancelOrder);
 
 // Pharmacy endpoints
 router.get('/pharmacy/list', authorize('PHARMACY', 'ADMIN'), orderController.getPharmacyOrders);
+router.post('/:id/assign-rider', authorize('PHARMACY', 'ADMIN'), orderController.assignRiderToOrder);
 
 // Fallback Routing Simulation Endpoints (accessible by authorized customer, pharmacy, or admin)
 router.post('/:id/simulate-timeout', orderController.simulateTimeout);

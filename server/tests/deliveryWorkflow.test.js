@@ -199,13 +199,15 @@ describe('Three-Sided Delivery Tracking & State Machine Tests', () => {
     });
 
     test('autoAssignDeliveryPartner assigns available rider to order', async () => {
-      const assignedPartner = await autoAssignDeliveryPartner(testOrder._id);
-      expect(assignedPartner).toBeDefined();
-      expect(assignedPartner.status).toBe('BUSY');
+      const result = await autoAssignDeliveryPartner(testOrder._id);
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.partner).toBeDefined();
+      expect(result.partner.status).toBe('BUSY');
 
       const refreshedOrder = await Order.findById(testOrder._id);
       expect(refreshedOrder.orderStatus).toBe('DELIVERY_ASSIGNED');
-      expect(refreshedOrder.deliveryPartnerId.toString()).toBe(assignedPartner.userId._id.toString());
+      expect(refreshedOrder.deliveryPartnerId.toString()).toBe(result.partner.userId._id.toString());
     });
 
     test('rider progresses through ARRIVED_AT_PHARMACY ➔ OUT_FOR_DELIVERY ➔ ARRIVED_NEAR_CUSTOMER ➔ DELIVERED', async () => {

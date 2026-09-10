@@ -1,7 +1,7 @@
 const DeliveryPartner = require('../models/DeliveryPartner');
 const Order = require('../models/Order');
 const Pharmacy = require('../models/Pharmacy');
-const { autoAssignDeliveryPartner } = require('../services/deliveryService');
+const { autoAssignDeliveryPartner, reconcileDeliveryPartners } = require('../services/deliveryService');
 const { getIO } = require('../config/socket');
 const { sendNotification } = require('../services/notificationService');
 const { logAction } = require('../services/auditService');
@@ -13,30 +13,65 @@ const ApiError = require('../utils/ApiError');
 // @access  Private (DELIVERY_PARTNER)
 const getActiveDelivery = async (req, res, next) => {
   try {
+    // 1. Reconcile any stale database state across partners
+    await reconcileDeliveryPartners();
+
     const partner = await DeliveryPartner.findOne({ userId: req.user._id });
     if (!partner) {
       throw ApiError.notFound('Delivery partner profile not found.');
     }
 
+    // 2. Query authoritative active orders assigned to this rider
+    const ACTIVE_RIDER_STATUSES = [
+      'READY_FOR_PICKUP',
+      'DELIVERY_ASSIGNED',
+      'ARRIVED_AT_PHARMACY',
+      'OUT_FOR_DELIVERY',
+      'ARRIVED_NEAR_CUSTOMER'
+    ];
+
     let activeOrder = null;
-    if (partner.activeOrderId) {
-      activeOrder = await Order.findById(partner.activeOrderId)
+
+    // Direct search by deliveryPartnerId (authoritative source of truth)
+    activeOrder = await Order.findOne({
+      deliveryPartnerId: req.user._id,
+      orderStatus: { $in: ACTIVE_RIDER_STATUSES }
+    })
+      .populate('customerId', 'name phone')
+      .populate('pharmacyId');
+
+    // If not found by deliveryPartnerId, check partner.activeOrderId as fallback
+    if (!activeOrder && partner.activeOrderId) {
+      const candidateOrder = await Order.findById(partner.activeOrderId)
         .populate('customerId', 'name phone')
         .populate('pharmacyId');
+
+      if (
+        candidateOrder &&
+        ACTIVE_RIDER_STATUSES.includes(candidateOrder.orderStatus) &&
+        (!candidateOrder.deliveryPartnerId || candidateOrder.deliveryPartnerId.toString() === req.user._id.toString())
+      ) {
+        activeOrder = candidateOrder;
+        if (!candidateOrder.deliveryPartnerId) {
+          candidateOrder.deliveryPartnerId = req.user._id;
+          await candidateOrder.save();
+        }
+      }
     }
 
-    // Also look for any assigned order if activeOrderId is unset or needs refresh
-    if (!activeOrder || ['DELIVERED', 'CANCELLED', 'REJECTED'].includes(activeOrder.orderStatus)) {
-      activeOrder = await Order.findOne({
-        deliveryPartnerId: req.user._id,
-        orderStatus: { $in: ['DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'ARRIVED_NEAR_CUSTOMER'] }
-      })
-        .populate('customerId', 'name phone')
-        .populate('pharmacyId');
-
-      if (activeOrder && partner.activeOrderId?.toString() !== activeOrder._id.toString()) {
+    // 3. Keep partner record synchronized with activeOrder state
+    if (activeOrder) {
+      if (partner.activeOrderId?.toString() !== activeOrder._id.toString() || partner.status !== 'BUSY') {
         partner.activeOrderId = activeOrder._id;
         partner.status = 'BUSY';
+        await partner.save();
+      }
+    } else {
+      if (partner.activeOrderId !== null || partner.status === 'BUSY') {
+        partner.activeOrderId = null;
+        if (partner.status !== 'OFFLINE') {
+          partner.status = 'AVAILABLE';
+        }
         await partner.save();
       }
     }
@@ -175,6 +210,11 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
       io.to(`user:${order.customerId._id}`).emit('order_status_changed', eventPayload);
     }
 
+    // Emit to rider's own user room so they receive updates from other actors
+    if (order.deliveryPartnerId) {
+      io.to(`user:${order.deliveryPartnerId}`).emit('order_status_changed', eventPayload);
+    }
+
     io.to('admin:room').emit('order_status_changed', eventPayload);
 
     // Contextual notifications
@@ -220,6 +260,18 @@ const toggleAvailability = async (req, res, next) => {
 
     partner.status = partner.status === 'OFFLINE' ? 'AVAILABLE' : 'OFFLINE';
     await partner.save();
+
+    // If driver went online and has no active order, check for waiting orders in READY_FOR_PICKUP
+    if (partner.status === 'AVAILABLE' && !partner.activeOrderId) {
+      const pendingOrder = await Order.findOne({
+        orderStatus: { $in: ['READY_FOR_PICKUP', 'DELIVERY_ASSIGNED'] },
+        $or: [{ deliveryPartnerId: null }, { deliveryPartnerId: req.user._id }]
+      }).sort({ createdAt: 1 });
+
+      if (pendingOrder) {
+        await autoAssignDeliveryPartner(pendingOrder._id);
+      }
+    }
 
     return ApiResponse.success(
       res,
@@ -366,8 +418,9 @@ const simulateDeliveryStep = async (req, res, next) => {
     let partner = null;
     if (['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(nextStatus)) {
       if (!order.deliveryPartnerId) {
-        partner = await autoAssignDeliveryPartner(order._id);
-        if (partner && partner.userId) {
+        const assignResult = await autoAssignDeliveryPartner(order._id);
+        if (assignResult?.success && assignResult.partner?.userId) {
+          partner = assignResult.partner;
           order.deliveryPartnerId = partner.userId._id;
         }
       }

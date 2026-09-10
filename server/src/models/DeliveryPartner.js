@@ -63,6 +63,11 @@ const deliveryPartnerSchema = new mongoose.Schema(
     totalEarnings: {
       type: Number,
       default: 0
+    },
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true
     }
   },
   {

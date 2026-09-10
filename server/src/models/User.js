@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
     pharmacyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Pharmacy',

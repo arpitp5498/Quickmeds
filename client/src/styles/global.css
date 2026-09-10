@@ -12,6 +12,8 @@ html {
   font-size: 16px;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  width: 100%;
+  max-width: 100%;
 }
 
 body {
@@ -20,9 +22,19 @@ body {
   color: var(--text-main);
   line-height: 1.5;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
   transition: background-color var(--transition-normal), color var(--transition-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -151,3 +163,203 @@ img {
     padding-right: 0.75rem;
   }
 }
+
+/* Responsive Navbar Controls */
+.desktop-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-location-desktop {
+  display: flex;
+  align-items: center;
+}
+
+.desktop-only-btn {
+  display: inline-flex;
+  align-items: center;
+}
+
+.mobile-hamburger-btn {
+  display: none;
+}
+
+.desktop-username {
+  display: inline;
+}
+
+/* Intermediate Laptop/Desktop Breakpoint (1100px to 1279px) */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .desktop-nav-links {
+    gap: 0.625rem !important;
+  }
+  .desktop-nav-links a {
+    font-size: 0.8125rem !important;
+    gap: 3px !important;
+  }
+  .nav-location-desktop button {
+    max-width: 120px !important;
+  }
+  .desktop-username {
+    display: none !important;
+  }
+}
+
+/* Mobile & Tablet Breakpoint (< 1100px) */
+@media (max-width: 1099px) {
+  .desktop-nav-links {
+    display: none !important;
+  }
+  .nav-location-desktop {
+    display: none !important;
+  }
+  .desktop-only-btn {
+    display: none !important;
+  }
+  .desktop-username {
+    display: none !important;
+  }
+  .mobile-hamburger-btn {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-right-actions {
+    gap: 0.35rem !important;
+  }
+  .nav-login-btn {
+    padding: 5px 9px !important;
+    font-size: 0.8125rem !important;
+  }
+}
+
+/* Responsive Dashboard & Sidebar Controls */
+.dashboard-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  transition: width var(--transition-normal), transform var(--transition-normal);
+}
+
+.dashboard-main-area {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 2rem;
+  background-color: var(--bg-main);
+}
+
+.dashboard-mobile-bar {
+  display: none;
+}
+
+/* Tablet Icon-Rail Mode (768px to 1099px) */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .dashboard-sidebar {
+    width: 72px !important;
+    padding: 1.25rem 0.5rem !important;
+  }
+  .dashboard-sidebar .sidebar-user-info {
+    display: none !important;
+  }
+  .dashboard-sidebar .sidebar-link-text {
+    display: none !important;
+  }
+  .dashboard-sidebar a,
+  .dashboard-sidebar button {
+    justify-content: center !important;
+    padding: 10px !important;
+  }
+  .dashboard-main-area {
+    padding: 1.5rem !important;
+  }
+}
+
+/* Mobile Off-Canvas Drawer Mode (< 768px) */
+@media (max-width: 767px) {
+  .dashboard-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    z-index: 1050 !important;
+    box-shadow: var(--shadow-xl) !important;
+    transform: translateX(-100%);
+    min-height: 100vh !important;
+  }
+  .dashboard-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+  .sidebar-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+  }
+  .dashboard-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin-bottom: 1.25rem;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+  }
+  .dashboard-main-area {
+    padding: 1rem !important;
+  }
+}
+
+/* Table Responsive Wrapper */
+.table-responsive-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Specific Grid Responsiveness */
+@media (max-width: 900px) {
+  .pharmacy-network-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Category Pill Row & Horizontal Filter Scrollers */
+.category-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+@media (max-width: 640px) {
+  .category-pill-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+  .category-pill-row::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+.mobile-app-showcase-card {
+  padding: 3rem 2.5rem;
+}
+
+@media (max-width: 640px) {
+  .mobile-app-showcase-card {
+    padding: 2rem 1.25rem !important;
+  }
+}
+
+

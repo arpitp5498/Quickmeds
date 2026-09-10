@@ -186,7 +186,8 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
   const opts = typeof options === 'number' ? { maxDistanceKm: options } : (options || {});
   const {
     maxDistanceKm = DEFAULT_MAX_DISTANCE_KM,
-    excludePharmacyIds = []
+    excludePharmacyIds = [],
+    isDemo = false
   } = opts;
 
   if (!cartItems || cartItems.length === 0) {
@@ -228,6 +229,13 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
     isOpen: true
   };
 
+  // Isolate demo ecosystem from production
+  if (isDemo) {
+    query.isDemo = true;
+  } else {
+    query.isDemo = { $ne: true };
+  }
+
   const formattedExcludeIds = excludePharmacyIds.map(id => id?.toString ? id.toString() : String(id));
   if (formattedExcludeIds.length > 0) {
     query._id = { $nin: formattedExcludeIds };
@@ -250,6 +258,12 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
 
   // Fallback: If no pharmacy found via $nearSphere, query all matching verified
   if (!pharmacies || pharmacies.length === 0) {
+    pharmacies = await Pharmacy.find(query).limit(10);
+  }
+
+  // Safety fallback: If demo filter was active and returned nothing, fallback to verified stores
+  if ((!pharmacies || pharmacies.length === 0) && isDemo) {
+    delete query.isDemo;
     pharmacies = await Pharmacy.find(query).limit(10);
   }
 

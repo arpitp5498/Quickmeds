@@ -29,6 +29,7 @@ const PharmacyOrders = () => {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [simulatingTimeoutId, setSimulatingTimeoutId] = useState(null);
+  const [assigningRiderId, setAssigningRiderId] = useState(null);
 
   const { socket } = useSocket();
   const { showToast } = useToast();
@@ -55,18 +56,52 @@ const PharmacyOrders = () => {
   useEffect(() => {
     fetchOrders();
 
+    const handleFocus = () => {
+      fetchOrders();
+    };
+    window.addEventListener('focus', handleFocus);
+
     if (socket) {
-      const handleNewOrder = () => fetchOrders();
-      socket.on('new_order_received', handleNewOrder);
-      socket.on('order_status_changed', handleNewOrder);
-      socket.on('order_reassigned_away', handleNewOrder);
+      const handleOrderUpdate = () => fetchOrders();
+      socket.on('new_order_received', handleOrderUpdate);
+      socket.on('order_status_changed', handleOrderUpdate);
+      socket.on('order_reassigned_away', handleOrderUpdate);
+      socket.on('new_delivery_assigned', handleOrderUpdate);
+      socket.on('connect', fetchOrders);
+
       return () => {
-        socket.off('new_order_received', handleNewOrder);
-        socket.off('order_status_changed', handleNewOrder);
-        socket.off('order_reassigned_away', handleNewOrder);
+        window.removeEventListener('focus', handleFocus);
+        socket.off('new_order_received', handleOrderUpdate);
+        socket.off('order_status_changed', handleOrderUpdate);
+        socket.off('order_reassigned_away', handleOrderUpdate);
+        socket.off('new_delivery_assigned', handleOrderUpdate);
+        socket.off('connect', fetchOrders);
       };
     }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [statusFilter, socket]);
+
+  const handleAssignRider = async (orderId) => {
+    try {
+      setAssigningRiderId(orderId);
+      const res = await api.post(`/orders/${orderId}/assign-rider`);
+      if (res.success) {
+        if (res.data?.assigned) {
+          showToast(`🛵 Delivery partner ${res.data.partner?.name || ''} assigned successfully!`, 'success');
+        } else {
+          showToast('No nearby riders currently available. System will auto-assign when a rider goes online.', 'warning');
+        }
+        fetchOrders();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to assign rider', 'error');
+    } finally {
+      setAssigningRiderId(null);
+    }
+  };
 
   const updateStatus = async (orderId, newStatus, note = '') => {
     try {
@@ -133,7 +168,8 @@ const PharmacyOrders = () => {
           { id: 'PHARMACY_REVIEW', label: 'Prescription Review' },
           { id: 'ACCEPTED', label: 'Accepted' },
           { id: 'PREPARING', label: 'Packaging' },
-          { id: 'READY_FOR_PICKUP', label: 'Ready for Pickup' },
+          { id: 'READY_FOR_PICKUP', label: 'Ready for Pickup / Staged' },
+          { id: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
           { id: 'DELIVERED', label: 'Completed' }
         ]}
       />
@@ -302,9 +338,47 @@ const PharmacyOrders = () => {
                       </Button>
                     )}
 
-                    {isReady && (
+                    {(isReady || order.orderStatus === 'DELIVERY_ASSIGNED' || order.orderStatus === 'ARRIVED_AT_PHARMACY') && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {order.deliveryPartnerId ? (
+                          <Badge variant="success">
+                            🛵 Rider: {order.deliveryPartnerId.name || 'Assigned'}
+                            {order.orderStatus === 'ARRIVED_AT_PHARMACY' ? ' • At Counter' : ' • En Route'}
+                          </Badge>
+                        ) : (
+                          <>
+                            <Badge variant="warning">
+                              ⏳ Finding Delivery Partner...
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              icon={Truck}
+                              loading={assigningRiderId === order._id}
+                              onClick={() => handleAssignRider(order._id)}
+                            >
+                              Assign / Retry Rider
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {order.orderStatus === 'OUT_FOR_DELIVERY' && (
+                      <Badge variant="primary">
+                        📦 Handed to Rider ({order.deliveryPartnerId?.name || 'In Transit'})
+                      </Badge>
+                    )}
+
+                    {order.orderStatus === 'ARRIVED_NEAR_CUSTOMER' && (
+                      <Badge variant="primary">
+                        📍 Rider at Customer Address
+                      </Badge>
+                    )}
+
+                    {order.orderStatus === 'DELIVERED' && (
                       <Badge variant="success">
-                        Rider Auto-Assigned • Awaiting Pickup
+                        ✓ Order Delivered
                       </Badge>
                     )}
                   </div>

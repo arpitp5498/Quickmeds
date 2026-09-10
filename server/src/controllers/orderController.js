@@ -19,6 +19,7 @@ const { optimizeFulfilmentPlan } = require('../services/smartRoutingService');
 const { getIO } = require('../config/socket');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const logger = require('../utils/logger');
 
 // @desc    Create a new order from cart / checkout
 // @route   POST /api/orders
@@ -38,9 +39,11 @@ const createOrder = async (req, res, next) => {
       throw ApiError.badRequest('Your cart is empty. Please add items before checking out.');
     }
 
+    const isDemoCustomer = Boolean(req.user?.email && req.user.email.endsWith('@quickmeds.demo')) || Boolean(req.user?.isDemo);
+
     // Automatically determine optimal pharmacy via QuickMeds Smart Fulfilment Engine
     const customerCoords = deliveryAddress?.coordinates || null;
-    const optimization = await optimizeFulfilmentPlan(cart.items, customerCoords);
+    const optimization = await optimizeFulfilmentPlan(cart.items, customerCoords, { isDemo: isDemoCustomer });
 
     let orderPharmacyId = null;
     let pharmacy = null;
@@ -94,6 +97,7 @@ const createOrder = async (req, res, next) => {
 
     const order = await Order.create({
       orderId: orderNumber,
+      isDemo: isDemoCustomer,
       customerId: req.user._id,
       pharmacyId: orderPharmacyId,
       items: cart.items,
@@ -296,7 +300,19 @@ const getPharmacyOrders = async (req, res, next) => {
     if (status && status !== 'ALL') {
       if (status === 'ACTIVE') {
         query.orderStatus = {
-          $in: ['PLACED', 'PHARMACY_REVIEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP']
+          $in: ['PLACED', 'PHARMACY_REVIEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY']
+        };
+      } else if (status === 'READY_FOR_PICKUP') {
+        query.orderStatus = {
+          $in: ['READY_FOR_PICKUP', 'DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY']
+        };
+      } else if (status === 'OUT_FOR_DELIVERY') {
+        query.orderStatus = {
+          $in: ['OUT_FOR_DELIVERY', 'ARRIVED_NEAR_CUSTOMER']
+        };
+      } else if (status === 'PLACED') {
+        query.orderStatus = {
+          $in: ['PLACED', 'PHARMACY_REVIEW']
         };
       } else {
         query.orderStatus = status;
@@ -332,7 +348,7 @@ const getPharmacyOrders = async (req, res, next) => {
 const updateOrderStatus = async (req, res, next) => {
   try {
     const { status, note = '', rejectionReason = '' } = req.body;
-    const order = await Order.findById(req.params.id)
+    let order = await Order.findById(req.params.id)
       .populate('customerId')
       .populate('pharmacyId');
 
@@ -429,6 +445,12 @@ const updateOrderStatus = async (req, res, next) => {
         failedOrder.fallbackLock = false;
         await failedOrder.save();
 
+        // Release any reserved delivery partner
+        await DeliveryPartner.updateMany(
+          { activeOrderId: order._id },
+          { $set: { status: 'AVAILABLE', activeOrderId: null } }
+        );
+
         // Emit socket event for customer
         try {
           const io = getIO();
@@ -487,6 +509,16 @@ const updateOrderStatus = async (req, res, next) => {
     if (status === 'CANCELLED') {
       order.cancellationReason = note || 'Cancelled';
       await restoreInventory(order.pharmacyId._id, order.items);
+      if (order.deliveryPartnerId) {
+        await DeliveryPartner.findOneAndUpdate(
+          { userId: order.deliveryPartnerId },
+          { $set: { status: 'AVAILABLE', activeOrderId: null } }
+        );
+      }
+      await DeliveryPartner.updateMany(
+        { activeOrderId: order._id },
+        { $set: { status: 'AVAILABLE', activeOrderId: null } }
+      );
     }
 
     order.statusHistory.push({
@@ -517,9 +549,31 @@ const updateOrderStatus = async (req, res, next) => {
     }
     io.to('admin:room').emit('order_status_changed', statusPayload);
 
-    // If order is marked READY_FOR_PICKUP or ACCEPTED, auto-assign delivery partner
-    if (status === 'READY_FOR_PICKUP' || (status === 'ACCEPTED' && !order.deliveryPartnerId)) {
-      await autoAssignDeliveryPartner(order._id);
+    // Trigger rider assignment when order is ready for pickup or explicitly requested
+    if (status === 'READY_FOR_PICKUP' || (req.body.autoAssign && !order.deliveryPartnerId)) {
+      logger.info(`[OrderStatus] RIDER_ASSIGNMENT_STARTED for order ${order.orderId}`);
+      const assignResult = await autoAssignDeliveryPartner(order._id);
+      if (assignResult?.success) {
+        // Re-fetch the order from DB to reflect the persisted DELIVERY_ASSIGNED state
+        // (autoAssignDeliveryPartner fetches its own copy and saves it — our in-memory copy is stale)
+        const freshOrder = await Order.findById(order._id)
+          .populate('customerId')
+          .populate('pharmacyId')
+          .populate('deliveryPartnerId', 'name phone');
+        if (freshOrder) {
+          order = freshOrder;
+        }
+        logger.info(`[OrderStatus] RIDER_ASSIGNMENT_SUCCESS for order ${order.orderId} → ${assignResult.partner?.userId?.name || 'rider'}`);
+      } else {
+        logger.warn(`[OrderStatus] RIDER_ASSIGNMENT_FAILED for order ${order.orderId}: ${assignResult?.reason || 'NO_ELIGIBLE_RIDER'}`);
+        // Explicit non-blocking state: order is ready, searching for delivery partner
+        io.to(`order:${order._id}`).emit('waiting_for_rider', {
+          orderId: order._id,
+          orderNumber: order.orderId,
+          status: 'READY_FOR_PICKUP',
+          note: 'Scanning for nearest available verified delivery partner...'
+        });
+      }
     }
 
     // If marked DELIVERED, update pharmacy completed orders & delivery partner status
@@ -605,6 +659,18 @@ const cancelOrder = async (req, res, next) => {
     });
     await order.save();
 
+    // Release any assigned delivery partner
+    if (order.deliveryPartnerId) {
+      await DeliveryPartner.findOneAndUpdate(
+        { userId: order.deliveryPartnerId },
+        { $set: { status: 'AVAILABLE', activeOrderId: null } }
+      );
+    }
+    await DeliveryPartner.updateMany(
+      { activeOrderId: order._id },
+      { $set: { status: 'AVAILABLE', activeOrderId: null } }
+    );
+
     // Restore inventory stock
     await restoreInventory(order.pharmacyId._id, order.items);
 
@@ -648,6 +714,40 @@ const simulateTimeout = async (req, res, next) => {
   }
 };
 
+// @desc    Trigger or retry delivery partner assignment
+// @route   POST /api/orders/:id/assign-rider
+// @access  Private (PHARMACY, ADMIN)
+const assignRiderToOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      throw ApiError.notFound('Order not found');
+    }
+
+    const result = await autoAssignDeliveryPartner(order._id);
+    if (!result.success) {
+      return ApiResponse.success(
+        res,
+        { assigned: false, reason: result.reason || 'NO_ELIGIBLE_RIDER' },
+        'No nearby delivery partner currently available. The system will continue scanning.'
+      );
+    }
+
+    const updatedOrder = await Order.findById(order._id)
+      .populate('deliveryPartnerId', 'name phone')
+      .populate('pharmacyId')
+      .populate('customerId');
+
+    return ApiResponse.success(
+      res,
+      { assigned: true, order: updatedOrder, partner: result.partner },
+      'Delivery partner assigned successfully!'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -655,5 +755,6 @@ module.exports = {
   getPharmacyOrders,
   updateOrderStatus,
   cancelOrder,
-  simulateTimeout
+  simulateTimeout,
+  assignRiderToOrder
 };

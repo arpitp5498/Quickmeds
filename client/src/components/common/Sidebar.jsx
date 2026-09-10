@@ -17,11 +17,12 @@ import {
   Settings,
   Pill,
   Heart,
-  Zap
+  Zap,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const Sidebar = ({ role = 'CUSTOMER' }) => {
+const Sidebar = ({ role = 'CUSTOMER', mobileOpen = false, onClose = () => {} }) => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -75,80 +76,110 @@ const Sidebar = ({ role = 'CUSTOMER' }) => {
   const links = getLinks();
 
   return (
-    <aside
-      style={{
-        width: 'var(--sidebar-width)',
-        backgroundColor: 'var(--bg-card)',
-        borderRight: '1px solid var(--border-light)',
-        minHeight: 'calc(100vh - var(--navbar-height))',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '1.5rem 1rem'
-      }}
-      className="dashboard-sidebar"
-    >
-      <div>
-        <div style={{ padding: '0 0.5rem 1.25rem', borderBottom: '1px solid var(--border-light)', marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {role.replace('_', ' ')} PORTAL
-          </span>
-          <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-            {user?.name}
-          </p>
+    <>
+      {mobileOpen && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          borderRight: '1px solid var(--border-light)',
+          minHeight: 'calc(100vh - var(--navbar-height))',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '1.5rem 1rem'
+        }}
+        className={`dashboard-sidebar ${mobileOpen ? 'mobile-open' : ''}`}
+      >
+        <div>
+          <div style={{ padding: '0 0.5rem 1.25rem', borderBottom: '1px solid var(--border-light)', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {role.replace('_', ' ')} PORTAL
+              </span>
+              {mobileOpen && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  style={{
+                    padding: '4px',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                  aria-label="Close sidebar"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+            <p className="sidebar-user-info" style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+              {user?.name}
+            </p>
+          </div>
+
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {links.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  title={link.label}
+                  onClick={onClose}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.875rem',
+                    fontWeight: isActive ? 600 : 500,
+                    backgroundColor: isActive ? 'var(--primary-50)' : 'transparent',
+                    color: isActive ? 'var(--primary-700)' : 'var(--text-main)',
+                    transition: 'all var(--transition-fast)'
+                  })}
+                >
+                  <Icon size={18} style={{ flexShrink: 0 }} />
+                  <span className="sidebar-link-text">{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {links.map((link) => {
-            const Icon = link.icon;
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.875rem',
-                  fontWeight: isActive ? 600 : 500,
-                  backgroundColor: isActive ? 'var(--primary-50)' : 'transparent',
-                  color: isActive ? 'var(--primary-700)' : 'var(--text-main)',
-                  transition: 'all var(--transition-fast)'
-                })}
-              >
-                <Icon size={18} />
-                <span>{link.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-      </div>
-
-      <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem' }}>
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '10px 14px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: 'var(--accent-600)',
-            width: '100%',
-            cursor: 'pointer'
-          }}
-        >
-          <LogOut size={18} />
-          <span>Sign Out</span>
-        </button>
-      </div>
-    </aside>
+        <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Sign Out"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: 'var(--accent-600)',
+              width: '100%',
+              cursor: 'pointer'
+            }}
+          >
+            <LogOut size={18} style={{ flexShrink: 0 }} />
+            <span className="sidebar-link-text">Sign Out</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 };
 

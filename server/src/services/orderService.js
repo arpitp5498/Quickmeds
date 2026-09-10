@@ -1,6 +1,7 @@
 const PharmacyInventory = require('../models/PharmacyInventory');
 const Order = require('../models/Order');
 const Pharmacy = require('../models/Pharmacy');
+const DeliveryPartner = require('../models/DeliveryPartner');
 const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
 const { optimizeFulfilmentPlan } = require('./smartRoutingService');
@@ -12,10 +13,10 @@ const { logAction } = require('./auditService');
 const VALID_TRANSITIONS = {
   PLACED: ['PHARMACY_REVIEW', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'FULFILMENT_UNAVAILABLE'],
   PHARMACY_REVIEW: ['ACCEPTED', 'REJECTED', 'CANCELLED', 'FULFILMENT_UNAVAILABLE'],
-  ACCEPTED: ['PREPARING', 'CANCELLED'],
-  PREPARING: ['READY_FOR_PICKUP', 'CANCELLED'],
+  ACCEPTED: ['PREPARING', 'READY_FOR_PICKUP', 'DELIVERY_ASSIGNED', 'CANCELLED', 'REJECTED'],
+  PREPARING: ['READY_FOR_PICKUP', 'DELIVERY_ASSIGNED', 'CANCELLED'],
   READY_FOR_PICKUP: ['DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'CANCELLED'],
-  DELIVERY_ASSIGNED: ['ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  DELIVERY_ASSIGNED: ['PREPARING', 'READY_FOR_PICKUP', 'ARRIVED_AT_PHARMACY', 'OUT_FOR_DELIVERY', 'CANCELLED'],
   ARRIVED_AT_PHARMACY: ['OUT_FOR_DELIVERY', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['ARRIVED_NEAR_CUSTOMER', 'DELIVERED', 'CANCELLED'],
   ARRIVED_NEAR_CUSTOMER: ['DELIVERED', 'CANCELLED'],
@@ -157,7 +158,8 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
 
     // 3. Run smart routing engine to find next best candidate
     const routingResult = await optimizeFulfilmentPlan(order.items, customerCoords, {
-      excludePharmacyIds: excludedIds
+      excludePharmacyIds: excludedIds,
+      isDemo: Boolean(order.isDemo)
     });
 
     if (!routingResult.recommended || !routingResult.recommended.pharmacies || routingResult.recommended.pharmacies.length === 0) {
@@ -189,8 +191,30 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
       order.previousPharmacyIds.push(oldPharmacyId);
     }
 
+    // Release any previously assigned delivery partner from the old pharmacy
+    if (order.deliveryPartnerId) {
+      await DeliveryPartner.findOneAndUpdate(
+        { userId: order.deliveryPartnerId },
+        {
+          $set: {
+            status: 'AVAILABLE',
+            activeOrderId: null
+          }
+        }
+      );
+    }
+    await DeliveryPartner.updateMany(
+      { activeOrderId: order._id },
+      {
+        $set: {
+          status: 'AVAILABLE',
+          activeOrderId: null
+        }
+      }
+    );
+
     order.pharmacyId = newPharmacyId;
-    order.deliveryPartnerId = null; // Clear any old pharmacy rider assignment
+    order.deliveryPartnerId = null; // Clear old pharmacy rider assignment
     order.fallbackTriggered = true;
     order.fallbackAttempt = (order.fallbackAttempt || 0) + 1;
     order.fallbackReason = reason;

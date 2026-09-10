@@ -189,7 +189,7 @@ const Landing = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
               gap: '3rem',
               alignItems: 'center'
             }}
@@ -702,7 +702,7 @@ const Landing = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
               gap: '1.5rem'
             }}
           >
@@ -1020,11 +1020,11 @@ const Landing = () => {
       {/* 6.5 MOBILE APP DOWNLOAD SHOWCASE */}
       <section className="container" id="mobile-app" style={{ scrollMarginTop: '80px', marginBottom: '3rem' }}>
         <div
+          className="mobile-app-showcase-card"
           style={{
             background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%)',
             color: '#ffffff',
             borderRadius: 'var(--radius-xl)',
-            padding: '3rem 2.5rem',
             boxShadow: 'var(--shadow-xl)',
             position: 'relative',
             overflow: 'hidden'
@@ -1034,11 +1034,12 @@ const Landing = () => {
           <div
             style={{
               position: 'absolute',
-              top: '-100px',
-              right: '-100px',
-              width: '320px',
-              height: '320px',
+              top: 0,
+              right: 0,
+              width: '280px',
+              height: '280px',
               borderRadius: '50%',
+              transform: 'translate(20%, -20%)',
               background: 'radial-gradient(circle, rgba(2, 132, 199, 0.35) 0%, transparent 70%)',
               pointerEvents: 'none'
             }}
@@ -1047,7 +1048,7 @@ const Landing = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
               gap: '2.5rem',
               alignItems: 'center',
               position: 'relative',

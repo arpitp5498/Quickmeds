@@ -186,16 +186,29 @@ const resetDemo = async () => {
     await order.save();
   }
 
-  // Reset inventory baselines
-  if (doloMed) {
-    await PharmacyInventory.findOneAndUpdate(
-      { pharmacyId: pharmacyA._id, medicineId: doloMed._id },
-      { stockQuantity: 10, isAvailable: true }
-    );
-    await PharmacyInventory.findOneAndUpdate(
-      { pharmacyId: pharmacyB._id, medicineId: doloMed._id },
-      { stockQuantity: 20, isAvailable: true }
-    );
+  // Reset inventory baselines for all active medicines
+  const Medicine = require('../models/Medicine');
+  const allMeds = await Medicine.find({ active: true });
+  const bulkOps = [];
+  for (const med of allMeds) {
+    const isDolo = /dolo/i.test(med.name) || (doloMed && med._id.toString() === doloMed._id.toString());
+    const stockA = isDolo ? 10 : 50;
+    const stockB = isDolo ? 20 : 50;
+    bulkOps.push({
+      updateOne: {
+        filter: { pharmacyId: pharmacyA._id, medicineId: med._id },
+        update: { $set: { stockQuantity: stockA, isAvailable: true } }
+      }
+    });
+    bulkOps.push({
+      updateOne: {
+        filter: { pharmacyId: pharmacyB._id, medicineId: med._id },
+        update: { $set: { stockQuantity: stockB, isAvailable: true } }
+      }
+    });
+  }
+  if (bulkOps.length > 0) {
+    await PharmacyInventory.bulkWrite(bulkOps);
   }
 
   // Reset rider
@@ -203,7 +216,7 @@ const resetDemo = async () => {
   if (riderUser) {
     await DeliveryPartner.findOneAndUpdate(
       { userId: riderUser._id },
-      { status: 'AVAILABLE' }
+      { status: 'AVAILABLE', activeOrderId: null }
     );
   }
 
