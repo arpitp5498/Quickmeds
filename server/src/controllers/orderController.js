@@ -91,7 +91,19 @@ const createOrder = async (req, res, next) => {
     // Validate and atomically decrement inventory stock
     await decrementInventory(orderPharmacyId, cart.items);
 
-    const orderNumber = generateOrderId();
+    let orderNumber;
+    if (isDemoCustomer) {
+      const demoOrderCount = await Order.countDocuments({
+        $or: [
+          { orderId: /^QM-DEMO-/ },
+          { isDemo: true }
+        ]
+      });
+      const nextNum = String(demoOrderCount + 1).padStart(3, '0');
+      orderNumber = `QM-DEMO-${nextNum}`;
+    } else {
+      orderNumber = generateOrderId();
+    }
     const initialStatus = hasRxItem ? 'PHARMACY_REVIEW' : 'PLACED';
     const rxStatus = hasRxItem ? 'PENDING_REVIEW' : 'NOT_REQUIRED';
 
@@ -240,14 +252,22 @@ const getOrderById = async (req, res, next) => {
     }
 
     // Role-based authorization check
-    const isCustomer = order.customerId._id.toString() === req.user._id.toString();
+    const isCustomer = order.customerId && order.customerId._id.toString() === req.user._id.toString();
+
+    let userPharmacyId = req.user.pharmacyId?.toString() || null;
+    if (!userPharmacyId && req.user.role === 'PHARMACY') {
+      const userPharmacy = await Pharmacy.findOne({ userId: req.user._id });
+      if (userPharmacy) userPharmacyId = userPharmacy._id.toString();
+    }
     const isPharmacy =
-      req.user.pharmacyId &&
+      userPharmacyId &&
       order.pharmacyId &&
-      order.pharmacyId._id.toString() === req.user.pharmacyId.toString();
+      (order.pharmacyId._id || order.pharmacyId).toString() === userPharmacyId;
+
+    let userPartnerId = req.user.deliveryPartnerId?.toString() || null;
     const isDelivery =
-      order.deliveryPartnerId &&
-      order.deliveryPartnerId._id.toString() === req.user._id.toString();
+      (order.deliveryPartnerId && (order.deliveryPartnerId._id || order.deliveryPartnerId).toString() === req.user._id.toString()) ||
+      (userPartnerId && order.deliveryPartnerId && (order.deliveryPartnerId._id || order.deliveryPartnerId).toString() === userPartnerId);
     const isAdmin = req.user.role === 'ADMIN';
 
     if (!isCustomer && !isPharmacy && !isDelivery && !isAdmin) {
@@ -300,7 +320,17 @@ const getPharmacyOrders = async (req, res, next) => {
     if (status && status !== 'ALL') {
       if (status === 'ACTIVE') {
         query.orderStatus = {
-          $in: ['PLACED', 'PHARMACY_REVIEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'DELIVERY_ASSIGNED', 'ARRIVED_AT_PHARMACY']
+          $in: [
+            'PLACED',
+            'PHARMACY_REVIEW',
+            'ACCEPTED',
+            'PREPARING',
+            'READY_FOR_PICKUP',
+            'DELIVERY_ASSIGNED',
+            'ARRIVED_AT_PHARMACY',
+            'OUT_FOR_DELIVERY',
+            'ARRIVED_NEAR_CUSTOMER'
+          ]
         };
       } else if (status === 'READY_FOR_PICKUP') {
         query.orderStatus = {

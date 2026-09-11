@@ -48,7 +48,28 @@ export const SocketProvider = ({ children }) => {
     return () => {
       socketInstance.disconnect();
     };
-  }, [isAuthenticated, user?._id, user?.role, user?.pharmacyId, user?.deliveryPartnerId]);
+  }, []);
+
+  // Ensure active socket joins appropriate role rooms whenever user changes
+  useEffect(() => {
+    if (socket && isConnected && user?._id) {
+      socket.emit('join_user', user._id);
+
+      if (user.role === 'PHARMACY' && user.pharmacyId) {
+        const pharmId = typeof user.pharmacyId === 'object' ? user.pharmacyId._id : user.pharmacyId;
+        socket.emit('join_pharmacy', pharmId);
+      }
+
+      if (user.role === 'DELIVERY_PARTNER' && user.deliveryPartnerId) {
+        const partnerId = typeof user.deliveryPartnerId === 'object' ? user.deliveryPartnerId._id : user.deliveryPartnerId;
+        socket.emit('join_delivery', partnerId);
+      }
+
+      if (user.role === 'ADMIN') {
+        socket.emit('join_admin');
+      }
+    }
+  }, [socket, isConnected, user?._id, user?.role, user?.pharmacyId, user?.deliveryPartnerId]);
 
   const trackOrder = (orderId) => {
     if (socket && orderId) {

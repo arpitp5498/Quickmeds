@@ -185,20 +185,21 @@ const PharmacyOrders = () => {
       ) : orders.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
-          title="No Orders In This Category"
-          description="There are currently no orders under this workflow status."
+          title={statusFilter === 'ALL' ? 'No Live Orders' : 'No Orders In This Category'}
+          description={statusFilter === 'ALL' ? 'New customer orders will appear here.' : 'There are currently no orders under this workflow status.'}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {orders.map((order) => {
+          {orders.map((order, index) => {
             const isPlaced = order.orderStatus === 'PLACED' || order.orderStatus === 'PHARMACY_REVIEW';
             const isAccepted = order.orderStatus === 'ACCEPTED';
             const isPreparing = order.orderStatus === 'PREPARING';
             const isReady = order.orderStatus === 'READY_FOR_PICKUP';
             const isFallback = order.fallbackTriggered || order.fallbackAttempt > 0;
+            const isLatest = index === 0 && order.orderStatus !== 'DELIVERED' && order.orderStatus !== 'CANCELLED' && order.orderStatus !== 'REJECTED';
 
             return (
-              <Card key={order._id}>
+              <Card key={order._id} style={isLatest ? { borderLeft: '4px solid var(--primary-600)' } : undefined}>
                 {/* Fallback Reassignment Banner */}
                 {isFallback && (
                   <div
@@ -244,7 +245,18 @@ const PharmacyOrders = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1rem', fontWeight: 800 }}>{order.orderId}</span>
+                    <span
+                      style={{ fontSize: '1rem', fontWeight: 800, cursor: 'pointer' }}
+                      onClick={() => navigate(`/pharmacy/orders/${order._id}`)}
+                      title="View Order Details"
+                    >
+                      {order.orderId}
+                    </span>
+                    {isLatest && (
+                      <Badge variant="warning" size="sm">
+                        ★ LATEST ORDER
+                      </Badge>
+                    )}
                     <Badge variant="primary" size="sm">
                       {order.orderStatus.replace(/_/g, ' ')}
                     </Badge>

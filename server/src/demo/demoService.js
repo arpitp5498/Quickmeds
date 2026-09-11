@@ -26,7 +26,12 @@ const {
 const getDemoStatus = async () => {
   await initDemoEnvironment();
 
-  const order = await Order.findOne({ orderId: DEMO_ORDER_ID })
+  // Find the latest active demo order, or fallback to latest demo order or DEMO_ORDER_ID
+  let order = await Order.findOne({
+    $or: [{ isDemo: true }, { orderId: DEMO_ORDER_ID }],
+    orderStatus: { $nin: ['DELIVERED', 'CANCELLED'] }
+  })
+    .sort({ createdAt: -1 })
     .populate('customerId', 'name email phone')
     .populate('pharmacyId', 'name address phone location rating')
     .populate({
@@ -37,6 +42,23 @@ const getDemoStatus = async () => {
         select: 'vehicleType vehicleNumber status currentLocation rating'
       }
     });
+
+  if (!order) {
+    order = await Order.findOne({
+      $or: [{ isDemo: true }, { orderId: DEMO_ORDER_ID }]
+    })
+      .sort({ createdAt: -1 })
+      .populate('customerId', 'name email phone')
+      .populate('pharmacyId', 'name address phone location rating')
+      .populate({
+        path: 'deliveryPartnerId',
+        select: 'name phone',
+        populate: {
+          path: 'deliveryPartnerId',
+          select: 'vehicleType vehicleNumber status currentLocation rating'
+        }
+      });
+  }
 
   const pharmacyUserA = await User.findOne({ email: DEMO_EMAILS.PHARMACY_A });
   const pharmacyA = pharmacyUserA ? await Pharmacy.findOne({ userId: pharmacyUserA._id }) : null;
@@ -112,7 +134,17 @@ const getDemoSession = async (role) => {
     { expiresIn: '12h' }
   );
 
-  const order = await Order.findOne({ orderId: DEMO_ORDER_ID });
+  // Dynamically find the latest active demo order, or fallback
+  let order = await Order.findOne({
+    $or: [{ isDemo: true }, { orderId: DEMO_ORDER_ID }],
+    orderStatus: { $nin: ['DELIVERED', 'CANCELLED'] }
+  }).sort({ createdAt: -1 });
+
+  if (!order) {
+    order = await Order.findOne({
+      $or: [{ isDemo: true }, { orderId: DEMO_ORDER_ID }]
+    }).sort({ createdAt: -1 });
+  }
 
   return {
     user: {
@@ -126,7 +158,7 @@ const getDemoSession = async (role) => {
     },
     token,
     demoOrderId: order?._id?.toString() || '',
-    demoOrderNumber: DEMO_ORDER_ID
+    demoOrderNumber: order?.orderId || DEMO_ORDER_ID
   };
 };
 
@@ -136,9 +168,17 @@ const getDemoSession = async (role) => {
 const simulatePharmacyRejection = async () => {
   await initDemoEnvironment();
 
-  const order = await Order.findOne({ orderId: DEMO_ORDER_ID });
+  // Target the latest active demo order in a rejectable state, or fallback to DEMO_ORDER_ID
+  let order = await Order.findOne({
+    $or: [{ isDemo: true }, { orderId: DEMO_ORDER_ID }],
+    orderStatus: { $in: ['PLACED', 'PHARMACY_REVIEW', 'ACCEPTED', 'PREPARING'] }
+  }).sort({ createdAt: -1 });
+
   if (!order) {
-    throw new Error('Demo order QM-DEMO-001 not found.');
+    order = await Order.findOne({ orderId: DEMO_ORDER_ID });
+  }
+  if (!order) {
+    throw new Error('No active demo order found to simulate rejection.');
   }
 
   // Trigger real fallback reassignment service with order._id
@@ -163,6 +203,9 @@ const simulatePharmacyRejection = async () => {
  */
 const resetDemo = async () => {
   const { pharmacyA, pharmacyB, doloMed } = await initDemoEnvironment();
+
+  // Clean up secondary demo orders created during tests
+  await Order.deleteMany({ orderId: { $ne: DEMO_ORDER_ID }, isDemo: true });
 
   const order = await Order.findOne({ orderId: DEMO_ORDER_ID });
   if (order) {

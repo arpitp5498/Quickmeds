@@ -67,9 +67,11 @@ const DemoCockpit = () => {
     const handleStatusChange = () => loadData();
     socket.on('order_status_changed', handleStatusChange);
     socket.on('order_reassigned_away', handleStatusChange);
+    socket.on('new_order_received', handleStatusChange);
     return () => {
       socket.off('order_status_changed', handleStatusChange);
       socket.off('order_reassigned_away', handleStatusChange);
+      socket.off('new_order_received', handleStatusChange);
     };
   }, [socket]);
 

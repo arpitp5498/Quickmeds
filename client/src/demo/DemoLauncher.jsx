@@ -43,7 +43,7 @@ const DemoLauncher = () => {
           if (backendRole === 'CUSTOMER') {
             navigate(demoOrderId ? `/orders/${demoOrderId}` : '/orders');
           } else if (backendRole === 'PHARMACY_A' || backendRole === 'PHARMACY_B') {
-            navigate(demoOrderId ? `/pharmacy/orders/${demoOrderId}` : '/pharmacy/orders');
+            navigate('/pharmacy/orders');
           } else if (backendRole === 'RIDER') {
             navigate('/delivery/active');
           } else {

@@ -63,17 +63,19 @@ const DemoControlPanel = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleStatusChange = (data) => {
-      if (data?.orderId === demoState?.order?._id || data?.orderId === 'QM-DEMO-001') {
-        loadStatus();
-      }
+    const handleStatusChange = () => {
+      loadStatus();
     };
 
     socket.on('order_status_changed', handleStatusChange);
+    socket.on('new_order_received', handleStatusChange);
+    socket.on('order_reassigned_away', handleStatusChange);
     return () => {
       socket.off('order_status_changed', handleStatusChange);
+      socket.off('new_order_received', handleStatusChange);
+      socket.off('order_reassigned_away', handleStatusChange);
     };
-  }, [socket, demoState?.order?._id]);
+  }, [socket]);
 
   if (!isOpen) return null;
 
