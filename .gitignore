@@ -43,3 +43,5 @@ update_brand.js
 # Chrome temp diag
 client/.chrome-temp-diag/
 
+.chrome-temp*
+
