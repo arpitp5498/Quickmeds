@@ -5,8 +5,8 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 router.use(authenticate);
 
-// Delivery step advancement (Customer, Delivery Partner, Pharmacy, Admin)
-router.post('/simulation/step', deliveryController.simulateDeliveryStep);
+
+
 
 router.use(authorize('DELIVERY_PARTNER', 'ADMIN'));
 

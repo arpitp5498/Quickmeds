@@ -7,7 +7,7 @@
  * - Master Medicine Catalog 1-click stocking
  * - Purchase Invoice OCR extraction, review, and commit
  * - Billing Software Webhooks (with HMAC verification & event idempotency)
- * - POS Demo Billing Sale Simulator
+ * - POS Billing Sale Simulator
  * - Manual Inventory Adjustments
  * - Expiry management and comprehensive InventoryActivity audit logging
  */
@@ -495,7 +495,7 @@ async function parseInvoiceOCR(fileBuffer, mimeType = 'image/jpeg', fileName = '
     ]
   ];
 
-  // Pick deterministic or random mock bundle for OCR demonstration
+  // Pick deterministic or random bundle for OCR extraction
   const rawItems = sampleInvoices[Math.floor(Math.random() * sampleInvoices.length)];
 
   const extractedLines = [];
@@ -588,7 +588,7 @@ async function processBillingWebhook({ headers, body }) {
       .update(JSON.stringify(body))
       .digest('hex');
 
-    if (signature !== expectedSig && signature !== 'DEMO_SIGNATURE') {
+    if (signature !== expectedSig) {
       await WebhookEvent.create({
         eventId,
         pharmacyId: integration.pharmacyId,

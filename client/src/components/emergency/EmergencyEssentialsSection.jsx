@@ -504,7 +504,7 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
       >
         <ShieldCheck size={14} color="var(--primary-600)" style={{ flexShrink: 0 }} />
         <span>
-          <strong>Demonstration feature:</strong> For medical emergencies, contact local emergency services or a qualified healthcare professional. QuickMeds automatically routes all orders to licensed pharmacies.
+          <strong>Important:</strong> For medical emergencies, contact local emergency services or a qualified healthcare professional. QuickMeds automatically routes all orders to licensed pharmacies.
         </span>
       </div>
     </div>

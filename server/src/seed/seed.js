@@ -242,7 +242,7 @@ const seedDatabase = async (exitOnComplete = true) => {
           stock = 50 + (idx % 10) * 15;
           isAvailable = true;
         } else if (pIdx === 1) {
-          // MedPlus: out of stock on Inhalers & Insulin to demonstrate split-basket
+          // MedPlus: out of stock on Inhalers & Insulin to test split-basket
           if (med.name.includes('Inhaler') || med.name.includes('Insulin') || med.name.includes('Mixtard')) {
             stock = 0;
             isAvailable = false;
@@ -766,7 +766,7 @@ const seedDatabase = async (exitOnComplete = true) => {
     console.log('  🏥 PHARMACY (Wellness):wellness@pharmacy.in     / Password@123');
     console.log('  🛵 DELIVERY 1 (Bike):  delivery1@quickmeds.in   / Password@123');
     console.log('=============================================================\n');
-    console.log('[Seed] Database successfully seeded with 33 medicines, 7 pharmacies, and demo users.');
+    console.log('[Seed] Database successfully seeded with 33 medicines, 7 pharmacies, and test users.');
 
     if (exitOnComplete) {
       process.exit(0);

@@ -63,7 +63,7 @@ const scorePharmacyCandidate = ({
   // 3. ETA Score (0.0 to 1.0)
   const etaScore = Math.max(0, Math.min(1.0, 1 - (etaMinutes / MAX_ETA_MINUTES_HORIZON)));
 
-  // 4. Demo Price Competitiveness Score (0.0 to 1.0)
+  // 4. Price Competitiveness Score (0.0 to 1.0)
   let priceScore = 1.0;
   if (maxBasketPrice > minBasketPrice) {
     priceScore = Math.max(0, Math.min(1.0, 1 - ((basketPrice - minBasketPrice) / (maxBasketPrice - minBasketPrice))));
@@ -171,7 +171,7 @@ const generateExplanation = (plan, type = 'SINGLE_STORE') => {
     return `Split-basket fulfilment across ${plan.fulfilmentPoints || 2} pharmacies (${names}) selected to guarantee 100% medicine availability that no single store could fulfill alone.`;
   }
 
-  return 'Fulfilment plan optimized according to availability, proximity, ETA, demo pricing, and partner reliability.';
+  return 'Fulfilment plan optimized according to availability, proximity, ETA, pricing, and partner reliability.';
 };
 
 /**
@@ -186,8 +186,7 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
   const opts = typeof options === 'number' ? { maxDistanceKm: options } : (options || {});
   const {
     maxDistanceKm = DEFAULT_MAX_DISTANCE_KM,
-    excludePharmacyIds = [],
-    isDemo = false
+    excludePharmacyIds = []
   } = opts;
 
   if (!cartItems || cartItems.length === 0) {
@@ -229,13 +228,6 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
     isOpen: true
   };
 
-  // Isolate demo ecosystem from production
-  if (isDemo) {
-    query.isDemo = true;
-  } else {
-    query.isDemo = { $ne: true };
-  }
-
   const formattedExcludeIds = excludePharmacyIds.map(id => id?.toString ? id.toString() : String(id));
   if (formattedExcludeIds.length > 0) {
     query._id = { $nin: formattedExcludeIds };
@@ -258,12 +250,6 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
 
   // Fallback: If no pharmacy found via $nearSphere, query all matching verified
   if (!pharmacies || pharmacies.length === 0) {
-    pharmacies = await Pharmacy.find(query).limit(10);
-  }
-
-  // Safety fallback: If demo filter was active and returned nothing, fallback to verified stores
-  if ((!pharmacies || pharmacies.length === 0) && isDemo) {
-    delete query.isDemo;
     pharmacies = await Pharmacy.find(query).limit(10);
   }
 

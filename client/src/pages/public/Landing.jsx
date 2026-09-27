@@ -520,7 +520,7 @@ const Landing = () => {
             4-Step Smart Fulfilment Workflow
           </h2>
           <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)' }}>
-            From emergency patient search to doorstep delivery in 4 automated, pharmacist-verified stages. Click any step below to explore live simulation mechanics.
+            From emergency patient search to doorstep delivery in 4 automated, pharmacist-verified stages. Click any step below to explore the workflow.
           </p>
         </div>
 
@@ -581,7 +581,7 @@ const Landing = () => {
           })}
         </div>
 
-        {/* Dynamic Workflow Stage Details & Simulation Box */}
+        {/* Dynamic Workflow Stage Details */}
         <div
           style={{
             backgroundColor: 'var(--bg-card)',

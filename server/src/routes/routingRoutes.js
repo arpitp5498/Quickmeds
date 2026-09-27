@@ -8,7 +8,7 @@ const router = express.Router();
 const routingController = require('../controllers/routingController');
 const { optionalAuth } = require('../middleware/auth');
 
-// Support both POST and GET for optimization demonstration
+// Support both POST and GET for optimization
 router.post('/optimize', optionalAuth, routingController.optimizeBasket);
 router.get('/optimize', optionalAuth, routingController.optimizeBasket);
 

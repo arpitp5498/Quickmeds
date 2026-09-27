@@ -185,7 +185,7 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Forgot password handler (demo simulation)
+// @desc    Forgot password handler
 // @route   POST /api/auth/forgot-password
 // @access  Public
 const forgotPassword = async (req, res, next) => {

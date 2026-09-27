@@ -28,10 +28,7 @@ import LocationPicker from './LocationPicker';
 import NotificationBell from './NotificationBell';
 import AppDownloadModal from './AppDownloadModal';
 
-// SIH DEMO MODE ONLY - REMOVE AFTER SIH
-import DemoControlPanel from '../../demo/DemoControlPanel';
-import { isDemoModeEnabled } from '../../demo/demoApi';
-const isDemoEnabled = isDemoModeEnabled();
+
 
 const Navbar = () => {
   const { user, isAuthenticated, isCustomer, isPharmacy, isDelivery, isAdmin, logout } = useAuth();
@@ -39,7 +36,6 @@ const Navbar = () => {
   const { isDark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [appModalOpen, setAppModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -255,31 +251,6 @@ const Navbar = () => {
             <span>App</span>
           </button>
 
-          {/* SIH DEMO MODE ONLY: Quick Launch Button */}
-          {isDemoEnabled && (
-            <button
-              type="button"
-              onClick={() => setDemoModalOpen(true)}
-              style={{
-                padding: '7px 16px',
-                borderRadius: '24px',
-                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                color: '#ffffff',
-                fontSize: '0.8125rem',
-                fontWeight: 700,
-                alignItems: 'center',
-                gap: '6px',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                cursor: 'pointer',
-                boxShadow: '0 2px 10px rgba(2, 132, 199, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
-              className="desktop-only-btn"
-              title="SIH Multi-Role Demo Launcher"
-            >
-              <span>🚀 Demo Mode</span>
-            </button>
-          )}
 
           {/* Theme Toggle */}
           <button
@@ -608,83 +579,10 @@ const Navbar = () => {
             <span>📱 Download QuickMeds App</span>
           </button>
 
-          {/* SIH DEMO MODE ONLY: Mobile Drawer Button */}
-          {isDemoEnabled && (
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setDemoModalOpen(true);
-              }}
-              style={{
-                marginTop: '8px',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                fontSize: '0.9375rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <span>🚀 Launch SIH Demo Mode</span>
-            </button>
-          )}
         </div>
       )}
 
-      {/* SIH DEMO MODE ONLY: Floating Action Button (bottom right corner) */}
-      {isDemoEnabled && (
-        <button
-          type="button"
-          onClick={() => setDemoModalOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 9998,
-            maxWidth: 'calc(100vw - 32px)',
-            padding: '12px 22px',
-            borderRadius: '9999px',
-            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-            color: '#ffffff',
-            fontSize: '0.9375rem',
-            fontWeight: 700,
-            border: '2px solid rgba(255, 255, 255, 0.3)',
-            cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(2, 132, 199, 0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 12px 28px rgba(2, 132, 199, 0.6)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 8px 24px rgba(2, 132, 199, 0.45)';
-          }}
-          title="Open SIH Multi-Role Demo Control Panel"
-        >
-          <span style={{ fontSize: '1.15rem' }}>🚀</span>
-          <span>SIH Demo Mode</span>
-        </button>
-      )}
 
-      {/* SIH DEMO MODE ONLY: Control Panel Modal */}
-      {isDemoEnabled && (
-        <DemoControlPanel
-          isOpen={demoModalOpen}
-          onClose={() => setDemoModalOpen(false)}
-        />
-      )}
 
       {/* Download App Modal */}
       <AppDownloadModal

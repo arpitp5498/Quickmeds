@@ -130,7 +130,7 @@ const PharmacyPrescriptions = () => {
         </div>
       </div>
 
-      {/* Statutory Requirement Simulation Banner */}
+      {/* Statutory Requirement Banner */}
       <div
         style={{
           backgroundColor: '#fff1f2',

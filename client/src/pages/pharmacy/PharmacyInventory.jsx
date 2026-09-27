@@ -86,7 +86,7 @@ const PharmacyInventory = () => {
   const [editingOcrLine, setEditingOcrLine] = useState(null);
   const ocrInputRef = useRef(null);
 
-  // ─── Billing Integration & Demo Simulator State ────────────────────
+  // ─── Billing Integration & POS State ─────────────────────────────────
   const [billingConfig, setBillingConfig] = useState(null);
   const [billingLoading, setBillingLoading] = useState(false);
   const [selectedSimItem, setSelectedSimItem] = useState('');
@@ -374,7 +374,7 @@ const PharmacyInventory = () => {
     }
   };
 
-  // ─── Demo POS Sale Simulator Handler ──────────────────────────────
+  // ─── POS Sale Simulator Handler ──────────────────────────────
   const handleSimulateSale = async (e) => {
     e.preventDefault();
     if (!selectedSimItem) {
@@ -1265,12 +1265,12 @@ const PharmacyInventory = () => {
       )}
 
       {/* ─────────────────────────────────────────────────────────────────
-          TAB 6: BILLING INTEGRATION & DEMO SIMULATOR
+          TAB 6: BILLING INTEGRATION & POS SIMULATOR
           ───────────────────────────────────────────────────────────────── */}
       {activeTab === 'billing' && (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Billing Software Integration & Demo POS Simulator</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Billing Software Integration & POS Simulator</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               Connect your retail pharmacy ERP (Marg ERP, Busy, Vyapar) for real-time inventory synchronization.
             </p>
@@ -1322,16 +1322,16 @@ const PharmacyInventory = () => {
               </div>
             </Card>
 
-            {/* Demo Billing Sale Simulator Card */}
+            {/* Billing Sale Simulator Card */}
             <Card style={{ borderTop: '4px solid var(--accent-600)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <Zap size={20} color="var(--accent-600)" />
                 <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0 }}>
-                  Demo Billing Sale Simulator
+                  Billing Sale Simulator
                 </h3>
               </div>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                Simulate a counter/retail POS sale to demonstrate real-time stock deduction via the central InventorySyncService.
+                Simulate a counter/retail POS sale to see real-time stock deduction via the central InventorySyncService.
               </p>
 
               <form onSubmit={handleSimulateSale}>

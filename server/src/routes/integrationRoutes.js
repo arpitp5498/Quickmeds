@@ -9,6 +9,6 @@ router.post('/billing/webhook', integrationController.handleBillingWebhook);
 // Authenticated Pharmacy Endpoints
 router.get('/billing/status', authenticate, authorize('PHARMACY'), integrationController.getBillingStatus);
 router.post('/billing/connect', authenticate, authorize('PHARMACY'), integrationController.connectBilling);
-router.post('/billing/simulate-sale', authenticate, authorize('PHARMACY'), integrationController.simulatePOSSale);
+router.post('/billing/test-sale', authenticate, authorize('PHARMACY'), integrationController.simulatePOSSale);
 
 module.exports = router;

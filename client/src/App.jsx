@@ -7,6 +7,8 @@ import { LocationProvider } from './context/LocationContext';
 import { SocketProvider } from './context/SocketContext';
 import { CartProvider } from './context/CartContext';
 import { ReminderProvider } from './context/ReminderContext';
+import { EmergencyModeProvider } from './context/EmergencyModeContext';
+import AIAssistantChat from './components/common/AIAssistantChat';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -19,7 +21,10 @@ function App() {
               <SocketProvider>
                 <CartProvider>
                   <ReminderProvider>
-                    <AppRoutes />
+                    <EmergencyModeProvider>
+                      <AppRoutes />
+                      <AIAssistantChat />
+                    </EmergencyModeProvider>
                   </ReminderProvider>
                 </CartProvider>
               </SocketProvider>
@@ -32,4 +37,3 @@ function App() {
 }
 
 export default App;
-

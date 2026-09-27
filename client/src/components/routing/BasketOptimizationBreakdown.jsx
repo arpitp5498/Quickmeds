@@ -540,7 +540,7 @@ const BasketOptimizationBreakdown = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8125rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
               <span>Medicine Items Subtotal</span>
-              <span style={{ fontWeight: 600 }}>₹{plan.priceBreakdown?.itemsSubtotal || plan.totalOrderValue || plan.totalDemoValue - 30}</span>
+              <span style={{ fontWeight: 600 }}>₹{plan.priceBreakdown?.itemsSubtotal || plan.totalOrderValue}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
               <span>Hyperlocal Delivery Fee ({isSplit ? '2 Multi-Drop' : 'Direct Dispatch'})</span>
@@ -563,7 +563,7 @@ const BasketOptimizationBreakdown = ({
               }}
             >
               <span>Estimated Order Total</span>
-              <span>₹{plan.totalOrderValue || plan.totalDemoValue || (plan.priceBreakdown?.itemsSubtotal + 30)}</span>
+              <span>₹{plan.totalOrderValue || (plan.priceBreakdown?.itemsSubtotal ? plan.priceBreakdown.itemsSubtotal + 30 : 0)}</span>
             </div>
           </div>
         </div>
@@ -687,7 +687,7 @@ const BasketOptimizationBreakdown = ({
                 </div>
               </div>
 
-              {/* 4. Demo Price Index (15%) */}
+              {/* 4. Price Competitiveness (15%) */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '2px' }}>
                   <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>

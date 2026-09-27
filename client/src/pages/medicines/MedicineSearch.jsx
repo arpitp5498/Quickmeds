@@ -145,18 +145,18 @@ const MedicineSearch = () => {
       return `Results for "${debouncedSearch.trim()}"`;
     }
     if (category !== 'All') {
-      return `${category} — Demo Medicines`;
+      return `${category} Medicines`;
     }
-    return 'Commonly Searched Demo Medicines';
+    return 'Commonly Searched Medicines';
   };
 
   const getSectionSubtitle = () => {
     if (loading) return 'Checking real-time stock across verified pharmacies...';
     if (medicines.length === 0) return 'No matching items in this selection.';
     if (category === 'All' && !debouncedSearch.trim()) {
-      return `Browse all ${pagination.total || medicines.length} simulated master items with live inventory matching.`;
+      return `Browse all ${pagination.total || medicines.length} master items with live inventory matching.`;
     }
-    return `Showing ${medicines.length} of ${pagination.total || medicines.length} demo medicines available nearby.`;
+    return `Showing ${medicines.length} of ${pagination.total || medicines.length} medicines available nearby.`;
   };
 
   return (
@@ -399,7 +399,7 @@ const MedicineSearch = () => {
           description={
             debouncedSearch.trim()
               ? `We couldn't find medicines matching "${debouncedSearch}"${category !== 'All' ? ` under ${category}` : ''}. Try searching for a salt formula (e.g. Paracetamol) or check another category.`
-              : `No demo medicines are currently listed under "${category}". Choose another category above or view all demo medicines.`
+              : `No medicines are currently listed under "${category}". Choose another category above or view all medicines.`
           }
           actionLabel={debouncedSearch.trim() ? "Clear Search" : "Show All Medicines"}
           onAction={handleResetFilters}

@@ -17,9 +17,8 @@ router.post('/:id/cancel', orderController.cancelOrder);
 router.get('/pharmacy/list', authorize('PHARMACY', 'ADMIN'), orderController.getPharmacyOrders);
 router.post('/:id/assign-rider', authorize('PHARMACY', 'ADMIN'), orderController.assignRiderToOrder);
 
-// Fallback Routing Simulation Endpoints (accessible by authorized customer, pharmacy, or admin)
-router.post('/:id/simulate-timeout', orderController.simulateTimeout);
-router.post('/:id/fallback-timeout', orderController.simulateTimeout);
+
+
 
 // State transition updates (Pharmacy, Delivery Partner, Admin)
 router.patch(

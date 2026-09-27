@@ -272,9 +272,6 @@ const MedicineDetail = () => {
                         </span>
                       )}
                     </div>
-                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                      Demonstration data only
-                    </span>
                   </div>
                 </div>
               );

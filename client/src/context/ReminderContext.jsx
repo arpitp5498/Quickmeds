@@ -196,7 +196,7 @@ export const ReminderProvider = ({ children }) => {
     }
   }, []);
 
-  // ─── Test Reminder Sound (Demo) ─────────────────────────────
+  // ─── Test Reminder Sound ─────────────────────────────
   const testReminderSound = useCallback(() => {
     // Dismiss any existing alert first
     if (activeAlert) {
@@ -204,11 +204,11 @@ export const ReminderProvider = ({ children }) => {
     }
 
     setActiveAlert({
-      reminderId: 'demo-test',
+      reminderId: 'test-sound',
       medicineName: 'Dolo 650mg (Test)',
       dosage: '1 tablet',
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
-      label: 'Demo',
+      label: 'Test',
       notes: 'This is a test reminder sound.'
     });
 

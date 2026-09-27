@@ -42,7 +42,7 @@ const REJECTION_REASONS = [
  * - Linked Order Medicines list
  * - Mandatory regulatory rejection reason dropdown for pharmacists
  * - Pharmacist Registration ID ("Verified by: Lic #DL-PH-2026-98124")
- * - Prominent statutory simulation disclaimer
+ * - Prominent statutory disclaimer
  */
 const PrescriptionInspectionModal = ({
   isOpen = false,
@@ -88,7 +88,7 @@ const PrescriptionInspectionModal = ({
   };
 
   const isPdf = prescription.mimeType === 'application/pdf' || prescription.fileUrl?.endsWith('.pdf');
-  const demoImage = prescription.fileUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80';
+  const prescriptionImage = prescription.fileUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80';
 
   return (
     <Modal
@@ -98,7 +98,7 @@ const PrescriptionInspectionModal = ({
       size="xl"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {/* Statutory Regulatory Simulation Disclaimer */}
+        {/* Statutory Regulatory Disclaimer */}
         <div
           style={{
             backgroundColor: 'var(--accent-50)',
@@ -272,7 +272,7 @@ const PrescriptionInspectionModal = ({
                 </div>
               ) : (
                 <img
-                  src={demoImage}
+                  src={prescriptionImage}
                   alt="Prescription Document"
                   style={{
                     maxWidth: '100%',

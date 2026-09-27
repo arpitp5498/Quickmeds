@@ -39,11 +39,8 @@ const createOrder = async (req, res, next) => {
       throw ApiError.badRequest('Your cart is empty. Please add items before checking out.');
     }
 
-    const isDemoCustomer = Boolean(req.user?.email && req.user.email.endsWith('@quickmeds.demo')) || Boolean(req.user?.isDemo);
-
-    // Automatically determine optimal pharmacy via QuickMeds Smart Fulfilment Engine
     const customerCoords = deliveryAddress?.coordinates || null;
-    const optimization = await optimizeFulfilmentPlan(cart.items, customerCoords, { isDemo: isDemoCustomer });
+    const optimization = await optimizeFulfilmentPlan(cart.items, customerCoords);
 
     let orderPharmacyId = null;
     let pharmacy = null;
@@ -91,25 +88,12 @@ const createOrder = async (req, res, next) => {
     // Validate and atomically decrement inventory stock
     await decrementInventory(orderPharmacyId, cart.items);
 
-    let orderNumber;
-    if (isDemoCustomer) {
-      const demoOrderCount = await Order.countDocuments({
-        $or: [
-          { orderId: /^QM-DEMO-/ },
-          { isDemo: true }
-        ]
-      });
-      const nextNum = String(demoOrderCount + 1).padStart(3, '0');
-      orderNumber = `QM-DEMO-${nextNum}`;
-    } else {
-      orderNumber = generateOrderId();
-    }
+    const orderNumber = generateOrderId();
     const initialStatus = hasRxItem ? 'PHARMACY_REVIEW' : 'PLACED';
     const rxStatus = hasRxItem ? 'PENDING_REVIEW' : 'NOT_REQUIRED';
 
     const order = await Order.create({
       orderId: orderNumber,
-      isDemo: isDemoCustomer,
       customerId: req.user._id,
       pharmacyId: orderPharmacyId,
       items: cart.items,
@@ -785,6 +769,5 @@ module.exports = {
   getPharmacyOrders,
   updateOrderStatus,
   cancelOrder,
-  simulateTimeout,
   assignRiderToOrder
 };

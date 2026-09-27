@@ -158,8 +158,7 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
 
     // 3. Run smart routing engine to find next best candidate
     const routingResult = await optimizeFulfilmentPlan(order.items, customerCoords, {
-      excludePharmacyIds: excludedIds,
-      isDemo: Boolean(order.isDemo)
+      excludePharmacyIds: excludedIds
     });
 
     if (!routingResult.recommended || !routingResult.recommended.pharmacies || routingResult.recommended.pharmacies.length === 0) {

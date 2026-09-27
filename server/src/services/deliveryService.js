@@ -69,13 +69,9 @@ const autoAssignDeliveryPartner = async (orderId) => {
     // Step 1: Reconcile any stale busy partners in database
     await reconcileDeliveryPartners();
 
-    const isDemoOrder = Boolean(order.isDemo);
-    const demoFilter = isDemoOrder ? { isDemo: true } : { isDemo: { $ne: true } };
-
     // Step 2: Atomic attempt to claim a partner marked AVAILABLE with no active order
     let partner = await DeliveryPartner.findOneAndUpdate(
       {
-        ...demoFilter,
         status: 'AVAILABLE',
         activeOrderId: null
       },
@@ -92,7 +88,6 @@ const autoAssignDeliveryPartner = async (orderId) => {
     if (!partner) {
       partner = await DeliveryPartner.findOneAndUpdate(
         {
-          ...demoFilter,
           activeOrderId: null,
           status: { $ne: 'OFFLINE' }
         },
@@ -106,11 +101,10 @@ const autoAssignDeliveryPartner = async (orderId) => {
       ).populate('userId');
     }
 
-    // Step 4: High-Resiliency Fallback for Demo & Low-Driver environments:
+    // Step 4: High-Resiliency Fallback for Low-Driver environments:
     // If all partners are offline or in standby, pick the first available registered partner
     if (!partner) {
       const candidate = await DeliveryPartner.findOne({
-        ...demoFilter,
         activeOrderId: null
       }).populate('userId');
 

@@ -72,7 +72,7 @@ const MyPrescriptions = () => {
         </Button>
       </div>
 
-      {/* Statutory Requirement Simulation Banner */}
+      {/* Statutory Requirement Banner */}
       <div
         style={{
           backgroundColor: '#fff1f2',

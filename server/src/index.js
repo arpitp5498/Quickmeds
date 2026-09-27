@@ -30,6 +30,10 @@ const cycleRoutes = require('./routes/cycleRoutes');
 const routingRoutes = require('./routes/routingRoutes');
 const researchRoutes = require('./routes/researchRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
+const consultationRoutes = require('./routes/consultationRoutes');
+const labRoutes = require('./routes/labRoutes');
+const ambulanceRoutes = require('./routes/ambulanceRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // Initialize express app
 const app = express();
@@ -137,12 +141,12 @@ app.use('/api/cycle', cycleRoutes);
 app.use('/api/routing', routingRoutes);
 app.use('/api/research', researchRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/consultations', consultationRoutes);
+app.use('/api/lab-tests', labRoutes);
+app.use('/api/ambulance', ambulanceRoutes);
+app.use('/api/ai', aiRoutes);
 
-// SIH DEMO MODE ONLY - REMOVE AFTER SIH
-if (env.ENABLE_DEMO_MODE) {
-  const demoRoutes = require('./routes/demoRoutes');
-  app.use('/api/demo', demoRoutes);
-}
+
 
 // Catch-all 404 for undefined API routes
 app.use('/api/*', (req, res) => {

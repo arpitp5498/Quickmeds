@@ -24,6 +24,8 @@ module.exports = {
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
   UPLOAD_DIR: process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads'),
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 5 * 1024 * 1024, // 5MB
-  // SIH DEMO MODE ONLY - REMOVE AFTER SIH
-  ENABLE_DEMO_MODE: process.env.ENABLE_DEMO_MODE !== 'false'
+  // AI Health Assistant
+  AI_PROVIDER: process.env.AI_PROVIDER || 'gemini',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || ''
 };

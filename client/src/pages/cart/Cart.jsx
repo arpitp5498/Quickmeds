@@ -256,7 +256,7 @@ const Cart = () => {
               icon={ArrowRight}
               iconPosition="right"
             >
-              Proceed to Checkout (₹{optimizedPlan?.recommended?.totalOrderValue || optimizedPlan?.recommended?.totalDemoValue || total})
+              Proceed to Checkout (₹{optimizedPlan?.recommended?.totalOrderValue || total})
             </Button>
 
             <div

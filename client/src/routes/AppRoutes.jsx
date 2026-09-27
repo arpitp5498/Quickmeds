@@ -50,6 +50,12 @@ import WriteReview from '../pages/reviews/WriteReview';
 import MedicineReminders from '../pages/reminders/MedicineReminders';
 import CycleTracker from '../pages/cycle/CycleTracker';
 
+// New Production Feature Pages
+import PeriodCare from '../pages/medicines/PeriodCare';
+import DoctorConsultation from '../pages/customer/DoctorConsultation';
+import LabTests from '../pages/customer/LabTests';
+import AmbulanceAssistance from '../pages/customer/AmbulanceAssistance';
+
 // Pharmacy Partner Pages
 import PharmacyDashboard from '../pages/pharmacy/PharmacyDashboard';
 import PharmacyOrders from '../pages/pharmacy/PharmacyOrders';
@@ -74,23 +80,11 @@ import AdminPrescriptions from '../pages/admin/AdminPrescriptions';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
 import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 
-// SIH DEMO MODE ONLY - REMOVE AFTER SIH
-import DemoLauncher from '../demo/DemoLauncher';
-import DemoCockpit from '../demo/DemoCockpit';
-import { isDemoModeEnabled } from '../demo/demoApi';
-
-const isDemoEnabled = isDemoModeEnabled();
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* SIH DEMO MODE ONLY - REMOVE AFTER SIH */}
-      {isDemoEnabled && (
-        <>
-          <Route path="/demo/launch/:role" element={<DemoLauncher />} />
-          <Route path="/demo/cockpit" element={<DemoCockpit />} />
-        </>
-      )}
+
 
       {/* 1. Public Marketing & Informational Routes (MainLayout) */}
       <Route element={<MainLayout />}>
@@ -113,6 +107,8 @@ const AppRoutes = () => {
         <Route path="/architecture" element={<Architecture />} />
         <Route path="/security" element={<Security />} />
         <Route path="/research" element={<Research />} />
+        <Route path="/period-care" element={<PeriodCare />} />
+        <Route path="/ambulance" element={<AmbulanceAssistance />} />
       </Route>
 
       {/* 2. Authentication Routes (AuthLayout) */}
@@ -143,6 +139,8 @@ const AppRoutes = () => {
         <Route path="/reviews/write" element={<WriteReview />} />
         <Route path="/reminders" element={<MedicineReminders />} />
         <Route path="/cycle-tracker" element={<CycleTracker />} />
+        <Route path="/doctors" element={<DoctorConsultation />} />
+        <Route path="/lab-tests" element={<LabTests />} />
       </Route>
 
       {/* 4. Pharmacy Partner Routes (PharmacyLayout) */}

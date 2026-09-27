@@ -12,7 +12,9 @@ const orderItemSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
-  requiresPrescription: { type: Boolean, default: false }
+  requiresPrescription: { type: Boolean, default: false },
+  batchNumber: { type: String, default: '' },
+  expiryDate: { type: Date }
 });
 
 const statusHistorySchema = new mongoose.Schema({
@@ -203,7 +205,7 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    // SIH DEMO MODE ONLY: Identify isolated demonstration orders
+    // Legacy field — kept for backward compatibility with existing documents
     isDemo: {
       type: Boolean,
       default: false,

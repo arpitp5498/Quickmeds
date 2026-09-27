@@ -5,7 +5,7 @@
 
 🔗 **Live Production App**: [https://quickmedss.vercel.app](https://quickmedss.vercel.app)
 
-[![Live Demo](https://img.shields.io/badge/demo-quickmedss.vercel.app-success.svg)](https://quickmedss.vercel.app)
+[![Live](https://img.shields.io/badge/live-quickmedss.vercel.app-success.svg)](https://quickmedss.vercel.app)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com)
 [![Test Suite](https://img.shields.io/badge/tests-88%20passed%20%7C%20100%25-brightgreen.svg)](https://github.com)
 [![Tech Stack](https://img.shields.io/badge/stack-MERN%20%2B%20Socket.IO-blue.svg)](https://github.com)

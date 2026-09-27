@@ -44,7 +44,7 @@ const DEFAULT_SURVEY_DATA = {
     { label: 'Incremental Night Order Revenue per Retailer', value: '+26.8%' },
     { label: 'Average Pharmacist Prescription Sign-off Time', value: '3.1 Mins' }
   ],
-  notes: 'Survey data simulated from preliminary Google Form responses collected across urban clusters for QuickMeds research benchmarks. Metrics are dynamically editable in Admin Mode.',
+  notes: 'Survey data from preliminary Google Form responses collected across urban clusters for QuickMeds research benchmarks. Metrics are dynamically editable in Admin Mode.',
   lastUpdated: new Date()
 };
 

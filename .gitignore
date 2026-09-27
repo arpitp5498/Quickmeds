@@ -39,3 +39,7 @@ update_brand.js
 
 .vercel
 .env*
+
+# Chrome temp diag
+client/.chrome-temp-diag/
+

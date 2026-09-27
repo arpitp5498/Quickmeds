@@ -318,7 +318,7 @@ const Checkout = () => {
               </h3>
             </div>
 
-            {/* Statutory Simulation Disclaimer */}
+            {/* Statutory Disclaimer */}
             <div
               style={{
                 backgroundColor: 'var(--accent-50)',
@@ -537,7 +537,7 @@ const Checkout = () => {
                 }}
               >
                 <span>Total Payable</span>
-                <span>₹{optimizedPlan?.recommended?.totalOrderValue || optimizedPlan?.recommended?.totalDemoValue || total}</span>
+                <span>₹{optimizedPlan?.recommended?.totalOrderValue || total}</span>
               </div>
             </div>
 
@@ -549,7 +549,7 @@ const Checkout = () => {
               loading={placingOrder}
               icon={CheckCircle2}
             >
-              Place Order (₹{optimizedPlan?.recommended?.totalOrderValue || optimizedPlan?.recommended?.totalDemoValue || total})
+              Place Order (₹{optimizedPlan?.recommended?.totalOrderValue || total})
             </Button>
 
             <div
