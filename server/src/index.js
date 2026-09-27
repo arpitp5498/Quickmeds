@@ -39,8 +39,26 @@ const aiRoutes = require('./routes/aiRoutes');
 const app = express();
 const httpServer = http.createServer(app);
 
+const mongoose = require('mongoose');
+
 // Connect to Database
-connectDB();
+connectDB().catch((err) => {
+  console.warn('[MongoDB] Initial connection attempt deferred:', err.message);
+});
+
+// Middleware to ensure DB connection is ready before handling requests (vital for Vercel serverless)
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    try {
+      if (mongoose.connection.readyState !== 1) {
+        await connectDB();
+      }
+    } catch (err) {
+      return next(err);
+    }
+  }
+  next();
+});
 
 // Initialize Socket.IO
 initSocket(httpServer, env.CLIENT_URL);

@@ -24,6 +24,12 @@ const medicineSchema = new mongoose.Schema(
       required: [true, 'Manufacturer name is required'],
       trim: true
     },
+    composition: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true
+    },
     strength: {
       type: String,
       required: [true, 'Strength/Dosage is required (e.g. 500mg, 10ml, 200mcg)'],
@@ -39,10 +45,16 @@ const medicineSchema = new mongoose.Schema(
         'Suspension',
         'Injection',
         'Ointment',
+        'Cream',
         'Gel',
+        'Lotion',
         'Drops',
+        'Spray',
+        'Solution',
         'Inhaler',
         'Powder',
+        'Granules',
+        'Effervescent Granules',
         'Strip',
         'Bottle',
         'Device',
@@ -59,9 +71,49 @@ const medicineSchema = new mongoose.Schema(
       ],
       required: true
     },
+    routeOfAdministration: {
+      type: String,
+      enum: [
+        'Oral',
+        'Topical',
+        'Inhalation',
+        'Ophthalmic',
+        'Otic',
+        'Nasal',
+        'Sublingual',
+        'Parenteral',
+        'Rectal',
+        'Transdermal',
+        'Other'
+      ],
+      default: 'Oral'
+    },
+    packSize: {
+      type: String,
+      default: ''
+    },
     category: {
       type: String,
       enum: [
+        // 17 Comprehensive Therapeutic Categories (India CDSCO/NLEM standard)
+        'Pain & Fever',
+        'Oral Rehydration & Electrolytes',
+        'Gastrointestinal Care',
+        'Acidity & Reflux',
+        'Constipation & Diarrhoea',
+        'Allergy & Antihistamines',
+        'Respiratory & Asthma',
+        'Diabetes Care',
+        'Cardiovascular Care',
+        'Dermatological & Skin Care',
+        'Wound Care & Antiseptics',
+        'Eye, Ear & Nasal Care',
+        'Vitamins & Mineral Supplements',
+        'Bone & Nutritional Support',
+        'Women Health & Hygiene',
+        'Pediatric Care',
+        'Essential Outpatient Medicines',
+        // Legacy category mappings preserved for backward compatibility
         'Fever & Pain',
         'Pain Relief',
         'Cold & Cough',
@@ -114,6 +166,28 @@ const medicineSchema = new mongoose.Schema(
       enum: ['OTC', 'Schedule H', 'Schedule H1', 'Schedule X'],
       default: 'OTC'
     },
+    regulatoryClass: {
+      type: String,
+      enum: ['OTC', 'Schedule H', 'Schedule H1', 'Schedule X', 'Schedule G', 'Not Classified'],
+      default: 'OTC'
+    },
+    sourceOfInformation: {
+      type: String,
+      default: 'CDSCO Approved Drugs / NLEM 2022'
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['VERIFIED', 'NEEDS_REVIEW', 'DISCONTINUED'],
+      default: 'VERIFIED'
+    },
+    lastVerificationDate: {
+      type: Date,
+      default: Date.now
+    },
+    aliases: [{
+      type: String,
+      trim: true
+    }],
     description: {
       type: String,
       required: true
@@ -158,6 +232,7 @@ medicineSchema.index({
   name: 'text',
   genericName: 'text',
   brand: 'text',
+  composition: 'text',
   category: 'text'
 });
 

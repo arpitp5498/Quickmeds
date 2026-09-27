@@ -24,35 +24,58 @@ const searchMedicines = async (req, res, next) => {
     const query = { active: true };
 
     if (q) {
-      const searchRegex = new RegExp(q.trim(), 'i');
+      const searchRegex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       query.$or = [
         { name: searchRegex },
         { genericName: searchRegex },
         { brand: searchRegex },
+        { composition: searchRegex },
+        { aliases: searchRegex },
+        { manufacturer: searchRegex },
         { category: searchRegex }
       ];
     }
 
     if (category && category !== 'All') {
       const catTrimmed = category.trim();
-      if (catTrimmed === 'Fever & Pain' || catTrimmed === 'Pain Relief') {
-        query.category = { $in: ['Fever & Pain', 'Pain Relief', 'Pediatric'] };
-      } else if (catTrimmed === 'Cold & Cough' || catTrimmed === 'Respiratory') {
-        query.category = { $in: ['Cold & Cough', 'Respiratory'] };
-      } else if (catTrimmed === 'Cardiac & Diabetes' || catTrimmed === 'Cardiac' || catTrimmed === 'Diabetes') {
-        query.category = { $in: ['Cardiac & Diabetes', 'Cardiac', 'Diabetes'] };
-      } else if (catTrimmed === 'Antibiotics & Anti-infectives' || catTrimmed === 'Antibiotics') {
-        query.category = { $in: ['Antibiotics & Anti-infectives', 'Antibiotics'] };
-      } else if (catTrimmed === 'Digestive Care') {
-        query.category = { $in: ['Digestive Care'] };
-      } else if (catTrimmed === 'Vitamins & Supplements' || catTrimmed === 'Vitamins') {
-        query.category = { $in: ['Vitamins & Supplements', 'Vitamins'] };
-      } else if (catTrimmed === 'First Aid & Surgical' || catTrimmed === 'First Aid') {
-        query.category = { $in: ['First Aid & Surgical', 'First Aid'] };
-      } else if (catTrimmed === 'Women Care & Hygiene' || catTrimmed === 'Women Care' || catTrimmed === 'Skin & Personal Care') {
-        query.category = { $in: ['Women Care & Hygiene', 'Women Care', 'Skin & Personal Care'] };
+      const catEscaped = catTrimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      if (catTrimmed === 'Pain & Fever' || catTrimmed === 'Fever & Pain' || catTrimmed === 'Pain Relief') {
+        query.category = { $in: ['Pain & Fever', 'Fever & Pain', 'Pain Relief'] };
+      } else if (catTrimmed === 'Oral Rehydration & Electrolytes') {
+        query.category = { $in: ['Oral Rehydration & Electrolytes', 'Digestive Care'] };
+      } else if (catTrimmed === 'Gastrointestinal Care' || catTrimmed === 'Digestive Care' || catTrimmed === 'Digestive') {
+        query.category = { $in: ['Gastrointestinal Care', 'Digestive Care', 'Digestive'] };
+      } else if (catTrimmed === 'Acidity & Reflux') {
+        query.category = { $in: ['Acidity & Reflux', 'Digestive Care'] };
+      } else if (catTrimmed === 'Constipation & Diarrhoea') {
+        query.category = { $in: ['Constipation & Diarrhoea', 'Digestive Care'] };
+      } else if (catTrimmed === 'Allergy & Antihistamines') {
+        query.category = { $in: ['Allergy & Antihistamines', 'Cold & Cough'] };
+      } else if (catTrimmed === 'Respiratory & Asthma' || catTrimmed === 'Cold & Cough' || catTrimmed === 'Respiratory') {
+        query.category = { $in: ['Respiratory & Asthma', 'Cold & Cough', 'Respiratory'] };
+      } else if (catTrimmed === 'Diabetes Care' || catTrimmed === 'Diabetes') {
+        query.category = { $in: ['Diabetes Care', 'Diabetes', 'Cardiac & Diabetes'] };
+      } else if (catTrimmed === 'Cardiovascular Care' || catTrimmed === 'Cardiac') {
+        query.category = { $in: ['Cardiovascular Care', 'Cardiac', 'Cardiac & Diabetes'] };
+      } else if (catTrimmed === 'Dermatological & Skin Care' || catTrimmed === 'Skin Care' || catTrimmed === 'Skin & Personal Care') {
+        query.category = { $in: ['Dermatological & Skin Care', 'Skin Care', 'Skin & Personal Care'] };
+      } else if (catTrimmed === 'Wound Care & Antiseptics' || catTrimmed === 'First Aid & Surgical' || catTrimmed === 'First Aid') {
+        query.category = { $in: ['Wound Care & Antiseptics', 'First Aid & Surgical', 'First Aid'] };
+      } else if (catTrimmed === 'Eye, Ear & Nasal Care' || catTrimmed === 'Eye & Ear Drops') {
+        query.category = { $in: ['Eye, Ear & Nasal Care', 'Eye & Ear Drops'] };
+      } else if (catTrimmed === 'Vitamins & Mineral Supplements' || catTrimmed === 'Vitamins & Supplements' || catTrimmed === 'Vitamins') {
+        query.category = { $in: ['Vitamins & Mineral Supplements', 'Vitamins & Supplements', 'Vitamins'] };
+      } else if (catTrimmed === 'Bone & Nutritional Support') {
+        query.category = { $in: ['Bone & Nutritional Support', 'Vitamins & Supplements'] };
+      } else if (catTrimmed === 'Women Health & Hygiene' || catTrimmed === 'Women Care & Hygiene' || catTrimmed === 'Women Care') {
+        query.category = { $in: ['Women Health & Hygiene', 'Women Care & Hygiene', 'Women Care', 'Menstrual Care', 'Comfort & Relief', 'Hygiene Essentials'] };
+      } else if (catTrimmed === 'Pediatric Care' || catTrimmed === 'Pediatric') {
+        query.category = { $in: ['Pediatric Care', 'Pediatric'] };
+      } else if (catTrimmed === 'Essential Outpatient Medicines' || catTrimmed === 'Antibiotics & Anti-infectives' || catTrimmed === 'Antibiotics') {
+        query.category = { $in: ['Essential Outpatient Medicines', 'Antibiotics & Anti-infectives', 'Antibiotics'] };
       } else {
-        query.category = new RegExp(`^${catTrimmed}$`, 'i');
+        query.category = new RegExp(`^${catEscaped}$`, 'i');
       }
     }
 

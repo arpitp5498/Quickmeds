@@ -24,6 +24,13 @@ const seedDatabase = async (exitOnComplete = true) => {
       await connectDB();
     }
 
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      console.error('[Seed] ⛔ ABORTED: seed.js is a destructive development reset script and is strictly blocked in production!');
+      console.error('[Seed] For safe, non-destructive master catalog updates, use: node src/seed/populateCatalog.js --commit');
+      if (exitOnComplete) process.exit(1);
+      return;
+    }
+
     console.log('[Seed] Clearing existing collections...');
     await Promise.all([
       User.deleteMany({}),

@@ -26,26 +26,27 @@ import { getMedicineImage } from '../../utils/medicineImages';
 
 export const CATEGORIES = [
   'All',
-  'Fever & Pain',
-  'Cold & Cough',
-  'Digestive Care',
-  'Cardiac & Diabetes',
-  'Antibiotics & Anti-infectives',
-  'Vitamins & Supplements',
-  'First Aid & Surgical',
-  'Women Care & Hygiene'
+  'Pain & Fever',
+  'Oral Rehydration & Electrolytes',
+  'Gastrointestinal Care',
+  'Acidity & Reflux',
+  'Constipation & Diarrhoea',
+  'Allergy & Antihistamines',
+  'Respiratory & Asthma',
+  'Diabetes Care',
+  'Cardiovascular Care',
+  'Dermatological & Skin Care',
+  'Wound Care & Antiseptics',
+  'Eye, Ear & Nasal Care',
+  'Vitamins & Mineral Supplements',
+  'Bone & Nutritional Support',
+  'Women Health & Hygiene',
+  'Pediatric Care',
+  'Essential Outpatient Medicines'
 ];
 
 const DEFAULT_CATEGORY_COUNTS = {
-  'All': 36,
-  'Fever & Pain': 7,
-  'Cold & Cough': 6,
-  'Cardiac & Diabetes': 7,
-  'Digestive Care': 4,
-  'Antibiotics & Anti-infectives': 4,
-  'Vitamins & Supplements': 3,
-  'First Aid & Surgical': 3,
-  'Women Care & Hygiene': 2
+  'All': 116
 };
 
 const MedicineSearch = () => {

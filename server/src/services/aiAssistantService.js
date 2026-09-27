@@ -1,6 +1,12 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const env = require('../config/env');
 const logger = require('../utils/logger');
+
+let GoogleGenerativeAI = null;
+try {
+  ({ GoogleGenerativeAI } = require('@google/generative-ai'));
+} catch (e) {
+  // @google/generative-ai optional dependency not installed
+}
 
 const SYSTEM_PROMPT = `You are a helpful healthcare assistant for QuickMeds. 
 You can provide general health information and help users find medicines from our catalog.
@@ -14,10 +20,14 @@ exports.generateResponse = async (message, conversationHistory, medicines) => {
     const hasOpenaiKey = !!env.OPENAI_API_KEY;
 
     if (!hasGeminiKey && !hasOpenaiKey) {
-      return "Hello! I am the QuickMeds AI assistant. It looks like my administrator hasn't configured my AI capabilities yet (missing API keys). Once configured, I can help you with health queries and medicine searches!";
+      return "Hello! I am the QuickMeds AI assistant. To enable AI consultations, please configure GEMINI_API_KEY in the environment. In the meantime, you can search our medicine catalog directly or consult a registered doctor on our platform.";
     }
 
     if (provider === 'gemini' || (hasGeminiKey && !hasOpenaiKey)) {
+      if (!GoogleGenerativeAI) {
+        return "The AI assistant service package is currently not available on this server instance. Please consult a licensed doctor for medical inquiries.";
+      }
+
       const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
@@ -31,8 +41,7 @@ exports.generateResponse = async (message, conversationHistory, medicines) => {
       const result = await model.generateContent(prompt);
       return result.response.text();
     } else {
-      // Dummy OpenAI implementation fallback or you could import openai
-      return "AI Provider configured to OpenAI but not implemented in this demo. Please use Gemini.";
+      return "AI Provider configured to OpenAI. Please ensure the provider is configured or use Gemini.";
     }
   } catch (error) {
     logger.error('Error generating AI response', error);
