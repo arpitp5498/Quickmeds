@@ -10,7 +10,11 @@ import {
   FileCheck,
   ArrowLeft,
   Check,
-  ShoppingBag
+  ShoppingBag,
+  Minus,
+  Plus,
+  Trash2,
+  ArrowRight
 } from 'lucide-react';
 import api from '../../services/api';
 import { useLocation } from '../../context/LocationContext';
@@ -25,7 +29,7 @@ import { getMedicineImage } from '../../utils/medicineImages';
 const MedicineDetail = () => {
   const { id } = useParams();
   const { location } = useLocation();
-  const { addToCart } = useCart();
+  const { addToCart, getItemQuantity, updateQuantity, removeFromCart, cart } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -58,13 +62,31 @@ const MedicineDetail = () => {
       ? Math.min(...pharmacies.map((p) => p.price || medicine?.mrp))
       : medicine?.mrp;
 
+  const currentQty = medicine ? getItemQuantity(medicine._id) : 0;
+
   const handleAddToCart = async () => {
+    if (!medicine) return;
     setAddingToCart(true);
-    const success = await addToCart(medicine._id, 1, bestPrice);
+    await addToCart(medicine, 1, bestPrice);
     setAddingToCart(false);
-    if (success) {
-      navigate('/cart');
+  };
+
+  const handleIncreaseQty = async () => {
+    if (!medicine) return;
+    setAddingToCart(true);
+    await updateQuantity(medicine._id, currentQty + 1);
+    setAddingToCart(false);
+  };
+
+  const handleDecreaseQty = async () => {
+    if (!medicine) return;
+    setAddingToCart(true);
+    if (currentQty <= 1) {
+      await removeFromCart(medicine._id);
+    } else {
+      await updateQuantity(medicine._id, currentQty - 1);
     }
+    setAddingToCart(false);
   };
 
   if (loading) {
@@ -277,16 +299,92 @@ const MedicineDetail = () => {
               );
             })()}
 
-            {/* Primary Add To Cart Action */}
-            <Button
-              variant="primary"
-              onClick={handleAddToCart}
-              loading={addingToCart}
-              style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
-              icon={ShoppingBag}
-            >
-              Add to Cart
-            </Button>
+            {/* Primary Add To Cart / Quantity Selector Area */}
+            {currentQty > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: 'var(--primary-50)',
+                    border: '1.5px solid var(--primary-600)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '6px 12px',
+                    height: '52px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--primary-900)' }}>
+                    Item in Cart:
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={handleDecreaseQty}
+                      disabled={addingToCart}
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--primary-200)',
+                        backgroundColor: '#ffffff',
+                        color: currentQty === 1 ? '#ef4444' : 'var(--primary-700)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                      aria-label="Decrease quantity"
+                    >
+                      {currentQty === 1 ? <Trash2 size={16} /> : <Minus size={16} />}
+                    </button>
+                    <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-900)', minWidth: '24px', textAlign: 'center' }}>
+                      {currentQty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleIncreaseQty}
+                      disabled={addingToCart}
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: 'var(--radius-md)',
+                        border: 'none',
+                        backgroundColor: 'var(--primary-600)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                      aria-label="Increase quantity"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/cart')}
+                  style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
+                  icon={ShoppingBag}
+                >
+                  Go to Cart ({cart.totalItems} item{cart.totalItems === 1 ? '' : 's'}) →
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                onClick={handleAddToCart}
+                loading={addingToCart}
+                style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
+                icon={ShoppingBag}
+              >
+                Add to Cart • ₹{bestPrice}
+              </Button>
+            )}
           </div>
         </div>
       </Card>

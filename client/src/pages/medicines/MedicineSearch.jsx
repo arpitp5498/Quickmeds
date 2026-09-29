@@ -10,15 +10,28 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
-  Layers
+  Layers,
+  ShoppingBag,
+  Plus,
+  Minus,
+  Trash2,
+  ExternalLink,
+  ShieldCheck,
+  Info,
+  Clock,
+  ArrowRight,
+  Check,
+  AlertTriangle
 } from 'lucide-react';
 import api from '../../services/api';
 import { useLocation } from '../../context/LocationContext';
+import { useCart } from '../../context/CartContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import SearchBar from '../../components/ui/SearchBar';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
 import Skeleton from '../../components/ui/Skeleton';
 import Pagination from '../../components/ui/Pagination';
 import EmptyState from '../../components/ui/EmptyState';
@@ -69,6 +82,43 @@ const MedicineSearch = () => {
 
   const { location } = useLocation();
   const navigate = useNavigate();
+  const { cart, getItemQuantity, addToCart, updateQuantity, removeFromCart } = useCart();
+  const [selectedMedicine, setSelectedMedicine] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  const handleAddToCart = async (e, med) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setActionLoadingId(med._id);
+    try {
+      await addToCart(med, 1, med.lowestPrice || med.mrp);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleIncreaseQty = async (e, med, currentQty) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setActionLoadingId(med._id);
+    try {
+      await updateQuantity(med._id, currentQty + 1);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDecreaseQty = async (e, med, currentQty) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setActionLoadingId(med._id);
+    try {
+      if (currentQty <= 1) {
+        await removeFromCart(med._id);
+      } else {
+        await updateQuantity(med._id, currentQty - 1);
+      }
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   // Keep URL in sync
   useEffect(() => {
@@ -413,140 +463,507 @@ const MedicineSearch = () => {
             gap: '1.5rem'
           }}
         >
-          {medicines.map((med) => (
-            <Card
-              key={med._id}
-              hoverable
-              onClick={() => navigate(`/medicines/${med._id}`)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                padding: '1.25rem',
-                borderRadius: 'var(--radius-xl)',
-                transition: 'all 0.25s ease'
-              }}
-            >
-              <div>
-                {/* Realistic Medicine Product Showcase Box */}
-                <div
-                  style={{
-                    position: 'relative',
-                    height: '210px',
-                    borderRadius: 'var(--radius-lg)',
-                    overflow: 'hidden',
-                    backgroundColor: '#ffffff',
-                    marginBottom: '14px',
-                    border: '1px solid var(--border-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6px'
-                  }}
-                >
-                  <img
-                    src={getMedicineImage(med)}
-                    alt={med.name}
+          {medicines.map((med) => {
+            const qty = getItemQuantity(med._id);
+            const isOutOfStock = med.availablePharmaciesCount === 0 && med.stockQuantity === 0;
+
+            return (
+              <Card
+                key={med._id}
+                hoverable
+                onClick={() => setSelectedMedicine(med)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  padding: '1.25rem',
+                  borderRadius: 'var(--radius-xl)',
+                  transition: 'all 0.25s ease',
+                  position: 'relative'
+                }}
+              >
+                <div>
+                  {/* Realistic Medicine Product Showcase Box */}
+                  <div
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      objectPosition: 'center'
+                      position: 'relative',
+                      height: '210px',
+                      borderRadius: 'var(--radius-lg)',
+                      overflow: 'hidden',
+                      backgroundColor: '#ffffff',
+                      marginBottom: '14px',
+                      border: '1px solid var(--border-light)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px'
                     }}
-                    loading="lazy"
-                  />
-                  {med.requiresPrescription ? (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                      <Badge variant="prescription" size="sm">
-                        Rx Required
-                      </Badge>
-                    </div>
-                  ) : (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                      <Badge variant="success" size="sm">
-                        OTC
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ fontSize: '0.75rem', color: 'var(--primary-700)', fontWeight: 600, marginBottom: '2px' }}>
-                  {med.category}
-                </div>
-
-                <h3
-                  style={{
-                    fontSize: '0.9375rem',
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    marginBottom: '4px',
-                    color: 'var(--text-main)'
-                  }}
-                >
-                  {med.name}
-                </h3>
-
-                <p
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--text-muted)',
-                    marginBottom: '8px',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {med.genericName} • {med.dosageForm}
-                </p>
-              </div>
-
-              <div>
-                {/* Availability & Price Summary */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                    marginTop: '8px',
-                    marginBottom: '10px',
-                    borderTop: '1px solid var(--border-light)',
-                    paddingTop: '8px'
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                      ₹{med.lowestPrice || med.mrp}
-                    </span>
-                    {med.lowestPrice && med.lowestPrice < med.mrp && (
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          color: 'var(--text-muted)',
-                          textDecoration: 'line-through',
-                          marginLeft: '6px'
-                        }}
-                      >
-                        ₹{med.mrp}
-                      </span>
+                  >
+                    <img
+                      src={getMedicineImage(med)}
+                      alt={med.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        objectPosition: 'center',
+                        transition: 'transform 0.25s ease'
+                      }}
+                      loading="lazy"
+                    />
+                    {med.requiresPrescription ? (
+                      <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                        <Badge variant="prescription" size="sm">
+                          Rx Required
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                        <Badge variant="success" size="sm">
+                          OTC
+                        </Badge>
+                      </div>
                     )}
                   </div>
 
-                  <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                    {med.availablePharmaciesCount > 0
-                      ? '✓ In stock in QuickMeds network'
-                      : 'Check availability'}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--primary-700)', fontWeight: 600, marginBottom: '2px' }}>
+                    {med.category}
                   </div>
+
+                  <h3
+                    style={{
+                      fontSize: '0.9375rem',
+                      fontWeight: 700,
+                      lineHeight: 1.35,
+                      marginBottom: '4px',
+                      color: 'var(--text-main)'
+                    }}
+                  >
+                    {med.name}
+                  </h3>
+
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                      marginBottom: '8px',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {med.genericName} • {med.dosageForm}
+                  </p>
                 </div>
 
-                <Button variant="outline" size="sm" fullWidth icon={Pill}>
-                  View Medicine &amp; Order
+                <div>
+                  {/* Availability & Price Summary */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      marginTop: '8px',
+                      marginBottom: '10px',
+                      borderTop: '1px solid var(--border-light)',
+                      paddingTop: '8px'
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                        ₹{med.lowestPrice || med.mrp}
+                      </span>
+                      {med.lowestPrice && med.lowestPrice < med.mrp && (
+                        <span
+                          style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)',
+                            textDecoration: 'line-through',
+                            marginLeft: '6px'
+                          }}
+                        >
+                          ₹{med.mrp}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
+                      {med.availablePharmaciesCount > 0
+                        ? '✓ In stock in network'
+                        : 'Check availability'}
+                    </div>
+                  </div>
+
+                  {/* E-Commerce Action Area: Prominent Add To Cart or Interactive Quantity Selector */}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    {isOutOfStock ? (
+                      <Button variant="outline" size="sm" fullWidth disabled style={{ opacity: 0.6 }}>
+                        Out of Stock
+                      </Button>
+                    ) : qty > 0 ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: 'var(--primary-50)',
+                          border: '1.5px solid var(--primary-600)',
+                          borderRadius: 'var(--radius-lg)',
+                          padding: '3px 6px',
+                          height: '38px',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => handleDecreaseQty(e, med, qty)}
+                          disabled={actionLoadingId === med._id}
+                          style={{
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--primary-200)',
+                            backgroundColor: '#ffffff',
+                            color: qty === 1 ? '#ef4444' : 'var(--primary-700)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title={qty === 1 ? 'Remove from cart' : 'Decrease quantity'}
+                          aria-label="Decrease quantity"
+                        >
+                          {qty === 1 ? <Trash2 size={13} /> : <Minus size={13} strokeWidth={2.5} />}
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--primary-900)' }}>
+                            {qty}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--primary-700)' }}>
+                            in cart
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleIncreaseQty(e, med, qty)}
+                          disabled={actionLoadingId === med._id}
+                          style={{
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: 'var(--radius-md)',
+                            border: 'none',
+                            backgroundColor: 'var(--primary-600)',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(37, 99, 235, 0.3)',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title="Add another unit"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus size={13} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        fullWidth
+                        icon={ShoppingBag}
+                        loading={actionLoadingId === med._id}
+                        onClick={(e) => handleAddToCart(e, med)}
+                        style={{
+                          height: '38px',
+                          fontWeight: 700,
+                          borderRadius: 'var(--radius-lg)',
+                          boxShadow: '0 2px 5px rgba(37, 99, 235, 0.18)'
+                        }}
+                      >
+                        Add to Cart
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Quick Details Modal */}
+      {selectedMedicine && (
+        <Modal
+          isOpen={!!selectedMedicine}
+          onClose={() => setSelectedMedicine(null)}
+          title={selectedMedicine.name}
+          size="lg"
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+            {/* Left: Product Image & Badges */}
+            <div>
+              <div
+                style={{
+                  position: 'relative',
+                  height: '260px',
+                  borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--border-light)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px',
+                  marginBottom: '1rem'
+                }}
+              >
+                <img
+                  src={getMedicineImage(selectedMedicine)}
+                  alt={selectedMedicine.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+                {selectedMedicine.requiresPrescription ? (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                    <Badge variant="prescription" size="sm">Rx Required</Badge>
+                  </div>
+                ) : (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                    <Badge variant="success" size="sm">OTC Medicine</Badge>
+                  </div>
+                )}
+              </div>
+
+              {/* Price Banner */}
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-subtle)',
+                  border: '1.5px solid var(--primary-100)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-700)', display: 'block' }}>
+                    BEST NETWORK PRICE
+                  </span>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                    ₹{selectedMedicine.lowestPrice || selectedMedicine.mrp}
+                  </span>
+                  {selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp && (
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: '6px' }}>
+                      MRP ₹{selectedMedicine.mrp}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
+                  {selectedMedicine.availablePharmaciesCount > 0
+                    ? '✓ In stock in network'
+                    : 'Check availability'}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Detailed Information */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div>
+                <Badge variant="primary" size="sm" style={{ marginBottom: '6px' }}>
+                  {selectedMedicine.category}
+                </Badge>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, lineHeight: 1.3 }}>
+                  {selectedMedicine.name}
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px', marginBottom: 0 }}>
+                  <strong>Generic:</strong> {selectedMedicine.genericName}
+                </p>
+              </div>
+
+              {/* Specs Grid */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px',
+                  padding: '10px 12px',
+                  backgroundColor: 'var(--bg-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.8125rem'
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Strength:</span>
+                  <strong style={{ color: 'var(--text-main)' }}>{selectedMedicine.strength || 'Standard'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Dosage Form:</span>
+                  <strong style={{ color: 'var(--text-main)' }}>{selectedMedicine.dosageForm || 'Tablet'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Manufacturer:</span>
+                  <strong style={{ color: 'var(--text-main)' }}>{selectedMedicine.manufacturer || 'Verified Partner'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Regulation:</span>
+                  <strong style={{ color: selectedMedicine.requiresPrescription ? 'var(--accent-600)' : 'var(--secondary-600)' }}>
+                    {selectedMedicine.prescriptionSchedule || (selectedMedicine.requiresPrescription ? 'Schedule H' : 'OTC')}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Description */}
+              {selectedMedicine.description && (
+                <div>
+                  <h5 style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
+                    Description &amp; Uses
+                  </h5>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    {selectedMedicine.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Safety Warning */}
+              <div
+                style={{
+                  backgroundColor: selectedMedicine.requiresPrescription ? 'var(--accent-50)' : 'var(--secondary-50)',
+                  border: `1px solid ${selectedMedicine.requiresPrescription ? 'var(--accent-100)' : 'var(--secondary-100)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  fontSize: '0.75rem',
+                  color: selectedMedicine.requiresPrescription ? 'var(--accent-700)' : 'var(--secondary-700)'
+                }}
+              >
+                <ShieldAlert size={16} style={{ minWidth: '16px', marginTop: '2px' }} />
+                <span>
+                  {selectedMedicine.requiresPrescription
+                    ? 'Doctor prescription is mandatory for dispensing this medicine. Upload or attach at checkout.'
+                    : 'Over-the-counter medicine. Use as advised and follow package directions.'}
+                </span>
+              </div>
+
+              {/* Actions Area */}
+              <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {(() => {
+                  const modalQty = getItemQuantity(selectedMedicine._id);
+                  return modalQty > 0 ? (
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: 'var(--primary-50)',
+                          border: '1.5px solid var(--primary-600)',
+                          borderRadius: 'var(--radius-lg)',
+                          padding: '4px 8px',
+                          height: '42px',
+                          flex: '0 0 140px',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => handleDecreaseQty(e, selectedMedicine, modalQty)}
+                          disabled={actionLoadingId === selectedMedicine._id}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--primary-200)',
+                            backgroundColor: '#ffffff',
+                            color: modalQty === 1 ? '#ef4444' : 'var(--primary-700)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}
+                          aria-label="Decrease quantity"
+                        >
+                          {modalQty === 1 ? <Trash2 size={14} /> : <Minus size={14} />}
+                        </button>
+                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-900)' }}>
+                          {modalQty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleIncreaseQty(e, selectedMedicine, modalQty)}
+                          disabled={actionLoadingId === selectedMedicine._id}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: 'var(--radius-md)',
+                            border: 'none',
+                            backgroundColor: 'var(--primary-600)',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}
+                          aria-label="Increase quantity"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        fullWidth
+                        icon={ShoppingBag}
+                        onClick={() => {
+                          setSelectedMedicine(null);
+                          navigate('/cart');
+                        }}
+                        style={{ height: '42px', fontWeight: 700 }}
+                      >
+                        View Cart ({cart.totalItems})
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      fullWidth
+                      icon={ShoppingBag}
+                      loading={actionLoadingId === selectedMedicine._id}
+                      onClick={(e) => handleAddToCart(e, selectedMedicine)}
+                      style={{ height: '42px', fontWeight: 700 }}
+                    >
+                      Add to Cart • ₹{selectedMedicine.lowestPrice || selectedMedicine.mrp}
+                    </Button>
+                  );
+                })()}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  fullWidth
+                  icon={ExternalLink}
+                  onClick={() => {
+                    const id = selectedMedicine._id;
+                    setSelectedMedicine(null);
+                    navigate(`/medicines/${id}`);
+                  }}
+                >
+                  View Full Detail &amp; Pharmacy Availability Page
                 </Button>
               </div>
-            </Card>
-          ))}
-        </div>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* Pagination */}

@@ -10,7 +10,10 @@ import {
   Phone,
   Pill,
   ShoppingBag,
-  ArrowLeft
+  ArrowLeft,
+  Minus,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import { useLocation } from '../../context/LocationContext';
@@ -27,7 +30,7 @@ import { getMedicineImage } from '../../utils/medicineImages';
 const PharmacyDetail = () => {
   const { id } = useParams();
   const { location } = useLocation();
-  const { addToCart } = useCart();
+  const { addToCart, getItemQuantity, updateQuantity, removeFromCart } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -287,13 +290,18 @@ const PharmacyDetail = () => {
               {filteredInventory.map((item) => {
                 const med = item.medicineId;
                 if (!med) return null;
+                const itemQty = getItemQuantity(med._id);
                 return (
                   <Card
                     key={item._id}
+                    onClick={() => navigate(`/medicines/${med._id}`)}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      border: '1px solid var(--border-light)'
                     }}
                   >
                     <div>
@@ -337,7 +345,7 @@ const PharmacyDetail = () => {
                         )}
                       </div>
 
-                      <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '2px' }}>
+                      <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '2px', color: 'var(--text-main)' }}>
                         {med.name}
                       </h4>
                       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
@@ -345,7 +353,7 @@ const PharmacyDetail = () => {
                       </p>
                     </div>
 
-                    <div>
+                    <div onClick={(e) => e.stopPropagation()}>
                       <div
                         style={{
                           display: 'flex',
@@ -371,15 +379,86 @@ const PharmacyDetail = () => {
                         </span>
                       </div>
 
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        fullWidth
-                        icon={ShoppingBag}
-                        onClick={() => addToCart(med._id, 1)}
-                      >
-                        Add to Cart
-                      </Button>
+                      {itemQty > 0 ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: 'var(--primary-50)',
+                            border: '1.5px solid var(--primary-600)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '3px 6px',
+                            height: '36px',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (itemQty <= 1) {
+                                await removeFromCart(med._id);
+                              } else {
+                                await updateQuantity(med._id, itemQty - 1);
+                              }
+                            }}
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid var(--primary-200)',
+                              backgroundColor: '#ffffff',
+                              color: itemQty === 1 ? '#ef4444' : 'var(--primary-700)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                            aria-label="Decrease quantity"
+                          >
+                            {itemQty === 1 ? <Trash2 size={13} /> : <Minus size={13} />}
+                          </button>
+                          <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--primary-900)' }}>
+                            {itemQty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await updateQuantity(med._id, itemQty + 1);
+                            }}
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: 'none',
+                              backgroundColor: 'var(--primary-600)',
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                            aria-label="Increase quantity"
+                          >
+                            <Plus size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          fullWidth
+                          icon={ShoppingBag}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await addToCart(med._id, 1, item.price);
+                          }}
+                        >
+                          Add to Cart
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 );

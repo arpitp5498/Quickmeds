@@ -132,7 +132,7 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
 
       for (const item of selectedList) {
         const unitPrice = item.lowestPrice || item.mrp;
-        const success = await addToCart(item._id, 1, unitPrice);
+        const success = await addToCart(item, 1, unitPrice);
         if (success) successCount++;
       }
 
