@@ -18,9 +18,7 @@ import Disclaimer from '../pages/public/Disclaimer';
 import Privacy from '../pages/public/Privacy';
 import Terms from '../pages/public/Terms';
 import Contact from '../pages/public/Contact';
-import Architecture from '../pages/public/Architecture';
 import Security from '../pages/public/Security';
-import Research from '../pages/public/Research';
 
 // Auth Pages
 import Login from '../pages/auth/Login';
@@ -104,9 +102,9 @@ const AppRoutes = () => {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/architecture" element={<Architecture />} />
+        <Route path="/architecture" element={<Navigate to="/" replace />} />
         <Route path="/security" element={<Security />} />
-        <Route path="/research" element={<Research />} />
+        <Route path="/research" element={<Navigate to="/" replace />} />
         <Route path="/period-care" element={<PeriodCare />} />
         <Route path="/ambulance" element={<AmbulanceAssistance />} />
       </Route>

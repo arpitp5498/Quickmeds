@@ -107,10 +107,10 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Column 3: Presentation & Tech */}
+          {/* Column 3: Trust & Company */}
           <div>
             <h5 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '1.25rem' }}>
-              System & Research
+              Platform & Trust
             </h5>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <li>

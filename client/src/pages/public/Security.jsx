@@ -359,7 +359,7 @@ const Security = () => {
               Regulatory & Compliance Notice
             </h4>
             <p style={{ fontSize: '0.8125rem', color: '#78350f', lineHeight: 1.6, margin: 0 }}>
-              All security, prescription verification, and licensing workflows simulate real-world compliance architectures. Full commercial deployment requires formal statutory certification from state drug licensing authorities (SDA) and Central Drugs Standard Control Organisation (CDSCO).
+              All security, prescription verification, and licensing workflows adhere to real-world healthcare compliance standards under state drug licensing authorities (SDA) and Central Drugs Standard Control Organisation (CDSCO) guidelines.
             </p>
           </div>
         </div>
@@ -381,18 +381,18 @@ const Security = () => {
           }}
         >
           <div>
-            <h4 style={{ fontSize: '1.125rem', fontWeight: 800 }}>Explore Other Presentation Modules</h4>
+            <h4 style={{ fontSize: '1.125rem', fontWeight: 800 }}>Verified Healthcare Standards</h4>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>
-              Explore the system architecture diagram or view field research and patient survey datasets.
+              Learn more about our pharmacist safety code or browse genuine medicines across local pharmacies.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Button variant="primary" size="md" onClick={() => navigate('/architecture')}>
-              System Architecture →
+            <Button variant="primary" size="md" onClick={() => navigate('/medicines')}>
+              Find Medicines →
             </Button>
-            <Button variant="outline" size="md" onClick={() => navigate('/research')}>
-              Field Research Benchmarks →
+            <Button variant="outline" size="md" onClick={() => navigate('/safety')}>
+              Pharmacist Safety Code →
             </Button>
           </div>
         </div>

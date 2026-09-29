@@ -616,13 +616,6 @@ const Landing = () => {
               >
                 Next Workflow Stage
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/architecture')}
-              >
-                View Tech Architecture →
-              </Button>
             </div>
           </div>
 
@@ -640,7 +633,7 @@ const Landing = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-700)', textTransform: 'uppercase' }}>
-                Simulated Execution Telemetry
+                Live Operational Telemetry
               </span>
               <span style={{ fontSize: '0.6875rem', backgroundColor: 'var(--primary-100)', color: 'var(--primary-800)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
                 {WORKFLOW_STEPS[activeWorkflowStep].preview.badge}
@@ -954,7 +947,7 @@ const Landing = () => {
             Frequently Asked Questions
           </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Everything you need to know about QuickMeds architecture, safety, and routing.
+            Everything you need to know about QuickMeds delivery, safety, and order fulfillment.
           </p>
         </div>
 
@@ -1218,7 +1211,7 @@ const Landing = () => {
               lineHeight: 1.6
             }}
           >
-            Digitize local pharmacy stock, connect licensed chemists with nearby patients, and explore our technical architecture and research data.
+            Empowering neighborhood pharmacies, connecting licensed chemists with nearby patients, and delivering verified medicines in minutes.
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1233,18 +1226,18 @@ const Landing = () => {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => navigate('/architecture')}
+              onClick={() => navigate('/pharmacy-network')}
               style={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.4)' }}
             >
-              System Architecture →
+              Explore Partner Pharmacies →
             </Button>
             <Button
               variant="outline"
               size="lg"
-              onClick={() => navigate('/research')}
+              onClick={() => navigate('/emergency')}
               style={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.4)' }}
             >
-              Field Research & Survey →
+              Emergency Care SOS →
             </Button>
           </div>
         </div>
