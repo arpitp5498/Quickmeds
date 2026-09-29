@@ -37,7 +37,7 @@ const verifiedCatalog = [
     mrp: 32.5,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/crocin-500-advance-tablet.png',
+    image: '/medicines/crocin-500-advance-tablet-netmeds.jpg',
     aliases: ['Crocin 500', 'Paracetamol 500', 'Crocin Advance', 'Fever tablet']
   },
   {
@@ -62,7 +62,7 @@ const verifiedCatalog = [
     mrp: 34.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/dolo-650mg-tablet.png',
+    image: '/medicines/dolo-650mg-tablet-netmeds.jpg',
     aliases: ['Dolo 650', 'Paracetamol 650', 'Dolo', 'Fever medicine']
   },
   {
@@ -87,7 +87,7 @@ const verifiedCatalog = [
     mrp: 33.5,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/calpol-650mg-tablet.png',
+    image: '/medicines/calpol-650mg-tablet-netmeds.jpg',
     aliases: ['Calpol 650', 'Paracetamol 650 Calpol']
   },
   {
@@ -112,7 +112,7 @@ const verifiedCatalog = [
     mrp: 47.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/combiflam-tablet.png',
+    image: '/medicines/combiflam-tablet-netmeds.jpg',
     aliases: ['Combiflam', 'Ibuprofen Paracetamol', 'Dental pain tablet']
   },
   {
@@ -137,7 +137,7 @@ const verifiedCatalog = [
     mrp: 22.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/brufen-400mg-tablet-netmeds.jpg',
     aliases: ['Brufen 400', 'Ibuprofen 400']
   },
   {
@@ -162,7 +162,7 @@ const verifiedCatalog = [
     mrp: 112.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/voveran-50mg-tablet-netmeds.jpg',
     aliases: ['Voveran 50', 'Diclofenac 50mg', 'Voveran']
   },
   {
@@ -187,7 +187,7 @@ const verifiedCatalog = [
     mrp: 165.0,
     sourceOfInformation: 'CDSCO Approved Topical Formulations',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/volini-pain-relief-gel.png',
+    image: '/medicines/volini-pain-relief-gel-50g-netmeds.jpg',
     aliases: ['Volini Gel', 'Volini', 'Pain balm', 'Diclofenac gel']
   },
   {
@@ -212,7 +212,7 @@ const verifiedCatalog = [
     mrp: 52.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/meftal-spas-tablet.png',
+    image: '/medicines/meftal-spas-tablet-netmeds.jpg',
     aliases: ['Meftal Spas', 'Meftal', 'Period pain tablet', 'Stomach cramp tablet']
   },
   {
@@ -237,7 +237,7 @@ const verifiedCatalog = [
     mrp: 75.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/zerodol-p-tablet-netmeds.jpg',
     aliases: ['Zerodol P', 'Aceclofenac Paracetamol', 'Zerodol']
   },
   {
@@ -262,7 +262,7 @@ const verifiedCatalog = [
     mrp: 42.0,
     sourceOfInformation: 'CDSCO Approved OTC Formulations',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/saridon-headache-relief-tablet.png',
+    image: '/medicines/saridon-headache-relief-tablet-netmeds.jpg',
     aliases: ['Saridon', 'Headache tablet', 'Saridon 10s']
   },
 
@@ -291,7 +291,7 @@ const verifiedCatalog = [
     mrp: 22.0,
     sourceOfInformation: 'WHO / CDSCO Essential Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/electral-ors-powder.png',
+    image: '/medicines/electral-ors-powder-21-8g-sachet-netmeds.jpg',
     aliases: ['Electral', 'ORS Sachet', 'Oral Rehydration Salts', 'Electral Powder']
   },
   {
@@ -316,7 +316,7 @@ const verifiedCatalog = [
     mrp: 35.0,
     sourceOfInformation: 'FSSAI / CDSCO Consumer Health Standards',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/electral-ready-to-drink-ors-apple-200ml-netmeds.jpg',
     aliases: ['Electral RTD', 'ORS Liquid', 'Electral Drink']
   },
   {
@@ -341,7 +341,7 @@ const verifiedCatalog = [
     mrp: 45.0,
     sourceOfInformation: 'FSSAI Standards',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/enerzal-energy-drink-powder-orange-100g-netmeds.jpg',
     aliases: ['Enerzal', 'Enerzal Orange', 'Electrolyte Drink']
   },
   {
@@ -366,7 +366,7 @@ const verifiedCatalog = [
     mrp: 65.0,
     sourceOfInformation: 'WHO Diarrhea Guidelines / CDSCO / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/zinconia-oral-solution.svg',
     aliases: ['Zinconia Syrup', 'Zinc Syrup', 'Elemental Zinc']
   },
 
@@ -395,7 +395,7 @@ const verifiedCatalog = [
     mrp: 155.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/pan-40mg-tablet-netmeds.jpg',
     aliases: ['Pan 40', 'Pantoprazole 40', 'Pantocid 40']
   },
   {
@@ -420,7 +420,7 @@ const verifiedCatalog = [
     mrp: 199.0,
     sourceOfInformation: 'CDSCO Approved Fixed Dose Combinations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/pan-d-capsule.png',
+    image: '/medicines/pan-d-capsule-netmeds.jpg',
     aliases: ['Pan D', 'Pantoprazole Domperidone', 'Pantocid DSR']
   },
   {
@@ -445,7 +445,7 @@ const verifiedCatalog = [
     mrp: 98.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/omez-20mg-capsule-netmeds.jpg',
     aliases: ['Omez 20', 'Omeprazole 20', 'Omez']
   },
   {
@@ -470,7 +470,7 @@ const verifiedCatalog = [
     mrp: 175.0,
     sourceOfInformation: 'CDSCO Approved Drugs',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/razo-20mg-tablet-netmeds.jpg',
     aliases: ['Razo 20', 'Rabeprazole 20']
   },
   {
@@ -495,7 +495,7 @@ const verifiedCatalog = [
     mrp: 52.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/ondem-md-4mg-tablet-netmeds.jpg',
     aliases: ['Ondem 4', 'Ondem MD', 'Ondansetron 4mg', 'Vomiting tablet']
   },
   {
@@ -520,7 +520,7 @@ const verifiedCatalog = [
     mrp: 38.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/ondem-syrup.png',
+    image: '/medicines/ondem-syrup-30ml-netmeds.jpg',
     aliases: ['Ondem Syrup', 'Pediatric vomiting syrup', 'Ondansetron syrup']
   },
   {
@@ -545,7 +545,7 @@ const verifiedCatalog = [
     mrp: 235.0,
     sourceOfInformation: 'CDSCO Approved Fixed Dose Combinations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/sucrafil-o-gel-suspension-200ml-netmeds.jpg',
     aliases: ['Sucrafil O', 'Sucralfate Oxetacaine', 'Ulcer gel']
   },
 
@@ -574,7 +574,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022) / CDSCO OTC',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/digene-acidity-relief-gel-mint.png',
+    image: '/medicines/digene-acidity-relief-gel-mint-200ml-netmeds.jpg',
     aliases: ['Digene Gel', 'Digene Mint', 'Antacid Syrup', 'Digene 200ml']
   },
   {
@@ -599,7 +599,7 @@ const verifiedCatalog = [
     mrp: 135.0,
     sourceOfInformation: 'CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/gelusil-mps-liquid-antacid-mint-200ml-netmeds.jpg',
     aliases: ['Gelusil', 'Gelusil MPS', 'Antacid liquid']
   },
   {
@@ -624,7 +624,7 @@ const verifiedCatalog = [
     mrp: 24.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022) / CDSCO',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/digene-chewable-tablet-mint-strip-of-15-netmeds.jpg',
     aliases: ['Digene Tablet', 'Digene Chewable', 'Gas relief tablet']
   },
   {
@@ -649,7 +649,7 @@ const verifiedCatalog = [
     mrp: 9.0,
     sourceOfInformation: 'Ayush / CDSCO Approved Proprietary Medicine',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/eno-fruit-salt-regular-5g-sachet-netmeds.jpg',
     aliases: ['Eno', 'Eno Regular', 'Fruit Salt', 'Eno Sachet']
   },
 
@@ -678,7 +678,7 @@ const verifiedCatalog = [
     mrp: 245.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/duphalac-oral-solution-150ml-netmeds.jpg',
     aliases: ['Duphalac', 'Lactulose Syrup', 'Duphalac 150ml']
   },
   {
@@ -703,7 +703,7 @@ const verifiedCatalog = [
     mrp: 14.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/dulcolax-5mg-tablet-netmeds.jpg',
     aliases: ['Dulcolax', 'Bisacodyl 5mg', 'Constipation tablet']
   },
   {
@@ -728,7 +728,7 @@ const verifiedCatalog = [
     mrp: 120.0,
     sourceOfInformation: 'Ayush / FSSAI Standards',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/softovac-bowel-regulator-100g-netmeds.jpg',
     aliases: ['Softovac', 'Isabgol', 'Psyllium husk', 'Bowel regulator']
   },
   {
@@ -753,7 +753,7 @@ const verifiedCatalog = [
     mrp: 25.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/lopamide-2mg-capsule-netmeds.jpg',
     aliases: ['Lopamide', 'Loperamide 2mg', 'Imodium', 'Loose motion tablet']
   },
   {
@@ -778,7 +778,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'CDSCO Approved Drugs',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/redotil-100mg-capsule-netmeds.jpg',
     aliases: ['Redotil 100', 'Racecadotril', 'Enuff 100']
   },
 
@@ -807,7 +807,7 @@ const verifiedCatalog = [
     mrp: 38.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/cetzine-10mg-tablet-netmeds.jpg',
     aliases: ['Cetzine', 'Cetirizine 10mg', 'Alerid 10', 'Allergy tablet']
   },
   {
@@ -832,7 +832,7 @@ const verifiedCatalog = [
     mrp: 65.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/levocet-5mg-tablet-netmeds.jpg',
     aliases: ['Levocet', 'Levocetirizine 5mg', '1-AL 5mg']
   },
   {
@@ -857,7 +857,7 @@ const verifiedCatalog = [
     mrp: 295.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/montair-lc-tablet-netmeds.jpg',
     aliases: ['Montair LC', 'Montair', 'Levocetirizine Montelukast', 'Telekast-L']
   },
   {
@@ -882,7 +882,7 @@ const verifiedCatalog = [
     mrp: 198.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/allegra-120mg-tablet-netmeds.jpg',
     aliases: ['Allegra 120', 'Allegra', 'Fexofenadine 120']
   },
   {
@@ -907,7 +907,7 @@ const verifiedCatalog = [
     mrp: 11.5,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/avil-25mg-tablet-netmeds.jpg',
     aliases: ['Avil 25', 'Avil', 'Pheniramine Maleate']
   },
   {
@@ -932,7 +932,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'CDSCO Approved Topical Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/caladryl-calamine-lotion-120ml-netmeds.jpg',
     aliases: ['Caladryl', 'Calamine Lotion', 'Prickly heat lotion']
   },
 
@@ -961,7 +961,7 @@ const verifiedCatalog = [
     mrp: 162.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/asthalin-100mcg-inhaler.png',
+    image: '/medicines/asthalin-100mcg-inhaler-netmeds.jpg',
     aliases: ['Asthalin Inhaler', 'Salbutamol Inhaler', 'Asthma pump', 'Asthalin']
   },
   {
@@ -986,7 +986,7 @@ const verifiedCatalog = [
     mrp: 385.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/budecort-200mcg-inhaler.png',
+    image: '/medicines/budecort-200mcg-inhaler-netmeds.jpg',
     aliases: ['Budecort 200', 'Budesonide Inhaler', 'Budecort']
   },
   {
@@ -1011,7 +1011,7 @@ const verifiedCatalog = [
     mrp: 495.0,
     sourceOfInformation: 'CDSCO Approved Fixed Dose Combinations / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/foracort-200-inhaler-netmeds.jpg',
     aliases: ['Foracort 200', 'Foracort', 'Formoterol Budesonide']
   },
   {
@@ -1036,7 +1036,7 @@ const verifiedCatalog = [
     mrp: 125.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/ascoril-ls-syrup-100ml-netmeds.jpg',
     aliases: ['Ascoril LS', 'Ascoril', 'Cough syrup wet cough']
   },
   {
@@ -1061,7 +1061,7 @@ const verifiedCatalog = [
     mrp: 135.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/ascoril-d-plus-syrup.png',
+    image: '/medicines/ascoril-d-plus-syrup-100ml-netmeds.jpg',
     aliases: ['Ascoril D', 'Dry cough syrup', 'Ascoril D Plus']
   },
   {
@@ -1086,7 +1086,7 @@ const verifiedCatalog = [
     mrp: 130.0,
     sourceOfInformation: 'CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/benadryl-cough-formula-syrup.png',
+    image: '/medicines/benadryl-cough-formula-syrup-150ml-netmeds.jpg',
     aliases: ['Benadryl', 'Benadryl Cough Syrup', 'Cough syrup 150ml']
   },
 
@@ -1115,7 +1115,7 @@ const verifiedCatalog = [
     mrp: 48.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/glycomet-500mg-sr-tablet-netmeds.jpg',
     aliases: ['Glycomet 500', 'Metformin 500', 'Glycomet SR']
   },
   {
@@ -1140,7 +1140,7 @@ const verifiedCatalog = [
     mrp: 125.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/glycomet-gp-1-tablet.png',
+    image: '/medicines/glycomet-gp-1-tablet-netmeds.jpg',
     aliases: ['Glycomet GP 1', 'Glimepiride Metformin', 'Diabetes combination tablet']
   },
   {
@@ -1165,7 +1165,7 @@ const verifiedCatalog = [
     mrp: 165.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/glycomet-gp-2-tablet-netmeds.jpg',
     aliases: ['Glycomet GP 2', 'Glimepiride 2mg Metformin 500']
   },
   {
@@ -1190,7 +1190,7 @@ const verifiedCatalog = [
     mrp: 380.0,
     sourceOfInformation: 'CDSCO Approved Drugs / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/janumet-50mg-500mg-tablet.png',
+    image: '/medicines/janumet-50mg-500mg-tablet-netmeds.jpg',
     aliases: ['Janumet', 'Sitagliptin Metformin', 'Janumet 50 500']
   },
   {
@@ -1215,7 +1215,7 @@ const verifiedCatalog = [
     mrp: 140.0,
     sourceOfInformation: 'CDSCO Approved Drugs',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/tenlimac-20mg-tablet-netmeds.jpg',
     aliases: ['Tenlimac 20', 'Teneligliptin 20', 'Ziten 20']
   },
   {
@@ -1240,7 +1240,7 @@ const verifiedCatalog = [
     mrp: 790.0,
     sourceOfInformation: 'CDSCO Approved Drugs',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/forxiga-10mg-tablet-netmeds.jpg',
     aliases: ['Forxiga 10', 'Dapagliflozin 10', 'Oxra 10']
   },
   {
@@ -1265,7 +1265,7 @@ const verifiedCatalog = [
     mrp: 185.0,
     sourceOfInformation: 'CDSCO Approved Biologics / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/human-mixtard-injection.png',
+    image: '/medicines/human-mixtard-30-70-injection.png',
     aliases: ['Mixtard 30 70', 'Human Insulin', 'Mixtard Vial', 'Insulin injection']
   },
 
@@ -1294,7 +1294,7 @@ const verifiedCatalog = [
     mrp: 215.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/telma-40mg-tablet.png',
+    image: '/medicines/telma-40mg-tablet-netmeds.jpg',
     aliases: ['Telma 40', 'Telmisartan 40', 'Blood pressure tablet', 'Telma']
   },
   {
@@ -1319,7 +1319,7 @@ const verifiedCatalog = [
     mrp: 235.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/telma-am-tablet-netmeds.jpg',
     aliases: ['Telma AM', 'Telmisartan Amlodipine', 'BP combination tablet']
   },
   {
@@ -1344,7 +1344,7 @@ const verifiedCatalog = [
     mrp: 68.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/amlong-5mg-tablet-netmeds.jpg',
     aliases: ['Amlong 5', 'Amlodipine 5mg', 'Stamlo 5']
   },
   {
@@ -1369,7 +1369,7 @@ const verifiedCatalog = [
     mrp: 185.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/atorva-20mg-tablet.png',
+    image: '/medicines/atorva-20mg-tablet-netmeds.jpg',
     aliases: ['Atorva 20', 'Atorvastatin 20', 'Cholesterol tablet']
   },
   {
@@ -1394,7 +1394,7 @@ const verifiedCatalog = [
     mrp: 245.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/rosuvas-10mg-tablet-netmeds.jpg',
     aliases: ['Rosuvas 10', 'Rosuvastatin 10', 'Rozavel 10']
   },
   {
@@ -1419,7 +1419,7 @@ const verifiedCatalog = [
     mrp: 5.5,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/ecosprin-75mg-tablet.png',
+    image: '/medicines/ecosprin-75mg-tablet-netmeds.jpg',
     aliases: ['Ecosprin 75', 'Aspirin 75', 'Blood thinner tablet']
   },
   {
@@ -1444,7 +1444,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/deplatt-75mg-tablet-netmeds.jpg',
     aliases: ['Deplatt 75', 'Clopidogrel 75', 'Plavix']
   },
   {
@@ -1469,7 +1469,7 @@ const verifiedCatalog = [
     mrp: 140.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/cardace-5mg-tablet-netmeds.jpg',
     aliases: ['Cardace 5', 'Ramipril 5mg', 'Cardace']
   },
   {
@@ -1494,7 +1494,7 @@ const verifiedCatalog = [
     mrp: 38.0,
     sourceOfInformation: 'CDSCO Approved Emergency Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/sorbitrate-5mg-sublingual-tablet.png',
+    image: '/medicines/sorbitrate-5mg-sublingual-tablet-netmeds.jpg',
     aliases: ['Sorbitrate 5', 'Sorbitrate', 'Angina emergency tablet', 'Isosorbide Dinitrate']
   },
 
@@ -1523,7 +1523,7 @@ const verifiedCatalog = [
     mrp: 110.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/candid-1-cream-20g-netmeds.jpg',
     aliases: ['Candid Cream', 'Clotrimazole Cream', 'Fungal cream', 'Ringworm cream']
   },
   {
@@ -1548,7 +1548,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/candid-dusting-powder-100g-netmeds.jpg',
     aliases: ['Candid Powder', 'Abzorb', 'Antifungal powder', 'Dusting powder']
   },
   {
@@ -1573,7 +1573,7 @@ const verifiedCatalog = [
     mrp: 140.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/t-bact-2-ointment-5g-netmeds.jpg',
     aliases: ['T Bact', 'Mupirocin Ointment', 'Antibiotic ointment skin']
   },
   {
@@ -1598,7 +1598,7 @@ const verifiedCatalog = [
     mrp: 110.0,
     sourceOfInformation: 'CDSCO Approved Drugs',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/fucidin-2-cream-10g-netmeds.jpg',
     aliases: ['Fucidin', 'Fusidic Acid Cream']
   },
   {
@@ -1623,7 +1623,7 @@ const verifiedCatalog = [
     mrp: 115.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/permite-5-w-w-cream-60g-netmeds.jpg',
     aliases: ['Permite', 'Permethrin Cream', 'Scabies cream', 'Scaboma']
   },
 
@@ -1652,7 +1652,7 @@ const verifiedCatalog = [
     mrp: 125.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022) / CDSCO / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/betadine-10-microbicidal-ointment.png',
+    image: '/medicines/betadine-10-microbicidal-ointment-20g-netmeds.jpg',
     aliases: ['Betadine Ointment', 'Povidone Iodine Ointment', 'Betadine', 'Antiseptic cream']
   },
   {
@@ -1677,7 +1677,7 @@ const verifiedCatalog = [
     mrp: 110.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/betadine-5-antiseptic-solution-100ml-netmeds.jpg',
     aliases: ['Betadine Liquid', 'Betadine Solution', 'Povidone Iodine Solution']
   },
   {
@@ -1702,7 +1702,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'CDSCO Approved Disinfectants',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/dettol-antiseptic-liquid.png',
+    image: '/medicines/dettol-antiseptic-liquid-250ml-netmeds.jpg',
     aliases: ['Dettol', 'Dettol Liquid', 'Antiseptic liquid', 'Dettol 250ml']
   },
   {
@@ -1727,7 +1727,7 @@ const verifiedCatalog = [
     mrp: 65.0,
     sourceOfInformation: 'CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/burnol-antiseptic-burn-cream-20g-netmeds.jpg',
     aliases: ['Burnol', 'Burn cream', 'Burnol 20g']
   },
   {
@@ -1752,7 +1752,7 @@ const verifiedCatalog = [
     mrp: 50.0,
     sourceOfInformation: 'CDSCO Medical Devices Classification',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/hansaplast-regular-bandage-strips.png',
+    image: '/medicines/hansaplast-regular-bandage-strips-pack-of-20-netmeds.jpg',
     aliases: ['Hansaplast', 'Band-Aid', 'Adhesive bandage', 'Bandage strips']
   },
 
@@ -1781,7 +1781,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'CDSCO Approved Ophthalmic Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/refresh-tears-0-5-eye-drops-10ml-netmeds.jpg',
     aliases: ['Refresh Tears', 'Carboxymethylcellulose', 'Dry eye drops', 'Eye lubricant']
   },
   {
@@ -1806,7 +1806,7 @@ const verifiedCatalog = [
     mrp: 20.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/ciplox-0-3-eye-ear-drops-10ml-netmeds.jpg',
     aliases: ['Ciplox Drops', 'Ciprofloxacin eye drops', 'Eye drops antibiotic']
   },
   {
@@ -1831,7 +1831,7 @@ const verifiedCatalog = [
     mrp: 95.0,
     sourceOfInformation: 'CDSCO Approved Otic Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/clearwax-ear-drops-10ml-netmeds.jpg',
     aliases: ['Clearwax', 'Ear wax drops', 'Waxsol']
   },
   {
@@ -1856,7 +1856,7 @@ const verifiedCatalog = [
     mrp: 110.0,
     sourceOfInformation: 'CDSCO Approved Nasal Formulations',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/otrivin-oxy-fast-relief.png',
+    image: '/medicines/otrivin-oxy-fast-relief-nasal-spray-10ml-netmeds.jpg',
     aliases: ['Otrivin', 'Nasal spray', 'Blocked nose spray', 'Otrivin Oxy']
   },
   {
@@ -1881,7 +1881,7 @@ const verifiedCatalog = [
     mrp: 65.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022)',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/nasoclear-saline-nasal-spray-20ml-netmeds.jpg',
     aliases: ['Nasoclear', 'Saline nasal spray', 'Normal saline spray']
   },
 
@@ -1910,7 +1910,7 @@ const verifiedCatalog = [
     mrp: 45.0,
     sourceOfInformation: 'CDSCO Approved Formulations / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/calcirol-60-000-iu-cholecalciferol-sachet-netmeds.jpg',
     aliases: ['Calcirol', 'Vitamin D3 Sachet', 'Cholecalciferol 60K', 'Calcirol 60000']
   },
   {
@@ -1935,7 +1935,7 @@ const verifiedCatalog = [
     mrp: 125.0,
     sourceOfInformation: 'CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/uprise-d3-60k-softgel-capsule-netmeds.jpg',
     aliases: ['Uprise D3', 'Uprise D3 60K', 'Vitamin D3 softgel']
   },
   {
@@ -1960,7 +1960,7 @@ const verifiedCatalog = [
     mrp: 52.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022) / CDSCO',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/becosules-z-capsule.png',
+    image: '/medicines/becosules-z-capsule-netmeds.jpg',
     aliases: ['Becosules', 'Becosules Z', 'B Complex capsule', 'Mouth ulcer medicine']
   },
   {
@@ -1985,7 +1985,7 @@ const verifiedCatalog = [
     mrp: 26.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022) / CDSCO',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/limcee-500mg-tablet.png',
+    image: '/medicines/limcee-500mg-chewable-tablet-netmeds.jpg',
     aliases: ['Limcee', 'Vitamin C tablet', 'Limcee 500', 'Chewable Vitamin C']
   },
   {
@@ -2010,7 +2010,7 @@ const verifiedCatalog = [
     mrp: 175.0,
     sourceOfInformation: 'CDSCO Approved Formulations / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/orofer-xt-tablet-netmeds.jpg',
     aliases: ['Orofer XT', 'Iron tablet', 'Ferrous ascorbate', 'Orofer']
   },
   {
@@ -2035,7 +2035,7 @@ const verifiedCatalog = [
     mrp: 85.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/folvite-5mg-tablet-netmeds.jpg',
     aliases: ['Folvite 5', 'Folic acid 5mg', 'Folvite', 'Pregnancy folic acid']
   },
   {
@@ -2060,7 +2060,7 @@ const verifiedCatalog = [
     mrp: 42.0,
     sourceOfInformation: 'CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/neurobion-forte-tablet-netmeds.jpg',
     aliases: ['Neurobion Forte', 'Neurobion', 'Nerve vitamin', 'Vitamin B12 tablet']
   },
 
@@ -2089,7 +2089,7 @@ const verifiedCatalog = [
     mrp: 145.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022) / CDSCO / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/shelcal-500-tablet.png',
+    image: '/medicines/shelcal-500-tablet-netmeds.jpg',
     aliases: ['Shelcal 500', 'Calcium tablet', 'Shelcal', 'Calcium D3']
   },
   {
@@ -2114,7 +2114,7 @@ const verifiedCatalog = [
     mrp: 135.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/caldikind-plus-capsule-netmeds.jpg',
     aliases: ['Caldikind Plus', 'Calcitriol Calcium', 'Osteoporosis capsule']
   },
   {
@@ -2139,7 +2139,7 @@ const verifiedCatalog = [
     mrp: 295.0,
     sourceOfInformation: 'USP / CDSCO Approved Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/cartigen-1500mg-tablet-netmeds.jpg',
     aliases: ['Cartigen', 'Glucosamine 1500', 'Joint supplement']
   },
 
@@ -2222,7 +2222,7 @@ const verifiedCatalog = [
     mrp: 165.0,
     sourceOfInformation: 'CDSCO Medical Device / Hygiene Standards',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/ob-procomfort-tampons.png',
+    image: '/medicines/ob-tampons-regular.png',
     sosEligible: true,
     sosCategory: 'MENSTRUAL_CARE',
     aliases: ['OB Tampons', 'Tampons', 'OB Regular']
@@ -2276,7 +2276,7 @@ const verifiedCatalog = [
     mrp: 290.0,
     sourceOfInformation: 'CDSCO Approved Cosmetic / Personal Care',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/vwash-plus-intimate-wash.png',
+    image: '/medicines/vwash-plus-intimate-hygiene-wash-200ml-netmeds.jpg',
     sosEligible: true,
     sosCategory: 'HYGIENE_ESSENTIALS',
     aliases: ['VWash', 'VWash Plus', 'Intimate wash', 'Vaginal wash']
@@ -2303,7 +2303,7 @@ const verifiedCatalog = [
     mrp: 199.0,
     sourceOfInformation: 'Consumer Health / Non-medicinal Wellness',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/nua-cramp-comfort-heat-patches.png',
+    image: '/medicines/nua-heat-patch.png',
     sosEligible: true,
     sosCategory: 'COMFORT_RELIEF',
     aliases: ['Nua Heat Patch', 'Cramp patch', 'Period heat patch', 'Heating pad patch']
@@ -2330,7 +2330,7 @@ const verifiedCatalog = [
     mrp: 75.0,
     sourceOfInformation: 'Hygiene & Sanitary Standards',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/disposable-sanitary-waste-bags.png',
+    image: '/medicines/sirona-disposal-bags.png',
     sosEligible: true,
     sosCategory: 'HYGIENE_ESSENTIALS',
     aliases: ['Sanitary bags', 'Disposal bags', 'Pad disposal bag']
@@ -2357,7 +2357,7 @@ const verifiedCatalog = [
     mrp: 295.0,
     sourceOfInformation: 'CDSCO Approved Fixed Dose Combinations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/trapic-mf-tablet-netmeds.jpg',
     aliases: ['Trapic MF', 'Heavy bleeding tablet', 'Tranexamic Mefenamic']
   },
 
@@ -2386,7 +2386,7 @@ const verifiedCatalog = [
     mrp: 46.0,
     sourceOfInformation: 'CDSCO Approved Pediatric Formulations / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/calpol-250mg-peadiatric-suspension.png',
+    image: '/medicines/calpol-250mg-peadiatric-suspension-60ml-netmeds.jpg',
     aliases: ['Calpol 250', 'Calpol Syrup', 'Children fever syrup', 'Paracetamol suspension']
   },
   {
@@ -2411,7 +2411,7 @@ const verifiedCatalog = [
     mrp: 42.0,
     sourceOfInformation: 'CDSCO Approved Formulations / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/calpol-100mg-ml-infant-drops-15ml-netmeds.jpg',
     aliases: ['Calpol Drops', 'Baby fever drops', 'Paracetamol drops infant']
   },
   {
@@ -2436,7 +2436,7 @@ const verifiedCatalog = [
     mrp: 65.0,
     sourceOfInformation: 'CDSCO Approved Pediatric Formulations',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/domstal-baby-oral-drops-30ml-netmeds.jpg',
     aliases: ['Domstal Drops', 'Baby vomiting drops', 'Domperidone drops']
   },
   {
@@ -2461,7 +2461,7 @@ const verifiedCatalog = [
     mrp: 72.0,
     sourceOfInformation: 'CDSCO Approved Formulations / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/augmentin-duo-dry-syrup-30ml-netmeds.jpg',
     aliases: ['Augmentin Syrup', 'Augmentin Duo Syrup', 'Amoxicillin dry syrup']
   },
   {
@@ -2486,7 +2486,7 @@ const verifiedCatalog = [
     mrp: 75.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/maxtra-oral-drops.png',
+    image: '/medicines/maxtra-oral-drops-15ml-netmeds.jpg',
     aliases: ['Maxtra Drops', 'Baby cold drops', 'Maxtra']
   },
   {
@@ -2511,7 +2511,7 @@ const verifiedCatalog = [
     mrp: 52.0,
     sourceOfInformation: 'Indian Pharmacopoeia (IP 2022)',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/nasoclear-paediatric-nasal-drops-15ml-netmeds.jpg',
     aliases: ['Nasoclear Drops', 'Infant nasal saline', 'Baby nose drops']
   },
 
@@ -2540,7 +2540,7 @@ const verifiedCatalog = [
     mrp: 205.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/augmentin-625-duo-tablet.png',
+    image: '/medicines/augmentin-625-duo-tablet-netmeds.jpg',
     aliases: ['Augmentin 625', 'Amoxyclav 625', 'Augmentin Duo', 'Moxikind-CV 625']
   },
   {
@@ -2565,7 +2565,7 @@ const verifiedCatalog = [
     mrp: 120.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/azithral-500mg-tablet.png',
+    image: '/medicines/azithral-500mg-tablet-netmeds.jpg',
     aliases: ['Azithral 500', 'Azithromycin 500', 'Azithral', 'Azee 500']
   },
   {
@@ -2590,7 +2590,7 @@ const verifiedCatalog = [
     mrp: 110.0,
     sourceOfInformation: 'CDSCO Approved Drugs / Schedule H1 / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/taxim-o-200mg-tablet.png',
+    image: '/medicines/taxim-o-200mg-tablet-netmeds.jpg',
     aliases: ['Taxim O 200', 'Cefixime 200', 'Taxim O', 'Zifi 200']
   },
   {
@@ -2615,7 +2615,7 @@ const verifiedCatalog = [
     mrp: 42.0,
     sourceOfInformation: 'CDSCO Approved Drugs / Schedule H1 / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '/medicines/ciplox-500mg-tablet.png',
+    image: '/medicines/ciplox-500mg-tablet-netmeds.jpg',
     aliases: ['Ciplox 500', 'Ciprofloxacin 500', 'Cifran 500']
   },
   {
@@ -2640,7 +2640,7 @@ const verifiedCatalog = [
     mrp: 24.0,
     sourceOfInformation: 'CDSCO Approved Drugs / NLEM 2022',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/flagyl-400mg-tablet-netmeds.jpg',
     aliases: ['Flagyl 400', 'Metronidazole 400', 'Flagyl']
   },
   {
@@ -2665,7 +2665,7 @@ const verifiedCatalog = [
     mrp: 125.0,
     sourceOfInformation: 'CDSCO Approved Formulations / Schedule H1',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/zenflox-oz-tablet-netmeds.jpg',
     aliases: ['Zenflox OZ', 'Ofloxacin Ornidazole', 'O2 Tablet']
   },
   {
@@ -2690,7 +2690,7 @@ const verifiedCatalog = [
     mrp: 185.0,
     sourceOfInformation: 'CDSCO Approved Drugs',
     verificationStatus: 'VERIFIED',
-    image: '',
+    image: '/medicines/drotin-ds-80mg-tablet-netmeds.jpg',
     aliases: ['Drotin DS', 'Drotaverine 80mg', 'Stomach pain tablet']
   }
 ];

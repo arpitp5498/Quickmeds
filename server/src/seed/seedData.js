@@ -19,7 +19,7 @@ const medicinesData = [
     "storage": "Store below 25°C away from direct sunlight.",
     "sideEffects": "Dizziness, back pain, sinus congestion in rare cases.",
     "mrp": 215,
-    "image": "/medicines/telma-40mg-tablet.png"
+    "image": "/medicines/telma-40mg-tablet-netmeds.jpg"
   },
   {
     "name": "Ecosprin 75mg Tablet",
@@ -36,7 +36,7 @@ const medicinesData = [
     "storage": "Store in a dry place below 30°C.",
     "sideEffects": "Mild dyspepsia, increased bleeding tendency.",
     "mrp": 5.5,
-    "image": "/medicines/ecosprin-75mg-tablet.png"
+    "image": "/medicines/ecosprin-75mg-tablet-netmeds.jpg"
   },
   {
     "name": "Sorbitrate 5mg Sublingual Tablet",
@@ -53,7 +53,7 @@ const medicinesData = [
     "storage": "Keep in original amber glass bottle tightly closed below 25°C.",
     "sideEffects": "Throbbing headache, temporary dizziness, facial flushing.",
     "mrp": 38,
-    "image": "/medicines/sorbitrate-5mg-sublingual-tablet.png"
+    "image": "/medicines/sorbitrate-5mg-sublingual-tablet-netmeds.jpg"
   },
   {
     "name": "Atorva 20mg Tablet",
@@ -70,7 +70,7 @@ const medicinesData = [
     "storage": "Store below 25°C.",
     "sideEffects": "Muscle ache, elevated liver enzymes in rare cases.",
     "mrp": 185,
-    "image": "/medicines/atorva-20mg-tablet.png"
+    "image": "/medicines/atorva-20mg-tablet-netmeds.jpg"
   },
   {
     "name": "Asthalin 100mcg Inhaler",
@@ -87,7 +87,7 @@ const medicinesData = [
     "storage": "Store below 30°C. Protect from frost and direct sunlight.",
     "sideEffects": "Mild tremor, tachycardia, transient headache.",
     "mrp": 162,
-    "image": "/medicines/asthalin-100mcg-inhaler.png"
+    "image": "/medicines/asthalin-100mcg-inhaler-netmeds.jpg"
   },
   {
     "name": "Budecort 200mcg Inhaler",
@@ -104,7 +104,7 @@ const medicinesData = [
     "storage": "Store below 25°C.",
     "sideEffects": "Oral candidiasis if mouth not rinsed, hoarseness.",
     "mrp": 340,
-    "image": "/medicines/budecort-200mcg-inhaler.png"
+    "image": "/medicines/budecort-200mcg-inhaler-netmeds.jpg"
   },
   {
     "name": "Ascoril D Plus Syrup (100ml)",
@@ -120,7 +120,7 @@ const medicinesData = [
     "usageInstructions": "Take 5-10ml two to three times daily after meals.",
     "storage": "Store at room temperature.",
     "mrp": 128,
-    "image": "/medicines/ascoril-d-plus-syrup.png"
+    "image": "/medicines/ascoril-d-plus-syrup-100ml-netmeds.jpg"
   },
   {
     "name": "Benadryl Cough Formula Syrup (150ml)",
@@ -134,7 +134,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Soothing expectorant syrup relieving chesty, tickly cough and sore throat irritation.",
     "mrp": 145,
-    "image": "/medicines/benadryl-cough-formula-syrup.png"
+    "image": "/medicines/benadryl-cough-formula-syrup-150ml-netmeds.jpg"
   },
   {
     "name": "Otrivin Oxy Fast Relief Nasal Spray (10ml)",
@@ -148,7 +148,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Unblocks stuffy nasal passages within 25 seconds for up to 12 hours of clear breathing.",
     "mrp": 110,
-    "image": "/medicines/otrivin-oxy-fast-relief-nasal-spray.png"
+    "image": "/medicines/otrivin-oxy-fast-relief-nasal-spray-10ml-netmeds.jpg"
   },
   {
     "name": "Augmentin 625 Duo Tablet",
@@ -165,7 +165,7 @@ const medicinesData = [
     "storage": "Store in moisture-proof packaging below 25°C.",
     "sideEffects": "Mild diarrhea, nausea, skin rash.",
     "mrp": 204,
-    "image": "/medicines/augmentin-625-duo-tablet.png"
+    "image": "/medicines/augmentin-625-duo-tablet-netmeds.jpg"
   },
   {
     "name": "Azithral 500mg Tablet",
@@ -181,7 +181,7 @@ const medicinesData = [
     "usageInstructions": "Take 1 tablet daily 1 hour before or 2 hours after meals for 3-5 days.",
     "storage": "Store below 30°C.",
     "mrp": 132,
-    "image": "/medicines/azithral-500mg-tablet.png"
+    "image": "/medicines/azithral-500mg-tablet-netmeds.jpg"
   },
   {
     "name": "Ciplox 500mg Tablet",
@@ -195,7 +195,7 @@ const medicinesData = [
     "prescriptionSchedule": "Schedule H1",
     "description": "Fluoroquinolone antibiotic for urinary tract, gastrointestinal, and systemic bacterial infections.",
     "mrp": 48,
-    "image": "/medicines/ciplox-500mg-tablet.png"
+    "image": "/medicines/ciplox-500mg-tablet-netmeds.jpg"
   },
   {
     "name": "Taxim-O 200mg Tablet",
@@ -209,7 +209,7 @@ const medicinesData = [
     "prescriptionSchedule": "Schedule H1",
     "description": "Third-generation cephalosporin antibiotic for typhoid, UTI, otitis media, and bronchitis.",
     "mrp": 175,
-    "image": "/medicines/taxim-o-200mg-tablet.png"
+    "image": "/medicines/taxim-o-200mg-tablet-netmeds.jpg"
   },
   {
     "name": "Dolo 650mg Tablet",
@@ -225,7 +225,7 @@ const medicinesData = [
     "usageInstructions": "Take 1 tablet every 4-6 hours as needed. Do not exceed 4 tablets in 24 hours.",
     "storage": "Store below 30°C in a dry place.",
     "mrp": 34,
-    "image": "/medicines/dolo-650mg-tablet.png",
+    "image": "/medicines/dolo-650mg-tablet-netmeds.jpg",
     "sosEligible": true,
     "sosCategory": "COMFORT_RELIEF"
   },
@@ -241,7 +241,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Fast-acting paracetamol with rapid disintegration technology for prompt headache and fever relief.",
     "mrp": 22.5,
-    "image": "/medicines/crocin-500-advance-tablet.png"
+    "image": "/medicines/crocin-500-advance-tablet-netmeds.jpg"
   },
   {
     "name": "Combiflam Tablet",
@@ -256,7 +256,7 @@ const medicinesData = [
     "description": "Dual anti-inflammatory and analgesic combination for muscle pain, dental ache, joint sprains, and fever.",
     "usageInstructions": "Always take with food or milk to prevent gastric irritation.",
     "mrp": 45,
-    "image": "/medicines/combiflam-tablet.png",
+    "image": "/medicines/combiflam-tablet-netmeds.jpg",
     "sosEligible": true,
     "sosCategory": "COMFORT_RELIEF"
   },
@@ -272,7 +272,7 @@ const medicinesData = [
     "prescriptionSchedule": "Schedule H",
     "description": "Relieves spasmodic abdominal cramps, intestinal colic, and menstrual pain.",
     "mrp": 52,
-    "image": "/medicines/meftal-spas-tablet.png"
+    "image": "/medicines/meftal-spas-tablet-netmeds.jpg"
   },
   {
     "name": "Saridon Headache Relief Tablet",
@@ -286,7 +286,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Classic triple-action formula providing rapid relief from acute tension headaches and toothaches within 30 minutes.",
     "mrp": 42,
-    "image": "/medicines/saridon-headache-relief-tablet.png"
+    "image": "/medicines/saridon-headache-relief-tablet-netmeds.jpg"
   },
   {
     "name": "Volini Pain Relief Gel (50g)",
@@ -300,7 +300,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Deep penetrating pain relief gel for neck pain, lower backache, joint stiffness, and athletic sprains.",
     "mrp": 165,
-    "image": "/medicines/volini-pain-relief-gel.png"
+    "image": "/medicines/volini-pain-relief-gel-50g-netmeds.jpg"
   },
   {
     "name": "Glycomet-GP 1 Tablet",
@@ -317,7 +317,7 @@ const medicinesData = [
     "storage": "Store below 25°C.",
     "sideEffects": "Hypoglycemia if meals skipped, mild metallic taste.",
     "mrp": 125,
-    "image": "/medicines/glycomet-gp-1-tablet.png"
+    "image": "/medicines/glycomet-gp-1-tablet-netmeds.jpg"
   },
   {
     "name": "Janumet 50mg/500mg Tablet",
@@ -331,7 +331,7 @@ const medicinesData = [
     "prescriptionSchedule": "Schedule H",
     "description": "DPP-4 inhibitor combined with metformin providing steady glycemic control with low hypoglycemic risk.",
     "mrp": 380,
-    "image": "/medicines/janumet-50mg-500mg-tablet.png"
+    "image": "/medicines/janumet-50mg-500mg-tablet-netmeds.jpg"
   },
   {
     "name": "Human Mixtard 30/70 100IU/ml Injection",
@@ -364,7 +364,7 @@ const medicinesData = [
     "usageInstructions": "Dosage based on child body weight. Use measuring cap provided.",
     "storage": "Store below 25°C away from direct sunlight.",
     "mrp": 45,
-    "image": "/medicines/calpol-250mg-paediatric-suspension.png"
+    "image": "/medicines/calpol-250mg-peadiatric-suspension-60ml-netmeds.jpg"
   },
   {
     "name": "Maxtra Oral Drops (15ml)",
@@ -378,7 +378,7 @@ const medicinesData = [
     "prescriptionSchedule": "Schedule H",
     "description": "Pediatric cold and nasal decongestant drops relieving blocked nose, sneezing, and runny nose in children.",
     "mrp": 78,
-    "image": "/medicines/maxtra-oral-drops.png"
+    "image": "/medicines/maxtra-oral-drops-15ml-netmeds.jpg"
   },
   {
     "name": "Ondem Syrup (30ml)",
@@ -393,7 +393,7 @@ const medicinesData = [
     "description": "Pediatric antiemetic medication stopping sudden acute vomiting, gastroenteritis, and nausea in children.",
     "usageInstructions": "Administer 30 mins before feeding or medication as directed by pediatrician.",
     "mrp": 42,
-    "image": "/medicines/ondem-syrup.png"
+    "image": "/medicines/ondem-syrup-30ml-netmeds.jpg"
   },
   {
     "name": "Pan-D Capsule",
@@ -408,7 +408,7 @@ const medicinesData = [
     "description": "Proton-pump inhibitor and prokinetic treating severe acid reflux (GERD), heartburn, gastric fullness, and nausea.",
     "usageInstructions": "Take 1 capsule on an empty stomach in the morning 30 minutes before breakfast.",
     "mrp": 199,
-    "image": "/medicines/pan-d-capsule.png"
+    "image": "/medicines/pan-d-capsule-netmeds.jpg"
   },
   {
     "name": "Digene Acidity Relief Gel Mint (200ml)",
@@ -422,7 +422,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Sugar-free, scientifically balanced antacid gel providing instant soothing relief from acidity and gas.",
     "mrp": 168,
-    "image": "/medicines/digene-acidity-relief-gel-mint.png"
+    "image": "/medicines/digene-acidity-relief-gel-mint-200ml-netmeds.jpg"
   },
   {
     "name": "Electral ORS Powder (21.8g Sachet)",
@@ -437,7 +437,7 @@ const medicinesData = [
     "description": "Restores essential body electrolytes and fluids lost during acute dehydration, diarrhea, heat exhaustion, and vomiting.",
     "usageInstructions": "Dissolve entire sachet in 1 Litre of clean drinking water. Consume within 24 hours.",
     "mrp": 22,
-    "image": "/medicines/electral-ors-powder.png",
+    "image": "/medicines/electral-ors-powder-21-8g-sachet-netmeds.jpg",
     "sosEligible": true,
     "sosCategory": "COMFORT_RELIEF"
   },
@@ -453,7 +453,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Broad-spectrum antiseptic ointment for treating cuts, burns, scrapes, and preventing bacterial/fungal wound infections.",
     "mrp": 120,
-    "image": "/medicines/betadine-10-microbicidal-ointment.png"
+    "image": "/medicines/betadine-10-microbicidal-ointment-20g-netmeds.jpg"
   },
   {
     "name": "Dettol Antiseptic Liquid (250ml)",
@@ -467,7 +467,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Gold-standard antiseptic disinfectant for wound cleaning, emergency first aid, and surgical hygiene.",
     "mrp": 154,
-    "image": "/medicines/dettol-antiseptic-liquid.png"
+    "image": "/medicines/dettol-antiseptic-liquid-250ml-netmeds.jpg"
   },
   {
     "name": "Hansaplast Regular Bandage Strips (Pack of 20)",
@@ -481,7 +481,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Breathable, antiseptic wound plaster protecting everyday cuts and scrapes from dirt and bacteria.",
     "mrp": 45,
-    "image": "/medicines/hansaplast-regular-bandage-strips.png"
+    "image": "/medicines/hansaplast-regular-bandage-strips-pack-of-20-netmeds.jpg"
   },
   {
     "name": "Whisper Ultra Clean Sanitary Pads XL (30 Pads)",
@@ -509,7 +509,7 @@ const medicinesData = [
     "prescriptionSchedule": "OTC",
     "description": "Maintains optimal vaginal pH 3.5 to prevent irritation, bacterial vaginosis, and odour.",
     "mrp": 225,
-    "image": "/medicines/vwash-plus-intimate-hygiene-wash.png",
+    "image": "/medicines/vwash-plus-intimate-hygiene-wash-200ml-netmeds.jpg",
     "sosEligible": true,
     "sosCategory": "HYGIENE_ESSENTIALS"
   },
@@ -528,7 +528,7 @@ const medicinesData = [
     "storage": "Store in a cool dry place below 25°C.",
     "sideEffects": "None reported with standard dosage.",
     "mrp": 28,
-    "image": "/medicines/limcee-500mg-chewable-tablet.png"
+    "image": "/medicines/limcee-500mg-chewable-tablet-netmeds.jpg"
   },
   {
     "name": "Shelcal 500 Tablet",
@@ -545,7 +545,7 @@ const medicinesData = [
     "storage": "Store protected from light and moisture below 30°C.",
     "sideEffects": "Mild constipation if taken without sufficient water.",
     "mrp": 135,
-    "image": "/medicines/shelcal-500-tablet.png"
+    "image": "/medicines/shelcal-500-tablet-netmeds.jpg"
   },
   {
     "name": "Becosules Z Capsule",
@@ -562,7 +562,7 @@ const medicinesData = [
     "storage": "Store in a dry place below 25°C.",
     "sideEffects": "Mild bright yellow discoloration of urine (harmless B2 excretion).",
     "mrp": 52,
-    "image": "/medicines/becosules-z-capsule.png"
+    "image": "/medicines/becosules-z-capsule-netmeds.jpg"
   },
   {
     "name": "Sanitary Pads – Regular (Whisper Choice)",
