@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg_betadine_sol" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fefce8"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+    <filter id="shadow_betadine_sol" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bg_betadine_sol)" rx="20"/>
+  
+  <!-- Category Badge -->
+  <rect x="24" y="20" width="169" height="22" rx="11" fill="#ffffff" opacity="0.9"/>
+  <text x="35" y="35" fill="#b45309" font-family="Arial,sans-serif" font-size="9.5" font-weight="bold" letter-spacing="0.5">ANTISEPTIC • SOLUTION</text>
+
+  <!-- Product Illustration -->
+  <g filter="url(#shadow_betadine_sol)">
+    <!-- Shadow -->
+  <ellipse cx="200" cy="278" rx="60" ry="8" fill="#94a3b8" opacity="0.35"/>
+  <!-- Bottle Cap -->
+  <rect x="176" y="65" width="48" height="30" rx="4" fill="#dc2626" stroke="#b91c1c" stroke-width="1.5"/>
+  <line x1="184" y1="72" x2="184" y2="88" stroke="#ef4444" stroke-width="1.5"/>
+  <line x1="200" y1="72" x2="200" y2="88" stroke="#ef4444" stroke-width="1.5"/>
+  <line x1="216" y1="72" x2="216" y2="88" stroke="#ef4444" stroke-width="1.5"/>
+  <!-- Bottle Neck -->
+  <rect x="184" y="95" width="32" height="15" fill="#78350f"/>
+  <!-- Dark Amber Bottle Body -->
+  <path d="M138 122 Q138 110 168 110 L232 110 Q262 110 262 122 L262 262 Q262 276 244 276 L156 276 Q138 276 138 262 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+  <rect x="144" y="118" width="8" height="150" rx="4" fill="#b45309" opacity="0.5"/>
+  <!-- Bottle Label -->
+  <rect x="146" y="132" width="108" height="122" rx="6" fill="#fef08a"/>
+  <rect x="146" y="132" width="108" height="28" rx="6" fill="#78350f"/>
+  <text x="200" y="151" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="12" fill="#ffffff" letter-spacing="0.5">BETADINE</text>
+  <rect x="156" y="165" width="88" height="16" rx="3" fill="#dc2626"/>
+  <text x="200" y="177" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="8.5" fill="#ffffff">5% SOLUTION</text>
+  <text x="200" y="200" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#451a03">Povidone-Iodine</text>
+  <text x="200" y="215" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" fill="#78350f">Microbicidal</text>
+  <line x1="165" y1="225" x2="235" y2="225" stroke="#ca8a04" stroke-width="1"/>
+  <text x="200" y="242" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="10.5" fill="#78350f">100 ml</text>
+  </g>
+
+  <!-- Product Labels Bottom -->
+  <text x="200" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="20" fill="#1e293b">Betadine 5% Solution</text>
+  <text x="200" y="345" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#475569">Povidone-Iodine 5% w/v (100ml)</text>
+  <text x="200" y="370" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8">Win-Medicare</text>
+</svg>

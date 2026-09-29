@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="lidGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+    <linearGradient id="jarGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="35%" stop-color="#a16207"/>
+      <stop offset="70%" stop-color="#451a03"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Powder Container / Jar -->
+  <g filter="url(#shadow)">
+    <!-- Floor Drop Shadow -->
+    <ellipse cx="200" cy="256" rx="72" ry="10" fill="#0f172a" opacity="0.14"/>
+    
+    <!-- Screw Lid -->
+    <rect x="134" y="68" width="132" height="30" rx="6" fill="url(#lidGrad)" stroke="#15803d" stroke-width="1.5"/>
+    
+    <!-- Lid Grips / Ridges -->
+    <line x1="146" y1="72" x2="146" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="160" y1="72" x2="160" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="174" y1="72" x2="174" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="188" y1="72" x2="188" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="202" y1="72" x2="202" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="216" y1="72" x2="216" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="230" y1="72" x2="230" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="244" y1="72" x2="244" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    <line x1="254" y1="72" x2="254" y2="94" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+    
+    <!-- Neck Ring -->
+    <rect x="140" y="98" width="120" height="8" rx="2" fill="#d97706" stroke="#b45309" stroke-width="1"/>
+    
+    <!-- Jar Body -->
+    <rect x="128" y="106" width="144" height="142" rx="14" fill="url(#jarGrad)" stroke="#78350f" stroke-width="1.5"/>
+    
+    <!-- Jar Label -->
+    <rect x="132" y="120" width="136" height="116" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1"/>
+    
+    <!-- Top Green Band -->
+    <rect x="132" y="120" width="136" height="32" rx="8" fill="#15803d"/>
+    <rect x="132" y="142" width="136" height="10" fill="#15803d"/>
+    <text x="200" y="141" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" letter-spacing="1">LUPIN HERBAL</text>
+    
+    <!-- Brand / Formula -->
+    <text x="200" y="168" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#78350f">Softovac</text>
+    <text x="200" y="182" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" fill="#475569">Bowel Regulator</text>
+    
+    <!-- Ayurvedic Herbal Leaf Seal -->
+    <circle cx="200" cy="201" r="11" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+    <path d="M 196,206 Q 200,195 204,195 Q 204,200 196,206 Z" fill="#16a34a"/>
+    
+    <!-- Weight Badge -->
+    <rect x="174" y="217" width="52" height="15" rx="7.5" fill="#78350f"/>
+    <text x="200" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="bold" fill="#ffffff">Net: 100g</text>
+    
+    <!-- Highlights -->
+    <path d="M 134,116 L 134,240" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="200" y="302" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="22" fill="#1e293b">Softovac</text>
+  <text x="200" y="327" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#475569">Ispaghula + Senna</text>
+  <text x="200" y="355" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#94a3b8" letter-spacing="0.5">Lupin</text>
+</svg>

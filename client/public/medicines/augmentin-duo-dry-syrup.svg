@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="capGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="35%" stop-color="#e2e8f0"/>
+      <stop offset="70%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="liquidGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#fef9c3"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Syrup Bottle -->
+  <g filter="url(#shadow)">
+    <!-- Floor Drop Shadow -->
+    <ellipse cx="200" cy="256" rx="55" ry="9" fill="#0f172a" opacity="0.14"/>
+    
+    <!-- Measuring Cap (Top) -->
+    <rect x="178" y="55" width="44" height="32" rx="4" fill="url(#capGrad)" stroke="#cbd5e1" stroke-width="1.2"/>
+    <!-- Graduation marks on measuring cup -->
+    <line x1="184" y1="64" x2="198" y2="64" stroke="rgba(100,116,139,0.5)" stroke-width="1.5"/>
+    <line x1="184" y1="71" x2="204" y2="71" stroke="rgba(100,116,139,0.5)" stroke-width="1.5"/>
+    <line x1="184" y1="78" x2="198" y2="78" stroke="rgba(100,116,139,0.5)" stroke-width="1.5"/>
+    
+    <!-- Bottle Neck -->
+    <rect x="185" y="87" width="30" height="15" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1"/>
+    <rect x="182" y="99" width="36" height="5" rx="2" fill="#ffffff"/>
+    
+    <!-- Bottle Body Silhouette -->
+    <path d="M 185,104 C 160,114 146,128 146,146 L 146,238 C 146,250 156,254 170,254 L 230,254 C 244,254 254,250 254,238 L 254,146 C 254,128 240,114 215,104 Z" fill="url(#bottleGrad)" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+    
+    <!-- Liquid Interior -->
+    <path d="M 150,154 L 150,238 C 150,246 158,250 170,250 L 230,250 C 242,250 250,246 250,238 L 250,154 Z" fill="url(#liquidGrad)" opacity="0.85"/>
+    
+    <!-- Label -->
+    <rect x="154" y="148" width="92" height="92" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+    
+    <!-- Label Header Strip -->
+    <rect x="154" y="148" width="92" height="24" rx="6" fill="#b91c1c"/>
+    <rect x="154" y="164" width="92" height="8" fill="#b91c1c"/>
+    <text x="200" y="164" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="bold" fill="#ffffff" letter-spacing="0.5">GSK • Duo Dry Syrup</text>
+    
+    <!-- Brand / Formula on Label -->
+    <text x="200" y="186" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#0f172a">Augmentin</text>
+    <text x="200" y="198" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" fill="#475569">Oral Suspension</text>
+    
+    <!-- Volume Badge -->
+    <rect x="176" y="212" width="48" height="18" rx="9" fill="#b91c1c"/>
+    <text x="200" y="224" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" font-weight="bold" fill="#ffffff">30 ml</text>
+    
+    <!-- Glass Highlight Reflection -->
+    <path d="M 152,126 L 152,246" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 157,132 L 157,242" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text x="200" y="302" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="22" fill="#1e293b">Augmentin Duo Dry Syrup</text>
+  <text x="200" y="327" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#475569">Amoxicillin + Clavulanic Acid</text>
+  <text x="200" y="355" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#94a3b8" letter-spacing="0.5">GlaxoSmithKline</text>
+</svg>

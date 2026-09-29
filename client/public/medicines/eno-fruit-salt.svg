@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg_eno_sachet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#eff6ff"/>
+      <stop offset="100%" stop-color="#dbeafe"/>
+    </linearGradient>
+    <filter id="shadow_eno_sachet" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bg_eno_sachet)" rx="20"/>
+  
+  <!-- Category Badge -->
+  <rect x="24" y="20" width="169" height="22" rx="11" fill="#ffffff" opacity="0.9"/>
+  <text x="35" y="35" fill="#1d4ed8" font-family="Arial,sans-serif" font-size="9.5" font-weight="bold" letter-spacing="0.5">FAST RELIEF • ANTACID</text>
+
+  <!-- Product Illustration -->
+  <g filter="url(#shadow_eno_sachet)">
+    <!-- Shadow -->
+  <ellipse cx="200" cy="278" rx="60" ry="8" fill="#94a3b8" opacity="0.35"/>
+  <!-- Sachet Body -->
+  <rect x="136" y="70" width="128" height="205" rx="6" fill="#1e40af" stroke="#1d4ed8" stroke-width="1.5"/>
+  <!-- Top and Bottom crimp borders -->
+  <line x1="136" y1="78" x2="264" y2="78" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <line x1="136" y1="267" x2="264" y2="267" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <!-- Tear notch -->
+  <polygon points="136,92 144,97 136,102" fill="#eff6ff"/>
+  <!-- Effervescent bubbles -->
+  <circle cx="152" cy="115" r="4" fill="#60a5fa" opacity="0.6"/>
+  <circle cx="160" cy="105" r="3" fill="#93c5fd" opacity="0.8"/>
+  <circle cx="240" cy="112" r="5" fill="#60a5fa" opacity="0.7"/>
+  <circle cx="248" cy="100" r="3.5" fill="#93c5fd" opacity="0.9"/>
+  <!-- ENO Brand Badge -->
+  <rect x="146" y="125" width="108" height="42" rx="6" fill="#facc15"/>
+  <text x="200" y="156" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="24" fill="#1e3a8a" letter-spacing="1">ENO</text>
+  <!-- Sachet Details -->
+  <text x="200" y="188" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="11" fill="#ffffff">Fruit Salt Regular</text>
+  <rect x="156" y="198" width="88" height="18" rx="4" fill="#ffffff"/>
+  <text x="200" y="211" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="9" fill="#1e40af">GETS TO WORK IN 6s</text>
+  <text x="200" y="235" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#93c5fd">Sodium Bicarbonate</text>
+  <text x="200" y="253" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="11" fill="#facc15">5 g Sachet</text>
+  </g>
+
+  <!-- Product Labels Bottom -->
+  <text x="200" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="20" fill="#1e293b">Eno Fruit Salt Regular</text>
+  <text x="200" y="345" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#475569">Effervescent Fast Action (5g)</text>
+  <text x="200" y="370" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8">GlaxoSmithKline</text>
+</svg>

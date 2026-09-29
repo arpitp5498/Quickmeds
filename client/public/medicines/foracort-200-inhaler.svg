@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg_foracort_inh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#faf5ff"/>
+      <stop offset="100%" stop-color="#f3e8ff"/>
+    </linearGradient>
+    <filter id="shadow_foracort_inh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bg_foracort_inh)" rx="20"/>
+  
+  <!-- Category Badge -->
+  <rect x="24" y="20" width="169" height="22" rx="11" fill="#ffffff" opacity="0.9"/>
+  <text x="35" y="35" fill="#7e22ce" font-family="Arial,sans-serif" font-size="9.5" font-weight="bold" letter-spacing="0.5">RESPIRATORY • INHALER</text>
+
+  <!-- Product Illustration -->
+  <g filter="url(#shadow_foracort_inh)">
+    <!-- Shadow -->
+  <ellipse cx="210" cy="275" rx="65" ry="8" fill="#94a3b8" opacity="0.35"/>
+  <!-- Vapor / Mist Puff -->
+  <circle cx="285" cy="235" r="9" fill="#e9d5ff" opacity="0.8"/>
+  <circle cx="305" cy="230" r="13" fill="#d8b4fe" opacity="0.6"/>
+  <circle cx="325" cy="225" r="17" fill="#c084fc" opacity="0.4"/>
+  <!-- Metallic Canister Top -->
+  <rect x="155" y="60" width="50" height="35" rx="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="160" y="55" width="40" height="8" rx="3" fill="#94a3b8"/>
+  <!-- Purple Inhaler Actuator Body -->
+  <path d="M150 88 L210 88 L210 205 L265 205 L265 260 L190 260 C165 260 150 245 150 220 Z" fill="#7e22ce" stroke="#6b21a8" stroke-width="2"/>
+  <!-- Mouthpiece Cap (Dark Violet) -->
+  <rect x="232" y="196" width="42" height="66" rx="8" fill="#581c87" stroke="#3b0764" stroke-width="1.5"/>
+  <!-- Brand text rotated on actuator -->
+  <text x="162" y="150" fill="#ffffff" font-family="Arial,sans-serif" font-size="11" font-weight="900" transform="rotate(-90 162 150)" letter-spacing="0.5">FORACORT 200</text>
+  <text x="180" y="150" fill="#e9d5ff" font-family="Arial,sans-serif" font-size="8" font-weight="bold" transform="rotate(-90 180 150)">Cipla Inhaler</text>
+  </g>
+
+  <!-- Product Labels Bottom -->
+  <text x="200" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="20" fill="#1e293b">Foracort 200 Inhaler</text>
+  <text x="200" y="345" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#475569">Formoterol + Budesonide (120 MDI)</text>
+  <text x="200" y="370" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8">Cipla</text>
+</svg>
