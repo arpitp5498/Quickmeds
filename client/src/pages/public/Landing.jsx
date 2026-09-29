@@ -12,9 +12,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
-  Navigation
+  Navigation,
+  ChevronDown,
+  Smartphone,
+  Download,
+  QrCode
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
 import SearchBar from '../../components/ui/SearchBar';
 import { useLocation } from '../../context/LocationContext';
 import EmergencyEssentialsSection from '../../components/emergency/EmergencyEssentialsSection';
