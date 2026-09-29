@@ -175,10 +175,39 @@ const medicineSchema = new mongoose.Schema(
       type: String,
       default: 'CDSCO Approved Drugs / NLEM 2022'
     },
+    gtin: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     verificationStatus: {
       type: String,
-      enum: ['VERIFIED', 'NEEDS_REVIEW', 'DISCONTINUED'],
+      enum: ['VERIFIED', 'NEEDS_REVIEW', 'DISCONTINUED', 'MERGED'],
       default: 'VERIFIED'
+    },
+    isMerged: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    canonicalMedicineId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Medicine',
+      default: null,
+      index: true
+    },
+    mergeReason: {
+      type: String,
+      default: ''
+    },
+    flaggedForReview: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    reviewNotes: {
+      type: String,
+      default: ''
     },
     lastVerificationDate: {
       type: Date,

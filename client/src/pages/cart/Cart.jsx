@@ -162,6 +162,14 @@ const Cart = () => {
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {item.strength} • ₹{item.price} each
                   </span>
+                  {item.pharmacyName && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                      <Store size={12} color="var(--primary-600)" />
+                      <span style={{ fontSize: '0.72rem', color: 'var(--primary-700)', fontWeight: 600 }}>
+                        Fulfilled by: {item.pharmacyName}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

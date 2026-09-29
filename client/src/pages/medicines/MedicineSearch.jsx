@@ -59,7 +59,7 @@ export const CATEGORIES = [
 ];
 
 const DEFAULT_CATEGORY_COUNTS = {
-  'All': 116
+  'All': 109
 };
 
 const MedicineSearch = () => {

@@ -66,7 +66,7 @@ function calculateSimilarity(str1, str2) {
 async function matchWithMasterCatalog(searchName, genericHint = '', allMedicines = null) {
   if (!searchName) return { status: 'UNMATCHED', matchedMedicine: null, confidence: 0 };
 
-  const catalog = allMedicines || (await Medicine.find({ active: true }));
+  const catalog = allMedicines || (await Medicine.find({ active: true, isMerged: { $ne: true } }));
   const normQuery = normalizeString(searchName);
   const normGeneric = normalizeString(genericHint);
 
@@ -252,7 +252,7 @@ async function bulkSyncInventory({
     return { totalProcessed: 0, matchedCount: 0, items: [] };
   }
 
-  const masterMedicines = await Medicine.find({ active: true });
+  const masterMedicines = await Medicine.find({ active: true, isMerged: { $ne: true } });
   const medicineMap = new Map(masterMedicines.map(m => [m._id.toString(), m]));
 
   const activities = [];
@@ -376,7 +376,7 @@ async function parseAndMatchSpreadsheet(fileBuffer, fileName = '') {
     throw ApiError.badRequest('Spreadsheet is empty or contains no valid rows.');
   }
 
-  const allMedicines = await Medicine.find({ active: true });
+  const allMedicines = await Medicine.find({ active: true, isMerged: { $ne: true } });
 
   // Intelligent column header detection
   const sampleRow = rawRows[0];
@@ -469,7 +469,7 @@ async function parseAndMatchSpreadsheet(fileBuffer, fileName = '') {
  * Extracts line items and metadata from a wholesale purchase invoice
  */
 async function parseInvoiceOCR(fileBuffer, mimeType = 'image/jpeg', fileName = '') {
-  const allMedicines = await Medicine.find({ active: true });
+  const allMedicines = await Medicine.find({ active: true, isMerged: { $ne: true } });
 
   // Intelligent OCR extraction engine
   // Extracts distributor, invoice number, line items with confidence rating

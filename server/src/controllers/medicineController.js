@@ -21,7 +21,11 @@ const searchMedicines = async (req, res, next) => {
       lng
     } = req.query;
 
-    const query = { active: true };
+    const query = {
+      active: true,
+      isMerged: { $ne: true },
+      verificationStatus: { $ne: 'MERGED' }
+    };
 
     if (q) {
       const searchRegex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -95,9 +99,9 @@ const searchMedicines = async (req, res, next) => {
       .skip(skip)
       .limit(parseInt(limit, 10));
 
-    // Category counts for quick discovery navigation
+    // Category counts for quick discovery navigation (excluding merged duplicates)
     const categoryCountsAgg = await Medicine.aggregate([
-      { $match: { active: true } },
+      { $match: { active: true, isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' } } },
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
     const categoryCounts = {};
@@ -121,25 +125,39 @@ const searchMedicines = async (req, res, next) => {
 
     const results = medicines.map((med) => {
       const medObj = med.toObject();
-      const matchingInventories = inventories.filter(
+
+      // Exclude demo stores and suspicious prices from lowestPrice and available count
+      const verifiedInventories = inventories.filter(
+        (inv) =>
+          inv.medicineId.toString() === med._id.toString() &&
+          inv.pharmacyId &&
+          !inv.isPriceSuspicious &&
+          !inv.pharmacyId.isDemo
+      );
+
+      const allInventories = inventories.filter(
         (inv) => inv.medicineId.toString() === med._id.toString() && inv.pharmacyId
       );
 
-      medObj.availablePharmaciesCount = matchingInventories.length;
-      medObj.isAvailableNearby = matchingInventories.length > 0;
+      const activeInventories = verifiedInventories.length > 0 ? verifiedInventories : allInventories;
 
-      if (matchingInventories.length > 0) {
-        // Find best price among verified pharmacies
-        const prices = matchingInventories.map((i) => i.price);
+      medObj.availablePharmaciesCount = activeInventories.length;
+      medObj.isAvailableNearby = activeInventories.length > 0;
+
+      if (activeInventories.length > 0) {
+        // Find best price among verified authentic pharmacies
+        const prices = activeInventories.map((i) => i.price);
         medObj.lowestPrice = Math.min(...prices);
 
         if (userLat !== null && userLng !== null) {
-          const distances = matchingInventories.map((i) => {
+          const distances = activeInventories.map((i) => {
             const [pLng, pLat] = i.pharmacyId.location.coordinates;
             return calculateDistance(userLat, userLng, pLat, pLng);
           });
           medObj.nearestDistanceKm = Math.min(...distances);
         }
+      } else {
+        medObj.lowestPrice = med.mrp;
       }
 
       return medObj;
@@ -166,10 +184,18 @@ const searchMedicines = async (req, res, next) => {
 const getMedicineById = async (req, res, next) => {
   try {
     const { lat, lng } = req.query;
-    const medicine = await Medicine.findById(req.params.id);
+    let medicine = await Medicine.findById(req.params.id);
 
     if (!medicine) {
       throw ApiError.notFound('Medicine not found');
+    }
+
+    // Seamlessly forward merged duplicates to canonical record
+    if (medicine.isMerged && medicine.canonicalMedicineId) {
+      const canonical = await Medicine.findById(medicine.canonicalMedicineId);
+      if (canonical) {
+        medicine = canonical;
+      }
     }
 
     // Find all verified pharmacies stocking this medicine
@@ -190,30 +216,52 @@ const getMedicineById = async (req, res, next) => {
       .map((item) => {
         const pharmacy = item.pharmacyId;
         let distanceKm = 2.5; // default estimate
-        if (userLat !== null && userLng !== null && pharmacy.location) {
+        if (userLat !== null && userLng !== null && pharmacy.location && pharmacy.location.coordinates) {
           const [pLng, pLat] = pharmacy.location.coordinates;
           distanceKm = calculateDistance(userLat, userLng, pLat, pLng);
         }
 
+        const discountPercentage =
+          medicine.mrp > 0 && item.price < medicine.mrp
+            ? Math.round(((medicine.mrp - item.price) / medicine.mrp) * 100)
+            : (item.discountPercentage || 0);
+
+        const isDemo = Boolean(pharmacy.isDemo);
+        const isPriceSuspicious = Boolean(item.isPriceSuspicious);
+
         return {
+          inventoryId: item._id,
           pharmacyId: pharmacy._id,
           name: pharmacy.name,
           address: pharmacy.address,
           phone: pharmacy.phone,
-          rating: pharmacy.rating,
-          totalRatings: pharmacy.totalRatings,
-          isOpen: pharmacy.isOpen,
+          rating: pharmacy.rating || 4.5,
+          totalRatings: pharmacy.totalRatings || 0,
+          isOpen: pharmacy.isOpen !== false,
+          is24x7: Boolean(pharmacy.is24x7),
           price: item.price,
           mrp: medicine.mrp,
-          discountPercentage: item.discountPercentage,
+          discountPercentage,
           stockQuantity: item.stockQuantity,
           batchNumber: item.batchNumber,
           expiryDate: item.expiryDate,
-          distanceKm,
-          estimatedMinutes: Math.round(15 + distanceKm * 3)
+          distanceKm: parseFloat(distanceKm.toFixed(1)),
+          estimatedMinutes: Math.round(15 + distanceKm * 3),
+          isPriceSuspicious,
+          isDemo,
+          isRecommended: !isDemo && !isPriceSuspicious && (pharmacy.rating >= 4.5 || distanceKm < 3)
         };
       })
-      .sort((a, b) => a.distanceKm - b.distanceKm);
+      .sort((a, b) => {
+        // Genuine non-demo first
+        if (a.isDemo !== b.isDemo) return a.isDemo ? 1 : -1;
+        // Clean non-suspicious prices first
+        if (a.isPriceSuspicious !== b.isPriceSuspicious) return a.isPriceSuspicious ? 1 : -1;
+        // Lowest price first
+        if (a.price !== b.price) return a.price - b.price;
+        // Nearest distance
+        return a.distanceKm - b.distanceKm;
+      });
 
     return ApiResponse.success(res, {
       medicine,
@@ -230,7 +278,7 @@ const getMedicineById = async (req, res, next) => {
 const getCategories = async (req, res, next) => {
   try {
     const categories = await Medicine.aggregate([
-      { $match: { active: true } },
+      { $match: { active: true, isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' } } },
       { $group: { _id: '$category', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
@@ -251,7 +299,11 @@ const getCategories = async (req, res, next) => {
 // @access  Public
 const getPopularMedicines = async (req, res, next) => {
   try {
-    const medicines = await Medicine.find({ active: true })
+    const medicines = await Medicine.find({
+      active: true,
+      isMerged: { $ne: true },
+      verificationStatus: { $ne: 'MERGED' }
+    })
       .limit(8)
       .sort({ createdAt: 1 });
     return ApiResponse.success(res, { medicines });
@@ -299,6 +351,8 @@ const getEmergencyEssentials = async (req, res, next) => {
 
     const query = {
       active: true,
+      isMerged: { $ne: true },
+      verificationStatus: { $ne: 'MERGED' },
       $or: [
         { sosEligible: true },
         {
@@ -365,13 +419,23 @@ const getEmergencyEssentials = async (req, res, next) => {
       const obj = m.toObject();
       const catKey = m.sosCategory || categoryMapping[m.name] || 'COMFORT_RELIEF';
 
-      const matchingInventories = inventories.filter(
+      const verifiedInventories = inventories.filter(
+        (inv) =>
+          inv.medicineId.toString() === m._id.toString() &&
+          inv.pharmacyId &&
+          !inv.isPriceSuspicious &&
+          !inv.pharmacyId.isDemo
+      );
+
+      const allInventories = inventories.filter(
         (inv) => inv.medicineId.toString() === m._id.toString() && inv.pharmacyId
       );
 
+      const activeInventories = verifiedInventories.length > 0 ? verifiedInventories : allInventories;
+
       let lowestPrice = m.mrp;
-      if (matchingInventories.length > 0) {
-        lowestPrice = Math.min(...matchingInventories.map((i) => i.price));
+      if (activeInventories.length > 0) {
+        lowestPrice = Math.min(...activeInventories.map((i) => i.price));
       }
 
       return {

@@ -47,6 +47,15 @@ const pharmacyInventorySchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    isPriceSuspicious: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    priceReviewNote: {
+      type: String,
+      default: ''
+    },
     source: {
       type: String,
       enum: ['MANUAL', 'CSV_IMPORT', 'MASTER_CATALOG', 'INVOICE_OCR', 'BILLING_SYNC'],

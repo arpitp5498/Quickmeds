@@ -76,7 +76,9 @@ export const CartProvider = ({ children }) => {
                 await api.post('/cart/items', {
                   medicineId: medId,
                   quantity: item.quantity || 1,
-                  price: item.price
+                  price: item.price,
+                  pharmacyId: item.pharmacyId,
+                  pharmacyName: item.pharmacyName
                 });
               }
             }
@@ -105,16 +107,21 @@ export const CartProvider = ({ children }) => {
     return item ? item.quantity : 0;
   }, [cart]);
 
-  const addToCart = async (medicineOrId, maybeQtyOrPrice = 1, unitPrice = null) => {
+  const addToCart = async (medicineOrId, maybeQtyOrPrice = 1, unitPrice = null, maybePharmacyId = null, maybePharmacyName = null) => {
     let medicineId = null;
     let qty = 1;
     let price = null;
     let medMeta = {};
+    let selectedPharmacyId = maybePharmacyId || null;
+    let selectedPharmacyName = maybePharmacyName || null;
 
     if (typeof medicineOrId === 'object' && medicineOrId !== null) {
       medicineId = medicineOrId._id || medicineOrId.id;
       qty = typeof maybeQtyOrPrice === 'number' ? maybeQtyOrPrice : 1;
       price = typeof unitPrice === 'number' ? unitPrice : (medicineOrId.lowestPrice || medicineOrId.price || medicineOrId.mrp);
+      if (!selectedPharmacyId && medicineOrId.pharmacyId) selectedPharmacyId = medicineOrId.pharmacyId;
+      if (!selectedPharmacyName && medicineOrId.pharmacyName) selectedPharmacyName = medicineOrId.pharmacyName;
+
       medMeta = {
         name: medicineOrId.name,
         strength: medicineOrId.strength || '',
@@ -126,6 +133,7 @@ export const CartProvider = ({ children }) => {
     } else if (typeof maybeQtyOrPrice === 'string') {
       // legacy addToCart(pharmacyId, medicineId, quantity)
       medicineId = maybeQtyOrPrice;
+      selectedPharmacyId = medicineOrId;
       qty = typeof unitPrice === 'number' ? unitPrice : 1;
     } else {
       // addToCart(medicineId, quantity, unitPrice)
@@ -148,16 +156,23 @@ export const CartProvider = ({ children }) => {
         if (price && price > 0) {
           payload.price = price;
         }
+        if (selectedPharmacyId) {
+          payload.pharmacyId = selectedPharmacyId;
+        }
+        if (selectedPharmacyName) {
+          payload.pharmacyName = selectedPharmacyName;
+        }
 
         const res = await api.post('/cart/items', payload);
 
         if (res.success && res.data) {
           setCart(res.data.cart);
           saveCartToStorage(res.data.cart);
+          const fulfilledNote = selectedPharmacyName ? ` (Fulfilled by ${selectedPharmacyName})` : '';
           if (medMeta.requiresPrescription || res.data.cart.hasPrescriptionRequiredItems) {
-            showToast('Added to cart! Doctor prescription will be required at checkout.', 'info');
+            showToast(`Added to cart!${fulfilledNote} Doctor prescription required at checkout.`, 'info');
           } else {
-            showToast('Added to cart!', 'success');
+            showToast(`Added to cart!${fulfilledNote}`, 'success');
           }
           return true;
         }
@@ -179,7 +194,10 @@ export const CartProvider = ({ children }) => {
       if (existingIdx > -1) {
         currentItems[existingIdx] = {
           ...currentItems[existingIdx],
-          quantity: currentItems[existingIdx].quantity + qty
+          quantity: currentItems[existingIdx].quantity + qty,
+          price: finalPrice > 0 ? finalPrice : currentItems[existingIdx].price,
+          pharmacyId: selectedPharmacyId || currentItems[existingIdx].pharmacyId,
+          pharmacyName: selectedPharmacyName || currentItems[existingIdx].pharmacyName
         };
       } else {
         currentItems.push({
@@ -191,7 +209,9 @@ export const CartProvider = ({ children }) => {
           price: finalPrice,
           mrp: medMeta.mrp || finalPrice,
           quantity: qty,
-          requiresPrescription: !!medMeta.requiresPrescription
+          requiresPrescription: !!medMeta.requiresPrescription,
+          pharmacyId: selectedPharmacyId,
+          pharmacyName: selectedPharmacyName
         });
       }
 
@@ -210,10 +230,11 @@ export const CartProvider = ({ children }) => {
       setCart(updatedCart);
       saveCartToStorage(updatedCart);
 
+      const fulfilledNote = selectedPharmacyName ? ` (Fulfilled by ${selectedPharmacyName})` : '';
       if (medMeta.requiresPrescription) {
-        showToast('Added to cart! Doctor prescription will be required at checkout.', 'info');
+        showToast(`Added to cart!${fulfilledNote} Doctor prescription required at checkout.`, 'info');
       } else {
-        showToast('Added to cart!', 'success');
+        showToast(`Added to cart!${fulfilledNote}`, 'success');
       }
       return true;
     }

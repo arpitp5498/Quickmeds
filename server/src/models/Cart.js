@@ -13,7 +13,13 @@ const cartItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   mrp: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
-  requiresPrescription: { type: Boolean, default: false }
+  requiresPrescription: { type: Boolean, default: false },
+  pharmacyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Pharmacy',
+    default: null
+  },
+  pharmacyName: { type: String, default: '' }
 });
 
 const cartSchema = new mongoose.Schema(

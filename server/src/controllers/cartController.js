@@ -54,10 +54,19 @@ const getCart = async (req, res, next) => {
 // @access  Private (CUSTOMER)
 const addToCart = async (req, res, next) => {
   try {
-    let { pharmacyId, medicineId, quantity = 1, clearExisting = false } = req.body;
+    let { pharmacyId, medicineId, quantity = 1, clearExisting = false, pharmacyName } = req.body;
 
-    const medicine = await Medicine.findById(medicineId);
+    let medicine = await Medicine.findById(medicineId);
     if (!medicine) throw ApiError.notFound('Medicine not found');
+
+    // Seamlessly forward merged duplicates to canonical record
+    if (medicine.isMerged && medicine.canonicalMedicineId) {
+      const canonical = await Medicine.findById(medicine.canonicalMedicineId);
+      if (canonical) {
+        medicine = canonical;
+        medicineId = canonical._id;
+      }
+    }
 
     let inventory = null;
     let pharmacy = null;
@@ -66,20 +75,26 @@ const addToCart = async (req, res, next) => {
       pharmacy = await Pharmacy.findById(pharmacyId);
       inventory = await PharmacyInventory.findOne({ pharmacyId, medicineId, isAvailable: true });
     } else {
-      // Auto-find verified pharmacy with stock for this medicine, sorted by lowest price first
+      // Auto-find verified pharmacy with stock for this medicine, sorted by lowest genuine price first
       const invMatches = await PharmacyInventory.find({
         medicineId,
         isAvailable: true,
+        isPriceSuspicious: { $ne: true },
         stockQuantity: { $gte: parseInt(quantity, 10) }
       })
         .populate('pharmacyId')
         .sort({ price: 1 });
 
-      const validMatch = invMatches.find(
-        (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED' && i.pharmacyId.isOpen
-      ) || invMatches.find(
-        (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED'
-      );
+      const validMatch =
+        invMatches.find(
+          (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED' && !i.pharmacyId.isDemo && i.pharmacyId.isOpen
+        ) ||
+        invMatches.find(
+          (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED' && !i.pharmacyId.isDemo
+        ) ||
+        invMatches.find(
+          (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED'
+        );
 
       if (validMatch) {
         inventory = validMatch;
@@ -87,7 +102,7 @@ const addToCart = async (req, res, next) => {
         pharmacyId = pharmacy._id;
       } else {
         // Fallback to any verified open pharmacy
-        pharmacy = await Pharmacy.findOne({ verificationStatus: 'VERIFIED', isOpen: true });
+        pharmacy = await Pharmacy.findOne({ verificationStatus: 'VERIFIED', isDemo: { $ne: true }, isOpen: true });
         if (pharmacy) {
           pharmacyId = pharmacy._id;
           inventory = { price: medicine.mrp, stockQuantity: 99 };
@@ -95,17 +110,19 @@ const addToCart = async (req, res, next) => {
       }
     }
 
-    // Client price input (e.g. displayed best price on product page) or lowest inventory price
+    // Client price input (e.g. selected pharmacy offer price) or lowest inventory price
     const clientPrice = req.body.price || req.body.unitPrice;
     const itemPrice = typeof clientPrice === 'number' && clientPrice > 0
       ? clientPrice
       : (inventory?.price !== undefined ? inventory.price : medicine.mrp);
     const availableStock = inventory?.stockQuantity || 50;
+    const resolvedPharmacyId = pharmacy?._id || pharmacyId || null;
+    const resolvedPharmacyName = pharmacy?.name || pharmacyName || null;
 
     let cart = await getOrCreateCart(req.user._id);
 
-    if (pharmacyId && !cart.pharmacyId) {
-      cart.pharmacyId = pharmacyId;
+    if (resolvedPharmacyId && !cart.pharmacyId) {
+      cart.pharmacyId = resolvedPharmacyId;
     }
 
     // Check if item is already in cart
@@ -119,9 +136,13 @@ const addToCart = async (req, res, next) => {
         throw ApiError.badRequest(`Cannot add more. Max stock is ${availableStock}.`);
       }
       cart.items[existingIndex].quantity = newQty;
-      // Preserve original unit price when increasing quantity
-      if (!cart.items[existingIndex].price) {
+      // If user selected a specific offer with price/pharmacy, update item attribution
+      if (typeof clientPrice === 'number' && clientPrice > 0) {
         cart.items[existingIndex].price = itemPrice;
+      }
+      if (resolvedPharmacyId) {
+        cart.items[existingIndex].pharmacyId = resolvedPharmacyId;
+        cart.items[existingIndex].pharmacyName = resolvedPharmacyName;
       }
     } else {
       cart.items.push({
@@ -133,7 +154,9 @@ const addToCart = async (req, res, next) => {
         price: itemPrice,
         mrp: medicine.mrp,
         quantity: parseInt(quantity, 10),
-        requiresPrescription: medicine.requiresPrescription
+        requiresPrescription: medicine.requiresPrescription,
+        pharmacyId: resolvedPharmacyId,
+        pharmacyName: resolvedPharmacyName
       });
     }
 
