@@ -3,7 +3,7 @@
  * Provides offline caching, background sync, and push notification support.
  */
 
-const CACHE_NAME = 'quickmeds-v1';
+const CACHE_NAME = 'quickmeds-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -79,7 +79,52 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: Cache-first with network fallback
+  // Navigation requests (HTML pages): Always network-first
+  // This ensures users get the latest index.html with correct bundle hashes after deployments
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match('/') || new Response('Offline', { status: 503 });
+        })
+    );
+    return;
+  }
+
+  // Hashed assets (Vite bundles like /assets/index-ABC123.js): Network-first
+  // These change hash on every build, so stale cache entries cause MIME type errors
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(request).then((cached) => {
+            if (cached) return cached;
+            return new Response('Offline', { status: 503 });
+          });
+        })
+    );
+    return;
+  }
+
+  // Other static assets (icons, manifest, images): Cache-first with background update
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
@@ -103,10 +148,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       }).catch(() => {
-        // Offline fallback for navigation requests
-        if (request.mode === 'navigate') {
-          return caches.match('/');
-        }
         return new Response('Offline', { status: 503 });
       });
     })
