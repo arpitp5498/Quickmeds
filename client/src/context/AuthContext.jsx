@@ -5,8 +5,13 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('quickmeds_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('quickmeds_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      localStorage.removeItem('quickmeds_user');
+      return null;
+    }
   });
   const [token, setToken] = useState(() => {
     return localStorage.getItem('quickmeds_token') || null;

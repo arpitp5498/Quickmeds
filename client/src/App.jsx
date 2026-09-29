@@ -9,6 +9,7 @@ import { CartProvider } from './context/CartContext';
 import { ReminderProvider } from './context/ReminderContext';
 import { EmergencyModeProvider } from './context/EmergencyModeContext';
 import AIAssistantChat from './components/common/AIAssistantChat';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -22,8 +23,10 @@ function App() {
                 <CartProvider>
                   <ReminderProvider>
                     <EmergencyModeProvider>
-                      <AppRoutes />
-                      <AIAssistantChat />
+                      <ErrorBoundary>
+                        <AppRoutes />
+                        <AIAssistantChat />
+                      </ErrorBoundary>
                     </EmergencyModeProvider>
                   </ReminderProvider>
                 </CartProvider>

@@ -11,8 +11,13 @@ const DEFAULT_LOCATION = {
 
 export const LocationProvider = ({ children }) => {
   const [location, setLocationState] = useState(() => {
-    const saved = localStorage.getItem('quickmeds_user_location');
-    return saved ? JSON.parse(saved) : DEFAULT_LOCATION;
+    try {
+      const saved = localStorage.getItem('quickmeds_user_location');
+      return saved ? JSON.parse(saved) : DEFAULT_LOCATION;
+    } catch {
+      localStorage.removeItem('quickmeds_user_location');
+      return DEFAULT_LOCATION;
+    }
   });
 
   const [isDetecting, setIsDetecting] = useState(false);
