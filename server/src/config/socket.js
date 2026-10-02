@@ -38,6 +38,13 @@ const initSocket = (httpServer, clientUrl) => {
       }
     });
 
+    // Doctor joins doctor room for consultation notifications
+    socket.on('join_doctor', (doctorId) => {
+      if (doctorId) {
+        socket.join(`doctor:${doctorId}`);
+      }
+    });
+
     // Admin joins platform monitor room
     socket.on('join_admin', () => {
       socket.join('admin:room');

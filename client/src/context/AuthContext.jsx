@@ -86,6 +86,7 @@ export const AuthProvider = ({ children }) => {
   const isPharmacy = user?.role === 'PHARMACY';
   const isDelivery = user?.role === 'DELIVERY_PARTNER';
   const isAdmin = user?.role === 'ADMIN';
+  const isDoctor = user?.role === 'DOCTOR';
 
   return (
     <AuthContext.Provider
@@ -99,6 +100,7 @@ export const AuthProvider = ({ children }) => {
         isPharmacy,
         isDelivery,
         isAdmin,
+        isDoctor,
         login,
         register,
         logout,

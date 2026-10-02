@@ -19,7 +19,9 @@ import {
   ShieldCheck,
   BarChart3,
   Zap,
-  Smartphone
+  Smartphone,
+  Stethoscope,
+  TestTubes
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -173,6 +175,36 @@ const Navbar = () => {
           >
             <Zap size={15} color="#e11d48" />
             <span>SOS Essentials</span>
+          </Link>
+
+          <Link
+            to="/doctors"
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: 'var(--text-main)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <Stethoscope size={16} />
+            <span>Consult Doctor</span>
+          </Link>
+
+          <Link
+            to="/lab-tests"
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: 'var(--text-main)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <TestTubes size={16} />
+            <span>Lab Tests</span>
           </Link>
 
           <Link
@@ -520,6 +552,22 @@ const Navbar = () => {
           >
             <Zap size={16} />
             SOS Emergency Essentials
+          </Link>
+          <Link
+            to="/doctors"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Stethoscope size={16} />
+            Consult Doctor
+          </Link>
+          <Link
+            to="/lab-tests"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <TestTubes size={16} />
+            Lab Tests
           </Link>
           <Link
             to="/pharmacies"

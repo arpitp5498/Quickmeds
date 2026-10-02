@@ -35,11 +35,44 @@ const labBookingSchema = new mongoose.Schema(
       type: String,
       enum: ['PENDING', 'PAID', 'REFUNDED'],
       default: 'PENDING'
-    }
+    },
+    bookingNumber: { type: String, unique: true, sparse: true },
+    collectionOTP: String,
+    labPartner: { type: String, default: '' },
+    statusHistory: [
+      {
+        status: String,
+        timestamp: { type: Date, default: Date.now },
+        note: { type: String, default: '' },
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+      }
+    ],
+    referredBy: {
+      doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' },
+      consultationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation' }
+    },
+    patientDetails: {
+      name: String,
+      age: Number,
+      gender: { type: String, enum: ['Male', 'Female', 'Other', ''], default: '' }
+    },
+    cancellationReason: { type: String, default: '' }
   },
   {
     timestamps: true
   }
 );
+
+// Auto-generate bookingNumber before save
+labBookingSchema.pre('save', function (next) {
+  if (!this.bookingNumber) {
+    this.bookingNumber =
+      'LB-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+  }
+  next();
+});
+
+labBookingSchema.index({ customerId: 1, createdAt: -1 });
+labBookingSchema.index({ status: 1 });
 
 module.exports = mongoose.model('LabBooking', labBookingSchema);

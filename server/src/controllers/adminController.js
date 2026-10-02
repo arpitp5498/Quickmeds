@@ -423,6 +423,184 @@ const getInventorySyncOverview = async (req, res, next) => {
   }
 };
 
+const Doctor = require('../models/Doctor');
+const Consultation = require('../models/Consultation');
+const LabBooking = require('../models/LabBooking');
+
+// @desc    Get all doctors with filters
+// @route   GET /api/admin/doctors
+// @access  Private (ADMIN)
+const getAllDoctors = async (req, res, next) => {
+  try {
+    const { status, specialty, search, page = 1, limit = 20 } = req.query;
+    const query = {};
+
+    if (status && status !== 'ALL') {
+      query.verificationStatus = status;
+    }
+    if (specialty && specialty !== 'ALL') {
+      query.specialty = specialty;
+    }
+    if (search) {
+      const s = new RegExp(search.trim(), 'i');
+      query.$or = [{ name: s }, { email: s }, { registrationNumber: s }];
+    }
+
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const total = await Doctor.countDocuments(query);
+    const doctors = await Doctor.find(query)
+      .populate('userId', 'name email phone isActive')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit, 10));
+
+    return ApiResponse.success(res, {
+      doctors,
+      pagination: {
+        total,
+        page: parseInt(page, 10),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify, Reject, or Suspend a doctor
+// @route   PATCH /api/admin/doctors/:id/verify
+// @access  Private (ADMIN)
+const verifyDoctor = async (req, res, next) => {
+  try {
+    const { status, notes = '' } = req.body;
+
+    if (!['VERIFIED', 'REJECTED', 'SUSPENDED', 'PENDING'].includes(status)) {
+      throw ApiError.badRequest('Invalid verification status');
+    }
+
+    const doctor = await Doctor.findById(req.params.id);
+    if (!doctor) {
+      throw ApiError.notFound('Doctor not found');
+    }
+
+    doctor.verificationStatus = status;
+    doctor.verificationNotes = notes;
+    if (status === 'VERIFIED') {
+      doctor.verifiedAt = new Date();
+      doctor.verifiedBy = req.user._id;
+    }
+    await doctor.save();
+
+    // Notify doctor if they have a linked user account
+    if (doctor.userId) {
+      await sendNotification({
+        userId: doctor.userId,
+        type: status === 'VERIFIED' ? 'DOCTOR_VERIFIED' : 'DOCTOR_REJECTED',
+        title:
+          status === 'VERIFIED'
+            ? 'Doctor Profile Verified! 🎉'
+            : `Doctor Application Status: ${status}`,
+        message:
+          status === 'VERIFIED'
+            ? 'Your doctor profile has been verified. You can now accept consultation requests on QuickMeds!'
+            : `Doctor profile status updated to ${status}. Note: ${notes}`,
+        link: `/doctor`
+      });
+    }
+
+    await logAction({
+      actorId: req.user._id,
+      actorRole: 'ADMIN',
+      action: `DOCTOR_${status}`,
+      entity: 'DOCTOR',
+      entityId: doctor._id.toString(),
+      description: `Admin updated doctor "${doctor.name}" status to ${status}. Notes: ${notes}`
+    });
+
+    return ApiResponse.success(
+      res,
+      { doctor },
+      `Doctor status successfully updated to ${status}`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all consultations across the platform
+// @route   GET /api/admin/consultations
+// @access  Private (ADMIN)
+const getAllConsultations = async (req, res, next) => {
+  try {
+    const { status, doctorId, search, page = 1, limit = 20 } = req.query;
+    const query = {};
+
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+    if (doctorId) {
+      query.doctorId = doctorId;
+    }
+
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const total = await Consultation.countDocuments(query);
+    const consultations = await Consultation.find(query)
+      .populate('patientId', 'name email phone')
+      .populate('doctorId', 'name specialty fee')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit, 10));
+
+    return ApiResponse.success(res, {
+      consultations,
+      pagination: {
+        total,
+        page: parseInt(page, 10),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all lab bookings across the platform
+// @route   GET /api/admin/lab-bookings
+// @access  Private (ADMIN)
+const getAllLabBookings = async (req, res, next) => {
+  try {
+    const { status, search, page = 1, limit = 20 } = req.query;
+    const query = {};
+
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+    if (search) {
+      query.bookingNumber = new RegExp(search.trim(), 'i');
+    }
+
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const total = await LabBooking.countDocuments(query);
+    const bookings = await LabBooking.find(query)
+      .populate('customerId', 'name email phone')
+      .populate('tests.testId')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit, 10));
+
+    return ApiResponse.success(res, {
+      bookings,
+      pagination: {
+        total,
+        page: parseInt(page, 10),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -433,5 +611,9 @@ module.exports = {
   getAllPrescriptions,
   getAuditLogs,
   assignDeliveryPartnerManual,
-  getInventorySyncOverview
+  getInventorySyncOverview,
+  getAllDoctors,
+  verifyDoctor,
+  getAllConsultations,
+  getAllLabBookings
 };

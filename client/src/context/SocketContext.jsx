@@ -36,6 +36,11 @@ export const SocketProvider = ({ children }) => {
         if (user.role === 'ADMIN') {
           socketInstance.emit('join_admin');
         }
+
+        if (user.role === 'DOCTOR' && user.doctorId) {
+          const docId = typeof user.doctorId === 'object' ? user.doctorId._id : user.doctorId;
+          socketInstance.emit('join_doctor', docId);
+        }
       }
     });
 
@@ -68,8 +73,13 @@ export const SocketProvider = ({ children }) => {
       if (user.role === 'ADMIN') {
         socket.emit('join_admin');
       }
+
+      if (user.role === 'DOCTOR' && user.doctorId) {
+        const docId = typeof user.doctorId === 'object' ? user.doctorId._id : user.doctorId;
+        socket.emit('join_doctor', docId);
+      }
     }
-  }, [socket, isConnected, user?._id, user?.role, user?.pharmacyId, user?.deliveryPartnerId]);
+  }, [socket, isConnected, user?._id, user?.role, user?.pharmacyId, user?.deliveryPartnerId, user?.doctorId]);
 
   const trackOrder = (orderId) => {
     if (socket && orderId) {

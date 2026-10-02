@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['CUSTOMER', 'PHARMACY', 'DELIVERY_PARTNER', 'ADMIN'],
+      enum: ['CUSTOMER', 'PHARMACY', 'DELIVERY_PARTNER', 'ADMIN', 'DOCTOR'],
       default: 'CUSTOMER'
     },
     avatar: {
@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema(
     deliveryPartnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'DeliveryPartner',
+      default: null
+    },
+    doctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Doctor',
       default: null
     },
     resetPasswordToken: String,

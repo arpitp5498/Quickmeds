@@ -81,6 +81,30 @@ const register = async (req, res, next) => {
       await user.save();
     }
 
+    // If registering as a Doctor
+    let doctorObj = null;
+    if (role === 'DOCTOR') {
+      const { registrationNumber, specialty, qualification, fee } = req.body;
+      if (!registrationNumber || !specialty || !qualification || !fee) {
+        throw ApiError.badRequest('Registration number, specialty, qualification, and fee are required for doctors.');
+      }
+      const Doctor = require('../models/Doctor');
+      const doctor = await Doctor.create({
+        name,
+        specialty,
+        qualification,
+        registrationNumber,
+        fee,
+        phone,
+        userId: user._id,
+        email: email.toLowerCase(),
+        verificationStatus: 'PENDING'
+      });
+      user.doctorId = doctor._id;
+      await user.save();
+      doctorObj = doctor.toObject();
+    }
+
     const token = generateToken(user);
 
     const userObj = user.toObject();
@@ -97,7 +121,7 @@ const register = async (req, res, next) => {
 
     return ApiResponse.created(
       res,
-      { user: userObj, token },
+      { user: userObj, token, ...(doctorObj && { doctor: doctorObj }) },
       'Account created successfully!'
     );
   } catch (error) {
@@ -115,7 +139,7 @@ const login = async (req, res, next) => {
     // Find user with password field included
     const user = await User.findOne({ email: email.toLowerCase() })
       .select('+password')
-      .populate('pharmacyId deliveryPartnerId');
+      .populate('pharmacyId deliveryPartnerId doctorId');
 
     if (!user) {
       throw ApiError.unauthorized('Invalid email or password.');
@@ -158,7 +182,7 @@ const login = async (req, res, next) => {
 const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).populate(
-      'pharmacyId deliveryPartnerId'
+      'pharmacyId deliveryPartnerId doctorId'
     );
     return ApiResponse.success(res, { user }, 'User profile retrieved');
   } catch (error) {

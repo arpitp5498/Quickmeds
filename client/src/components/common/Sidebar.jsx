@@ -18,7 +18,12 @@ import {
   Pill,
   Heart,
   Zap,
-  X
+  X,
+  Stethoscope,
+  TestTubes,
+  ClipboardList,
+  CalendarCheck,
+  UserCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -41,7 +46,8 @@ const Sidebar = ({ role = 'CUSTOMER', mobileOpen = false, onClose = () => {} }) 
           { to: '/admin/orders', label: 'Order Monitor', icon: ShoppingBag },
           { to: '/admin/prescriptions', label: 'Prescription Queue', icon: FileText },
           { to: '/admin/analytics', label: 'Analytics & Trends', icon: BarChart3 },
-          { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText }
+          { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText },
+          { to: '/admin/doctors', label: 'Manage Doctors', icon: Stethoscope }
         ];
       case 'PHARMACY':
         return [
@@ -58,6 +64,13 @@ const Sidebar = ({ role = 'CUSTOMER', mobileOpen = false, onClose = () => {} }) 
           { to: '/delivery/history', label: 'Delivery History', icon: ScrollText },
           { to: '/delivery/profile', label: 'Rider Profile', icon: UserCheck }
         ];
+      case 'DOCTOR':
+        return [
+          { to: '/doctor', label: 'Dashboard', icon: LayoutDashboard, end: true },
+          { to: '/doctor/appointments', label: 'My Appointments', icon: CalendarCheck },
+          { to: '/doctor/patients', label: 'My Patients', icon: Users },
+          { to: '/doctor/profile', label: 'Profile', icon: UserCircle }
+        ];
       case 'CUSTOMER':
       default:
         return [
@@ -66,6 +79,9 @@ const Sidebar = ({ role = 'CUSTOMER', mobileOpen = false, onClose = () => {} }) 
           { to: '/orders', label: 'My Orders', icon: ShoppingBag },
           { to: '/reminders', label: 'Medicine Reminders', icon: Pill },
           { to: '/cycle-tracker', label: 'Cycle Tracker & SOS', icon: Heart },
+          { to: '/doctors', label: 'Consult Doctor', icon: Stethoscope },
+          { to: '/lab-tests', label: 'Lab Tests', icon: TestTubes },
+          { to: '/health-records', label: 'Health Records', icon: ClipboardList },
           { to: '/prescriptions', label: 'My Prescriptions', icon: FileText },
           { to: '/addresses', label: 'Saved Addresses', icon: MapPin },
           { to: '/profile', label: 'Account Profile', icon: Settings }

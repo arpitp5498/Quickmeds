@@ -17,4 +17,12 @@ router.get('/prescriptions', adminController.getAllPrescriptions);
 router.get('/audit-logs', adminController.getAuditLogs);
 router.get('/inventory-sync-overview', adminController.getInventorySyncOverview);
 
+// Doctor management
+router.get('/doctors', adminController.getAllDoctors);
+router.patch('/doctors/:id/verify', adminController.verifyDoctor);
+
+// Consultation & Lab oversight
+router.get('/consultations', adminController.getAllConsultations);
+router.get('/lab-bookings', adminController.getAllLabBookings);
+
 module.exports = router;

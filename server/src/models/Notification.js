@@ -26,7 +26,18 @@ const notificationSchema = new mongoose.Schema(
         'ORDER_CANCELLED',
         'PHARMACY_VERIFIED',
         'PHARMACY_REJECTED',
-        'SYSTEM_ALERT'
+        'SYSTEM_ALERT',
+        'CONSULTATION_REQUESTED',
+        'CONSULTATION_CONFIRMED',
+        'CONSULTATION_COMPLETED',
+        'CONSULTATION_CANCELLED',
+        'PRESCRIPTION_ISSUED',
+        'LAB_BOOKED',
+        'LAB_SAMPLE_COLLECTED',
+        'LAB_REPORT_READY',
+        'LAB_CANCELLED',
+        'DOCTOR_VERIFIED',
+        'DOCTOR_REJECTED'
       ],
       required: true
     },

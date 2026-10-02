@@ -16,7 +16,12 @@ const doctorSchema = new mongoose.Schema(
         'ENT',
         'Ophthalmology',
         'Psychiatry',
-        'Neurology'
+        'Neurology',
+        'Gastroenterology',
+        'Pulmonology',
+        'Endocrinology',
+        'Urology',
+        'General Surgery'
       ]
     },
     qualification: { type: String, required: true },
@@ -34,11 +39,40 @@ const doctorSchema = new mongoose.Schema(
     isAvailable: { type: Boolean, default: true },
     profileImage: String,
     experience: { type: Number, default: 0 },
-    languages: [String]
+    languages: [String],
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      unique: true,
+      sparse: true
+    },
+    email: { type: String, trim: true, lowercase: true },
+    about: { type: String, default: '' },
+    clinicAddress: {
+      street: { type: String, default: '' },
+      city: { type: String, default: '' },
+      state: { type: String, default: '' },
+      pincode: { type: String, default: '' },
+      coordinates: { type: [Number], default: [77.209, 28.6139] }
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['PENDING', 'VERIFIED', 'REJECTED', 'SUSPENDED'],
+      default: 'PENDING'
+    },
+    verifiedAt: { type: Date },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    verificationNotes: { type: String, default: '' },
+    consultationCount: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true }
   },
   {
     timestamps: true
   }
 );
+
+doctorSchema.index({ userId: 1 });
+doctorSchema.index({ specialty: 1, verificationStatus: 1 });
+doctorSchema.index({ isAvailable: 1, isActive: 1 });
 
 module.exports = mongoose.model('Doctor', doctorSchema);

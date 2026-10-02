@@ -77,6 +77,17 @@ import AdminOrders from '../pages/admin/AdminOrders';
 import AdminPrescriptions from '../pages/admin/AdminPrescriptions';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
 import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
+import AdminDoctors from '../pages/admin/AdminDoctors';
+
+// Doctor Portal Pages
+import DoctorLayout from '../layouts/DoctorLayout';
+import DoctorDashboard from '../pages/doctor/DoctorDashboard';
+import DoctorAppointments from '../pages/doctor/DoctorAppointments';
+import DoctorConsultationDetail from '../pages/doctor/DoctorConsultationDetail';
+import DoctorProfile from '../pages/doctor/DoctorProfile';
+
+// Patient Health Records
+import HealthRecords from '../pages/customer/HealthRecords';
 
 
 const AppRoutes = () => {
@@ -139,6 +150,7 @@ const AppRoutes = () => {
         <Route path="/cycle-tracker" element={<CycleTracker />} />
         <Route path="/doctors" element={<DoctorConsultation />} />
         <Route path="/lab-tests" element={<LabTests />} />
+        <Route path="/health-records" element={<HealthRecords />} />
       </Route>
 
       {/* 4. Pharmacy Partner Routes (PharmacyLayout) */}
@@ -171,6 +183,20 @@ const AppRoutes = () => {
         <Route path="/delivery/profile" element={<DeliveryProfile />} />
       </Route>
 
+      {/* 5b. Doctor Portal Routes (DoctorLayout) */}
+      <Route
+        element={
+          <ProtectedRoute allowedRoles={['DOCTOR', 'ADMIN']}>
+            <DoctorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/doctor" element={<DoctorDashboard />} />
+        <Route path="/doctor/appointments" element={<DoctorAppointments />} />
+        <Route path="/doctor/appointments/:id" element={<DoctorConsultationDetail />} />
+        <Route path="/doctor/profile" element={<DoctorProfile />} />
+      </Route>
+
       {/* 6. Admin Routes (AdminLayout) */}
       <Route
         element={
@@ -187,6 +213,7 @@ const AppRoutes = () => {
         <Route path="/admin/prescriptions" element={<AdminPrescriptions />} />
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
         <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+        <Route path="/admin/doctors" element={<AdminDoctors />} />
       </Route>
 
       {/* Catch-all 404 redirect */}

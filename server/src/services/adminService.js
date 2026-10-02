@@ -3,6 +3,9 @@ const Pharmacy = require('../models/Pharmacy');
 const Order = require('../models/Order');
 const Prescription = require('../models/Prescription');
 const DeliveryPartner = require('../models/DeliveryPartner');
+const Doctor = require('../models/Doctor');
+const Consultation = require('../models/Consultation');
+const LabBooking = require('../models/LabBooking');
 
 const getDashboardStats = async () => {
   const [
@@ -16,7 +19,13 @@ const getDashboardStats = async () => {
     completedOrders,
     cancelledOrders,
     pendingPrescriptions,
-    revenueData
+    revenueData,
+    totalDoctors,
+    verifiedDoctors,
+    pendingDoctors,
+    totalConsultations,
+    completedConsultations,
+    totalLabBookings
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ role: 'CUSTOMER' }),
@@ -31,7 +40,13 @@ const getDashboardStats = async () => {
     Order.aggregate([
       { $match: { orderStatus: 'DELIVERED' } },
       { $group: { _id: null, totalRevenue: { $sum: '$total' }, avgOrderValue: { $avg: '$total' } } }
-    ])
+    ]),
+    Doctor.countDocuments(),
+    Doctor.countDocuments({ $or: [{ verificationStatus: 'VERIFIED' }, { verificationStatus: { $exists: false } }] }),
+    Doctor.countDocuments({ verificationStatus: 'PENDING' }),
+    Consultation.countDocuments(),
+    Consultation.countDocuments({ status: 'COMPLETED' }),
+    LabBooking.countDocuments()
   ]);
 
   const totalRevenue = revenueData[0] ? Math.round(revenueData[0].totalRevenue) : 0;
@@ -77,7 +92,13 @@ const getDashboardStats = async () => {
       cancelledOrders,
       pendingPrescriptions,
       totalRevenue,
-      avgOrderValue
+      avgOrderValue,
+      totalDoctors,
+      verifiedDoctors,
+      pendingDoctors,
+      totalConsultations,
+      completedConsultations,
+      totalLabBookings
     },
     orderTrends,
     statusDistribution
