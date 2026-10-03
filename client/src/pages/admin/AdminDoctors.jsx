@@ -19,8 +19,26 @@ const AdminDoctors = () => {
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [actionLoading, setActionLoading] = useState(null);
+  const [seeding, setSeeding] = useState(false);
   const { showToast } = useToast();
   const toast = { success: (m) => showToast(m, 'success'), error: (m) => showToast(m, 'error') };
+
+  const handleSeedStarter = async () => {
+    if (!window.confirm('Initialize starter catalog with verified starter doctors and diagnostic tests? This will only populate empty collections.')) {
+      return;
+    }
+    try {
+      setSeeding(true);
+      const res = await api.post('/admin/catalog/seed-starter');
+      const { insertedDoctors, insertedTests } = res?.data || {};
+      toast.success(`Starter catalog initialized: ${insertedDoctors || 0} doctors, ${insertedTests || 0} lab tests.`);
+      fetchDoctors();
+    } catch (err) {
+      toast.error(err?.message || 'Failed to seed starter catalog');
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   useEffect(() => {
     fetchDoctors();
@@ -123,7 +141,32 @@ const AdminDoctors = () => {
       ) : doctors.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
           <Stethoscope size={48} style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
-          <p style={{ color: 'var(--text-secondary)' }}>No doctors found</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>No doctors found</p>
+          {activeFilter === 'ALL' && !search && (
+            <div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 16px' }}>
+                The doctor catalog is currently empty. You can either wait for doctors to register, or initialize the verified starter catalog.
+              </p>
+              <button
+                type="button"
+                onClick={handleSeedStarter}
+                disabled={seeding}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--primary-600)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  opacity: seeding ? 0.6 : 1
+                }}
+              >
+                {seeding ? 'Initializing...' : 'Initialize Starter Catalog'}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

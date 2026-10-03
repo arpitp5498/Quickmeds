@@ -601,6 +601,64 @@ const getAllLabBookings = async (req, res, next) => {
   }
 };
 
+// @desc    Seed starter doctors and lab tests if the catalog is empty
+// @route   POST /api/admin/catalog/seed-starter
+// @access  Private (ADMIN)
+const seedStarterCatalog = async (req, res, next) => {
+  try {
+    const LabTest = require('../models/LabTest');
+    const { doctors: seedDoctors, labTests: seedLabTests } = require('../seed/productionSeed');
+
+    const [existingDoctors, existingTests] = await Promise.all([
+      Doctor.countDocuments(),
+      LabTest.countDocuments()
+    ]);
+
+    let insertedDoctors = 0;
+    let insertedTests = 0;
+
+    if (existingDoctors === 0 && Array.isArray(seedDoctors) && seedDoctors.length > 0) {
+      const docsToInsert = seedDoctors.map(d => ({
+        ...d,
+        verificationStatus: 'VERIFIED',
+        verifiedAt: new Date(),
+        verifiedBy: req.user._id,
+        verificationNotes: 'Initial verified starter catalog',
+        isActive: true
+      }));
+      await Doctor.insertMany(docsToInsert);
+      insertedDoctors = docsToInsert.length;
+    }
+
+    if (existingTests === 0 && Array.isArray(seedLabTests) && seedLabTests.length > 0) {
+      const testsToInsert = seedLabTests.map(t => ({
+        ...t,
+        isActive: true
+      }));
+      await LabTest.insertMany(testsToInsert);
+      insertedTests = testsToInsert.length;
+    }
+
+    await logAction({
+      actorId: req.user._id,
+      actorRole: 'ADMIN',
+      action: 'CATALOG_SEED_STARTER',
+      entity: 'SYSTEM',
+      entityId: 'STARTER_CATALOG',
+      description: `Admin initialized starter catalog: ${insertedDoctors} doctors, ${insertedTests} lab tests inserted.`
+    });
+
+    return ApiResponse.success(res, {
+      insertedDoctors,
+      insertedTests,
+      currentDoctors: existingDoctors + insertedDoctors,
+      currentTests: existingTests + insertedTests
+    }, 'Starter catalog processed');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -615,5 +673,6 @@ module.exports = {
   getAllDoctors,
   verifyDoctor,
   getAllConsultations,
-  getAllLabBookings
+  getAllLabBookings,
+  seedStarterCatalog
 };

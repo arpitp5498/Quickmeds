@@ -242,7 +242,7 @@ const labTests = [
 
 const seedData = async () => {
   try {
-    await mongoose.connect(env.MONGODB_URI);
+    await mongoose.connect(env.MONGO_URI || env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
     console.log('Clearing old doctors and lab tests...');
@@ -263,4 +263,8 @@ const seedData = async () => {
   }
 };
 
-seedData();
+if (require.main === module) {
+  seedData();
+}
+
+module.exports = { doctors, labTests, seedData };

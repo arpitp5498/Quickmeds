@@ -25,4 +25,7 @@ router.patch('/doctors/:id/verify', adminController.verifyDoctor);
 router.get('/consultations', adminController.getAllConsultations);
 router.get('/lab-bookings', adminController.getAllLabBookings);
 
+// Starter catalog initialization
+router.post('/catalog/seed-starter', adminController.seedStarterCatalog);
+
 module.exports = router;
