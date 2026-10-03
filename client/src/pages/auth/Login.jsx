@@ -33,6 +33,7 @@ const Login = () => {
       if (user.role === 'ADMIN') navigate('/admin');
       else if (user.role === 'PHARMACY') navigate('/pharmacy');
       else if (user.role === 'DELIVERY_PARTNER') navigate('/delivery');
+      else if (user.role === 'DOCTOR') navigate('/doctor');
       else navigate(from === '/login' ? '/dashboard' : from);
     } catch (err) {
       showToast(err.message || 'Invalid credentials', 'error');

@@ -33,7 +33,7 @@ import AppDownloadModal from './AppDownloadModal';
 
 
 const Navbar = () => {
-  const { user, isAuthenticated, isCustomer, isPharmacy, isDelivery, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isCustomer, isPharmacy, isDelivery, isAdmin, isDoctor, logout } = useAuth();
   const { cart } = useCart();
   const { isDark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,6 +49,7 @@ const Navbar = () => {
 
   const getDashboardLink = () => {
     if (isAdmin) return '/admin';
+    if (isDoctor) return '/doctor';
     if (isPharmacy) return '/pharmacy';
     if (isDelivery) return '/delivery';
     return '/dashboard';

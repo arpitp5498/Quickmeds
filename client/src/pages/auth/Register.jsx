@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Mail, Phone, Lock, Store, Bike, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Phone, Lock, Store, Bike, Stethoscope, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import Button from '../../components/ui/Button';
@@ -27,6 +27,13 @@ const Register = () => {
   const [vehicleType, setVehicleType] = useState('Bike');
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [drivingLicense, setDrivingLicense] = useState('');
+
+  // Doctor specific fields
+  const [specialty, setSpecialty] = useState('General Medicine');
+  const [qualification, setQualification] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [fee, setFee] = useState('');
+  const [experience, setExperience] = useState('');
 
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -70,6 +77,17 @@ const Register = () => {
           vehicleNumber: vehicleNumber || `DL-01-AB-${Math.floor(1000 + Math.random() * 9000)}`,
           drivingLicenseNumber: drivingLicense || `DL-IN-${Date.now().toString().slice(-6)}`
         };
+      } else if (role === 'DOCTOR') {
+        if (!registrationNumber || !qualification || !fee) {
+          showToast('Please provide your registration number, qualification and consultation fee', 'warning');
+          setLoading(false);
+          return;
+        }
+        payload.specialty = specialty;
+        payload.qualification = qualification.trim();
+        payload.registrationNumber = registrationNumber.trim();
+        payload.fee = Number(fee);
+        if (experience) payload.experience = Number(experience);
       }
 
       const user = await register(payload);
@@ -77,6 +95,7 @@ const Register = () => {
 
       if (user.role === 'PHARMACY') navigate('/pharmacy');
       else if (user.role === 'DELIVERY_PARTNER') navigate('/delivery');
+      else if (user.role === 'DOCTOR') navigate('/doctor');
       else navigate('/dashboard');
     } catch (err) {
       showToast(err.message || 'Registration failed', 'error');
@@ -98,7 +117,7 @@ const Register = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '6px',
           backgroundColor: 'var(--bg-subtle)',
           padding: '4px',
@@ -110,7 +129,7 @@ const Register = () => {
           type="button"
           onClick={() => setRole('CUSTOMER')}
           style={{
-            padding: '8px 4px',
+            padding: '8px 2px',
             fontSize: '0.75rem',
             fontWeight: 600,
             borderRadius: 'var(--radius-sm)',
@@ -128,9 +147,29 @@ const Register = () => {
 
         <button
           type="button"
+          onClick={() => setRole('DOCTOR')}
+          style={{
+            padding: '8px 2px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: role === 'DOCTOR' ? 'var(--bg-card)' : 'transparent',
+            color: role === 'DOCTOR' ? 'var(--primary-600)' : 'var(--text-muted)',
+            boxShadow: role === 'DOCTOR' ? 'var(--shadow-xs)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px'
+          }}
+        >
+          <Stethoscope size={14} /> Doctor
+        </button>
+
+        <button
+          type="button"
           onClick={() => setRole('PHARMACY')}
           style={{
-            padding: '8px 4px',
+            padding: '8px 2px',
             fontSize: '0.75rem',
             fontWeight: 600,
             borderRadius: 'var(--radius-sm)',
@@ -150,7 +189,7 @@ const Register = () => {
           type="button"
           onClick={() => setRole('DELIVERY_PARTNER')}
           style={{
-            padding: '8px 4px',
+            padding: '8px 2px',
             fontSize: '0.75rem',
             fontWeight: 600,
             borderRadius: 'var(--radius-sm)',
@@ -270,6 +309,81 @@ const Register = () => {
           </div>
         )}
 
+        {/* Conditional Doctor Fields */}
+        {role === 'DOCTOR' && (
+          <div
+            style={{
+              padding: '12px',
+              backgroundColor: 'var(--primary-50)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '1rem',
+              border: '1px solid var(--primary-200)'
+            }}
+          >
+            <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-900)', marginBottom: '8px' }}>
+              Doctor Verification Details
+            </p>
+            <Input
+              label="Medical Specialty"
+              as="select"
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
+            >
+              <option value="General Medicine">General Medicine</option>
+              <option value="Dermatology">Dermatology</option>
+              <option value="Gynecology">Gynecology</option>
+              <option value="Pediatrics">Pediatrics</option>
+              <option value="Cardiology">Cardiology</option>
+              <option value="Orthopedics">Orthopedics</option>
+              <option value="ENT">ENT</option>
+              <option value="Ophthalmology">Ophthalmology</option>
+              <option value="Psychiatry">Psychiatry</option>
+              <option value="Neurology">Neurology</option>
+              <option value="Gastroenterology">Gastroenterology</option>
+              <option value="Pulmonology">Pulmonology</option>
+              <option value="Endocrinology">Endocrinology</option>
+              <option value="Urology">Urology</option>
+              <option value="General Surgery">General Surgery</option>
+            </Input>
+            <Input
+              label="Medical Registration / License Number"
+              placeholder="e.g. MCI-12345 or DMC-67890"
+              value={registrationNumber}
+              onChange={(e) => setRegistrationNumber(e.target.value)}
+              required
+            />
+            <Input
+              label="Qualifications / Degrees"
+              placeholder="e.g. MBBS, MD (General Medicine)"
+              value={qualification}
+              onChange={(e) => setQualification(e.target.value)}
+              required
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <Input
+                label="Consultation Fee (₹)"
+                type="number"
+                min="0"
+                placeholder="e.g. 500"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+                required
+              />
+              <Input
+                label="Experience (years)"
+                type="number"
+                min="0"
+                placeholder="e.g. 8"
+                value={experience}
+                onChange={(e) => setExperience(e.target.value)}
+              />
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              Doctor profiles are reviewed by an administrator before appearing in public listings.
+            </p>
+          </div>
+        )}
+
         <Input
           label="Password (min 6 characters)"
           type="password"
@@ -281,7 +395,7 @@ const Register = () => {
         />
 
         <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
-          Register as {role === 'CUSTOMER' ? 'Customer' : role === 'PHARMACY' ? 'Pharmacy Partner' : 'Delivery Rider'}
+          Register as {role === 'CUSTOMER' ? 'Customer' : role === 'DOCTOR' ? 'Doctor' : role === 'PHARMACY' ? 'Pharmacy Partner' : 'Delivery Rider'}
         </Button>
       </form>
 
