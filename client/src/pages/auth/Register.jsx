@@ -42,26 +42,37 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!name || !email || !phone || !password) {
+    if (!name.trim() || !email.trim() || !phone.trim() || !password) {
       showToast('Please fill in all mandatory fields', 'warning');
+      return;
+    }
+
+    const cleanPhone = phone.trim().replace(/\s+/g, '');
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      showToast('Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9', 'warning');
+      return;
+    }
+
+    if (password.length < 6) {
+      showToast('Password must be at least 6 characters long', 'warning');
       return;
     }
 
     try {
       setLoading(true);
       const payload = {
-        name,
-        email,
-        phone,
+        name: name.trim(),
+        email: email.trim(),
+        phone: cleanPhone,
         password,
         role
       };
 
       if (role === 'PHARMACY') {
         payload.pharmacyDetails = {
-          name: pharmacyName || `${name}'s Pharmacy`,
+          name: pharmacyName || `${name.trim()}'s Pharmacy`,
           licenseNumber: licenseNumber || `DL-${Date.now().toString().slice(-6)}`,
-          phone,
+          phone: cleanPhone,
           address: {
             street: street || 'Main Road',
             city,
@@ -98,7 +109,10 @@ const Register = () => {
       else if (user.role === 'DOCTOR') navigate('/doctor');
       else navigate('/dashboard');
     } catch (err) {
-      showToast(err.message || 'Registration failed', 'error');
+      const msg = Array.isArray(err.errors) && err.errors.length > 0
+        ? err.errors.join(' | ')
+        : (err.message || 'Registration failed');
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }

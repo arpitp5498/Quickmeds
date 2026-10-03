@@ -27,6 +27,19 @@ const register = async (req, res, next) => {
       throw ApiError.conflict('An account with this email address already exists.');
     }
 
+    // Pre-validate Doctor specific fields before user creation
+    if (role === 'DOCTOR') {
+      const { registrationNumber, specialty, qualification, fee } = req.body;
+      if (!registrationNumber || !specialty || !qualification || !fee) {
+        throw ApiError.badRequest('Registration number, specialty, qualification, and consultation fee are required for doctors.');
+      }
+      const Doctor = require('../models/Doctor');
+      const existingDoc = await Doctor.findOne({ registrationNumber: registrationNumber.trim() });
+      if (existingDoc) {
+        throw ApiError.conflict('A doctor with this medical registration number is already registered.');
+      }
+    }
+
     // Create user
     const user = await User.create({
       name,
@@ -84,17 +97,15 @@ const register = async (req, res, next) => {
     // If registering as a Doctor
     let doctorObj = null;
     if (role === 'DOCTOR') {
-      const { registrationNumber, specialty, qualification, fee } = req.body;
-      if (!registrationNumber || !specialty || !qualification || !fee) {
-        throw ApiError.badRequest('Registration number, specialty, qualification, and fee are required for doctors.');
-      }
+      const { registrationNumber, specialty, qualification, fee, experience } = req.body;
       const Doctor = require('../models/Doctor');
       const doctor = await Doctor.create({
         name,
         specialty,
-        qualification,
-        registrationNumber,
-        fee,
+        qualification: qualification.trim(),
+        registrationNumber: registrationNumber.trim(),
+        fee: Number(fee),
+        experience: experience ? Number(experience) : 0,
         phone,
         userId: user._id,
         email: email.toLowerCase(),

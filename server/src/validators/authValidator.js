@@ -14,7 +14,7 @@ const registerValidator = [
     .withMessage('Password must be at least 6 characters long'),
   body('role')
     .optional()
-    .isIn(['CUSTOMER', 'PHARMACY', 'DELIVERY_PARTNER'])
+    .isIn(['CUSTOMER', 'PHARMACY', 'DELIVERY_PARTNER', 'DOCTOR'])
     .withMessage('Invalid role specified')
 ];
 
