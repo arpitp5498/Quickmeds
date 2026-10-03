@@ -7,7 +7,8 @@ import Spinner from '../../components/ui/Spinner';
 
 const DoctorProfile = () => {
   const { user, updateProfile } = useAuth();
-  const { toast } = useToast();
+  const { showToast } = useToast();
+  const toast = { success: (m) => showToast(m, 'success'), error: (m) => showToast(m, 'error') };
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

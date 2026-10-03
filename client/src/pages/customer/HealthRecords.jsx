@@ -32,7 +32,8 @@ const HealthRecords = () => {
   const [activeTab, setActiveTab] = useState('consultations');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { showToast } = useToast();
+  const toast = { success: (m) => showToast(m, 'success'), error: (m) => showToast(m, 'error') };
 
   useEffect(() => {
     fetchData();
@@ -45,19 +46,19 @@ const HealthRecords = () => {
       switch (activeTab) {
         case 'consultations':
           res = await api.get('/consultations/my?limit=50');
-          setData(res.data?.consultations || []);
+          setData(Array.isArray(res.data?.consultations) ? res.data.consultations : []);
           break;
         case 'lab-reports':
           res = await api.get('/lab-tests/bookings/my?limit=50');
-          setData(res.data?.bookings || []);
+          setData(Array.isArray(res.data?.bookings) ? res.data.bookings : []);
           break;
         case 'prescriptions':
           res = await api.get('/prescriptions?limit=50');
-          setData(res.data?.prescriptions || res.data || []);
+          setData(Array.isArray(res.data?.prescriptions) ? res.data.prescriptions : Array.isArray(res.data) ? res.data : []);
           break;
         case 'orders':
           res = await api.get('/orders?limit=50');
-          setData(res.data?.orders || res.data || []);
+          setData(Array.isArray(res.data?.orders) ? res.data.orders : Array.isArray(res.data) ? res.data : []);
           break;
         default:
           setData([]);

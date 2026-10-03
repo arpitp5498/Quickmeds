@@ -12,29 +12,34 @@ const { getIO } = require('../config/socket');
 exports.getDoctors = async (req, res, next) => {
   try {
     const { specialty, search, language, minFee, maxFee, page = 1, limit = 20 } = req.query;
-    const query = { isActive: true };
 
-    // Only show verified doctors or those from seed data (no verificationStatus field)
-    query.$or = [
-      { verificationStatus: 'VERIFIED' },
-      { verificationStatus: { $exists: false } }
+    // Records created before isActive existed have no such field; treat them as active.
+    // Only verified doctors (or legacy records predating the verification field) are listed.
+    const conditions = [
+      { isActive: { $ne: false } },
+      { $or: [{ verificationStatus: 'VERIFIED' }, { verificationStatus: { $exists: false } }] }
     ];
 
     if (specialty) {
-      query.specialty = specialty;
+      conditions.push({ specialty });
     }
     if (search) {
-      const s = new RegExp(search.trim(), 'i');
-      query.$or = [{ name: s }, { specialty: s }, { qualification: s }];
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const s = new RegExp(escaped, 'i');
+      conditions.push({ $or: [{ name: s }, { specialty: s }, { qualification: s }] });
     }
     if (language) {
-      query.languages = { $in: [new RegExp(language.trim(), 'i')] };
+      const escapedLang = language.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      conditions.push({ languages: { $in: [new RegExp(escapedLang, 'i')] } });
     }
     if (minFee || maxFee) {
-      query.fee = {};
-      if (minFee) query.fee.$gte = Number(minFee);
-      if (maxFee) query.fee.$lte = Number(maxFee);
+      const fee = {};
+      if (minFee) fee.$gte = Number(minFee);
+      if (maxFee) fee.$lte = Number(maxFee);
+      conditions.push({ fee });
     }
+
+    const query = { $and: conditions };
 
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const total = await Doctor.countDocuments(query);

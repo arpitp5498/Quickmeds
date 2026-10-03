@@ -16,7 +16,8 @@ const statusColors = {
 const DoctorConsultationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { showToast } = useToast();
+  const toast = { success: (m) => showToast(m, 'success'), error: (m) => showToast(m, 'error') };
   const [consultation, setConsultation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

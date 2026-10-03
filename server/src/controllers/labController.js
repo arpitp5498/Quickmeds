@@ -10,7 +10,7 @@ const { sendNotification } = require('../services/notificationService');
 exports.getLabTests = async (req, res, next) => {
   try {
     const { category, popular, search, sortBy, page = 1, limit = 20 } = req.query;
-    const query = { isActive: true };
+    const query = { isActive: { $ne: false } };
 
     if (category) {
       query.category = category;
@@ -19,7 +19,8 @@ exports.getLabTests = async (req, res, next) => {
       query.isPopular = true;
     }
     if (search) {
-      const s = new RegExp(search.trim(), 'i');
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const s = new RegExp(escaped, 'i');
       query.$or = [{ name: s }, { description: s }, { category: s }];
     }
 
@@ -53,7 +54,7 @@ exports.getLabTests = async (req, res, next) => {
 exports.getLabTestCategories = async (req, res, next) => {
   try {
     const categories = await LabTest.aggregate([
-      { $match: { isActive: true } },
+      { $match: { isActive: { $ne: false } } },
       {
         $group: {
           _id: '$category',

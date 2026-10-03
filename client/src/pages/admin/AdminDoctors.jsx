@@ -19,7 +19,8 @@ const AdminDoctors = () => {
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [actionLoading, setActionLoading] = useState(null);
-  const { toast } = useToast();
+  const { showToast } = useToast();
+  const toast = { success: (m) => showToast(m, 'success'), error: (m) => showToast(m, 'error') };
 
   useEffect(() => {
     fetchDoctors();
