@@ -66,7 +66,8 @@ const consultationSchema = new mongoose.Schema(
         testId: { type: mongoose.Schema.Types.ObjectId, ref: 'LabTest' },
         name: String
       }
-    ]
+    ],
+    isTestData: { type: Boolean, default: false, index: true }
   },
   {
     timestamps: true

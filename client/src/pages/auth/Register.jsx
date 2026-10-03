@@ -344,6 +344,7 @@ const Register = () => {
               <option value="Endocrinology">Endocrinology</option>
               <option value="Urology">Urology</option>
               <option value="General Surgery">General Surgery</option>
+              <option value="Dentistry">Dentistry</option>
             </Input>
             <Input
               label="Medical Registration / License Number"

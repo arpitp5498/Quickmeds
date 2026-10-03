@@ -251,7 +251,14 @@ const LabTests = () => {
               {filteredTests.map((test) => (
                 <Card key={test._id} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <div style={{ flexGrow: 1 }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '8px' }}>{test.name}</h3>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      {test.name}
+                      {test.isTestData && (
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+                          Staging Test
+                        </span>
+                      )}
+                    </h3>
                     {test.description && (
                       <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>{test.description}</p>
                     )}

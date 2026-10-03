@@ -30,7 +30,8 @@ const labTestSchema = new mongoose.Schema(
     },
     parametersIncluded: [String],
     isPopular: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    isTestData: { type: Boolean, default: false, index: true }
   },
   {
     timestamps: true

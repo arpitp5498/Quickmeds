@@ -21,7 +21,8 @@ const doctorSchema = new mongoose.Schema(
         'Pulmonology',
         'Endocrinology',
         'Urology',
-        'General Surgery'
+        'General Surgery',
+        'Dentistry'
       ]
     },
     qualification: { type: String, required: true },
@@ -64,14 +65,14 @@ const doctorSchema = new mongoose.Schema(
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     verificationNotes: { type: String, default: '' },
     consultationCount: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    isTestData: { type: Boolean, default: false, index: true }
   },
   {
     timestamps: true
   }
 );
 
-doctorSchema.index({ userId: 1 });
 doctorSchema.index({ specialty: 1, verificationStatus: 1 });
 doctorSchema.index({ isAvailable: 1, isActive: 1 });
 

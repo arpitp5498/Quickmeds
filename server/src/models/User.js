@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema(
       default: false,
       index: true
     },
+    isTestData: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
     pharmacyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Pharmacy',

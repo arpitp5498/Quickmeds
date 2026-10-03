@@ -9,6 +9,8 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "seed": "cd server && npm run seed",
+    "seed:healthcare": "cd server && npm run seed:healthcare",
+    "seed:healthcare:clear": "cd server && npm run seed:healthcare:clear",
     "test": "cd server && npm test",
     "build": "cd client && npm install --include=dev && npm run build"
   },

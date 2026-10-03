@@ -224,9 +224,14 @@ const DoctorConsultation = () => {
                       <UserRound size={32} />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {doc.name}
                         {doc.verificationStatus === 'VERIFIED' && <BadgeCheck size={18} color="#10b981" aria-label="Verified doctor" />}
+                        {doc.isTestData && (
+                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+                            Test Profile
+                          </span>
+                        )}
                       </h3>
                       <p style={{ fontSize: '0.875rem', color: 'var(--primary-600)', fontWeight: 600, margin: '0 0 4px 0' }}>{doc.specialty}</p>
                       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>

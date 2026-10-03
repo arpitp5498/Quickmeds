@@ -56,7 +56,8 @@ const labBookingSchema = new mongoose.Schema(
       age: Number,
       gender: { type: String, enum: ['Male', 'Female', 'Other', ''], default: '' }
     },
-    cancellationReason: { type: String, default: '' }
+    cancellationReason: { type: String, default: '' },
+    isTestData: { type: Boolean, default: false, index: true }
   },
   {
     timestamps: true
