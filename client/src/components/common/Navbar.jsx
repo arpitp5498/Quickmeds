@@ -270,18 +270,18 @@ const Navbar = () => {
               to="/cart"
               style={{
                 position: 'relative',
-                padding: cart.totalItems > 0 ? '5px 10px' : '7px',
+                padding: '7px',
                 borderRadius: 'var(--radius-full)',
+                color: cart.totalItems > 0 ? 'var(--primary-700)' : 'var(--text-muted)',
                 backgroundColor: cart.totalItems > 0 ? 'var(--primary-50)' : 'var(--bg-subtle)',
-                border: cart.totalItems > 0 ? '1px solid var(--primary-200)' : '1px solid transparent',
-                color: cart.totalItems > 0 ? 'var(--primary-700)' : 'var(--text-main)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                justifyContent: 'center',
                 textDecoration: 'none',
                 transition: 'all var(--transition-fast)'
               }}
-              aria-label="Cart"
+              aria-label="Shopping Cart"
+              title="Shopping Cart"
             >
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <ShoppingBag size={18} />
@@ -295,24 +295,20 @@ const Navbar = () => {
                       color: '#ffffff',
                       fontSize: '0.625rem',
                       fontWeight: 700,
-                      minWidth: '15px',
-                      height: '15px',
+                      minWidth: '16px',
+                      height: '16px',
                       borderRadius: 'var(--radius-full)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '0 2px'
+                      padding: '0 3px',
+                      lineHeight: 1
                     }}
                   >
                     {cart.totalItems}
                   </span>
                 )}
               </div>
-              {cart.totalItems > 0 && (
-                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--primary-900)' }}>
-                  ₹{cart.totalAmount || 0}
-                </span>
-              )}
             </Link>
           )}
 
