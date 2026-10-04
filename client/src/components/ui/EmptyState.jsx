@@ -8,9 +8,29 @@ const EmptyState = ({
   actionLabel,
   onAction,
   actionIcon,
+  variant = 'empty', // 'empty' | 'error' | 'info' | 'success'
   className = '',
   style = {}
 }) => {
+  const isError = variant === 'error';
+  const isInfo = variant === 'info';
+
+  const iconBg = isError
+    ? '#fee2e2'
+    : isInfo
+    ? 'var(--primary-100)'
+    : 'var(--primary-50)';
+
+  const iconColor = isError
+    ? '#dc2626'
+    : isInfo
+    ? 'var(--primary-700)'
+    : 'var(--primary-600)';
+
+  const borderColor = isError
+    ? '#fca5a5'
+    : 'var(--border-medium)';
+
   return (
     <div
       style={{
@@ -22,7 +42,7 @@ const EmptyState = ({
         padding: '3rem 1.5rem',
         backgroundColor: 'var(--bg-card)',
         borderRadius: 'var(--radius-lg)',
-        border: '1px dashed var(--border-medium)',
+        border: `1px ${isError ? 'solid' : 'dashed'} ${borderColor}`,
         ...style
       }}
       className={`empty-state ${className}`}
@@ -33,24 +53,27 @@ const EmptyState = ({
             width: '64px',
             height: '64px',
             borderRadius: 'var(--radius-full)',
-            backgroundColor: 'var(--primary-50)',
-            color: 'var(--primary-600)',
+            backgroundColor: iconBg,
+            color: iconColor,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: '1rem'
           }}
         >
-          <Icon size={32} />
+          <Icon size={30} />
         </div>
       )}
 
-      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>{title}</h4>
+      <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: isError ? '#991b1b' : 'var(--text-main)', marginBottom: '0.5rem' }}>
+        {title}
+      </h4>
       <p
         style={{
           fontSize: '0.875rem',
           color: 'var(--text-muted)',
-          maxWidth: '420px',
+          maxWidth: '440px',
+          lineHeight: 1.5,
           marginBottom: actionLabel ? '1.5rem' : 0
         }}
       >
@@ -58,7 +81,12 @@ const EmptyState = ({
       </p>
 
       {actionLabel && (
-        <Button variant="primary" onClick={onAction} icon={actionIcon}>
+        <Button
+          variant={isError ? 'outline' : 'primary'}
+          onClick={onAction}
+          icon={actionIcon}
+          style={isError ? { borderColor: '#dc2626', color: '#dc2626' } : {}}
+        >
           {actionLabel}
         </Button>
       )}

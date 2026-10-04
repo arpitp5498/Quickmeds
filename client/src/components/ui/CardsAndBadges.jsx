@@ -60,6 +60,37 @@ export const Badge = ({
           color: 'var(--primary-700)',
           borderColor: 'rgba(2, 132, 199, 0.25)'
         };
+      case 'available_now':
+        return {
+          backgroundColor: '#ecfdf5',
+          color: '#065f46',
+          borderColor: '#a7f3d0'
+        };
+      case 'available_today':
+        return {
+          backgroundColor: '#eff6ff',
+          color: '#1e40af',
+          borderColor: '#bfdbfe'
+        };
+      case 'next_available':
+        return {
+          backgroundColor: '#f8fafc',
+          color: '#475569',
+          borderColor: '#cbd5e1'
+        };
+      case 'test_data':
+      case 'staging':
+        return {
+          backgroundColor: '#fef3c7',
+          color: '#b45309',
+          borderColor: '#fde68a'
+        };
+      case 'home_collection':
+        return {
+          backgroundColor: '#f0fdfa',
+          color: '#0f766e',
+          borderColor: '#99f6e4'
+        };
       default:
         return {
           backgroundColor: 'var(--bg-subtle)',

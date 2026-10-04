@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ShoppingBag,
   User,
@@ -21,7 +21,8 @@ import {
   Zap,
   Smartphone,
   Stethoscope,
-  TestTubes
+  TestTubes,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -40,6 +41,7 @@ const Navbar = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [appModalOpen, setAppModalOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -53,6 +55,28 @@ const Navbar = () => {
     if (isPharmacy) return '/pharmacy';
     if (isDelivery) return '/delivery';
     return '/dashboard';
+  };
+
+  const isLinkActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  const navLinkStyle = (path) => {
+    const active = isLinkActive(path);
+    return {
+      fontSize: '0.875rem',
+      fontWeight: active ? 600 : 500,
+      color: active ? 'var(--primary-600)' : 'var(--text-main)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '6px 10px',
+      borderRadius: 'var(--radius-md)',
+      backgroundColor: active ? 'var(--primary-50)' : 'transparent',
+      textDecoration: 'none',
+      transition: 'all var(--transition-fast)'
+    };
   };
 
   return (
@@ -77,30 +101,31 @@ const Navbar = () => {
         }}
       >
         {/* Brand Logo & Location */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Link
             to="/"
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              textDecoration: 'none'
+              textDecoration: 'none',
+              flexShrink: 0
             }}
           >
             <div
               style={{
-                width: '38px',
-                height: '38px',
+                width: '36px',
+                height: '36px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--primary-600)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)'
               }}
             >
-              <Pill size={22} strokeWidth={2.5} />
+              <Pill size={20} strokeWidth={2.5} />
             </div>
             <div>
               <span
@@ -119,13 +144,13 @@ const Navbar = () => {
               <span
                 style={{
                   fontSize: '0.625rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: 'var(--text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}
               >
-                Urgent Medicines
+                Healthcare Marketplace
               </span>
             </div>
           </Link>
@@ -136,208 +161,156 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Center Navigation Links */}
+        {/* Center Primary Healthcare Navigation Links */}
         <nav
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '1.5rem'
+            gap: '0.5rem'
           }}
           className="desktop-nav-links"
         >
-          <Link
-            to="/medicines"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'var(--text-main)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <Search size={16} />
-            <span>Search Medicines</span>
+          <Link to="/medicines" style={navLinkStyle('/medicines')}>
+            <Search size={15} />
+            <span>Medicines</span>
+          </Link>
+
+          <Link to="/doctors" style={navLinkStyle('/doctors')}>
+            <Stethoscope size={15} />
+            <span>Consult Doctor</span>
+          </Link>
+
+          <Link to="/lab-tests" style={navLinkStyle('/lab-tests')}>
+            <TestTubes size={15} />
+            <span>Lab Tests</span>
+          </Link>
+
+          <Link to="/pharmacies" style={navLinkStyle('/pharmacies')}>
+            <Store size={15} />
+            <span>Pharmacies</span>
           </Link>
 
           <Link
             to="/emergency"
             style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
+              fontSize: '0.8125rem',
+              fontWeight: 700,
               color: '#e11d48',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
               backgroundColor: '#fff1f2',
+              border: '1px solid #fecdd3',
               padding: '4px 10px',
-              borderRadius: 'var(--radius-full)'
+              borderRadius: 'var(--radius-full)',
+              textDecoration: 'none',
+              transition: 'all var(--transition-fast)'
             }}
           >
-            <Zap size={15} color="#e11d48" />
-            <span>SOS Essentials</span>
+            <Zap size={14} color="#e11d48" />
+            <span>SOS</span>
           </Link>
-
-          <Link
-            to="/doctors"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'var(--text-main)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <Stethoscope size={16} />
-            <span>Consult Doctor</span>
-          </Link>
-
-          <Link
-            to="/lab-tests"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'var(--text-main)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <TestTubes size={16} />
-            <span>Lab Tests</span>
-          </Link>
-
-          <Link
-            to="/pharmacies"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'var(--text-main)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <Store size={16} />
-            <span>Nearby Pharmacies</span>
-          </Link>
-
-          <Link
-            to="/pharmacy-network"
-            style={{
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'var(--text-main)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <Map size={16} />
-            <span>Network Map</span>
-          </Link>
-
 
           {isAuthenticated && isCustomer && (
-            <Link
-              to="/prescriptions"
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: 'var(--text-main)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <FileText size={16} />
-              <span>Prescriptions</span>
+            <Link to="/health-records" style={navLinkStyle('/health-records')}>
+              <ClipboardList size={15} />
+              <span>Records</span>
             </Link>
           )}
         </nav>
 
         {/* Right Actions: Cart, Notifications, Theme, Auth */}
-        <div className="navbar-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="navbar-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
 
           {/* Download App Button */}
           <button
             type="button"
             onClick={() => setAppModalOpen(true)}
             style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
+              padding: '6px 10px',
+              borderRadius: 'var(--radius-full)',
               backgroundColor: 'var(--bg-subtle)',
               border: '1px solid var(--border-medium)',
               color: 'var(--text-main)',
-              fontSize: '0.8125rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               cursor: 'pointer',
               transition: 'all 0.2s ease'
             }}
             className="desktop-only-btn"
             title="Download QuickMeds Mobile App"
           >
-            <Smartphone size={15} color="var(--primary-600)" />
+            <Smartphone size={14} color="var(--primary-600)" />
             <span>App</span>
           </button>
-
 
           {/* Theme Toggle */}
           <button
             type="button"
             onClick={toggleTheme}
             style={{
-              padding: '8px',
+              padding: '7px',
               borderRadius: 'var(--radius-full)',
               color: 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              backgroundColor: 'var(--bg-subtle)'
             }}
             aria-label="Toggle dark mode"
           >
-            {isDark ? <Sun size={19} /> : <Moon size={19} />}
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
-          {/* Cart Icon (Customer) */}
+          {/* Cart Button (Customer) */}
           {(!isAuthenticated || isCustomer) && (
             <Link
               to="/cart"
               style={{
                 position: 'relative',
-                padding: '8px',
+                padding: cart.totalItems > 0 ? '5px 10px' : '7px',
                 borderRadius: 'var(--radius-full)',
-                color: 'var(--text-main)',
+                backgroundColor: cart.totalItems > 0 ? 'var(--primary-50)' : 'var(--bg-subtle)',
+                border: cart.totalItems > 0 ? '1px solid var(--primary-200)' : '1px solid transparent',
+                color: cart.totalItems > 0 ? 'var(--primary-700)' : 'var(--text-main)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                gap: '6px',
+                textDecoration: 'none',
+                transition: 'all var(--transition-fast)'
               }}
               aria-label="Cart"
             >
-              <ShoppingBag size={20} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <ShoppingBag size={18} />
+                {cart.totalItems > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-6px',
+                      right: '-8px',
+                      backgroundColor: 'var(--primary-600)',
+                      color: '#ffffff',
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      minWidth: '15px',
+                      height: '15px',
+                      borderRadius: 'var(--radius-full)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 2px'
+                    }}
+                  >
+                    {cart.totalItems}
+                  </span>
+                )}
+              </div>
               {cart.totalItems > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '4px',
-                    right: '4px',
-                    backgroundColor: 'var(--primary-600)',
-                    color: '#ffffff',
-                    fontSize: '0.6875rem',
-                    fontWeight: 700,
-                    minWidth: '16px',
-                    height: '16px',
-                    borderRadius: 'var(--radius-full)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 3px'
-                  }}
-                >
-                  {cart.totalItems}
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--primary-900)' }}>
+                  ₹{cart.totalAmount || 0}
                 </span>
               )}
             </Link>
@@ -355,7 +328,7 @@ const Navbar = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   padding: '4px 8px',
                   borderRadius: 'var(--radius-full)',
                   border: '1px solid var(--border-light)',
@@ -366,8 +339,8 @@ const Navbar = () => {
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '26px',
+                    height: '26px',
                     borderRadius: '50%',
                     backgroundColor: 'var(--primary-600)',
                     color: '#ffffff',
@@ -391,7 +364,7 @@ const Navbar = () => {
                     position: 'absolute',
                     right: 0,
                     top: 'calc(100% + 8px)',
-                    width: '200px',
+                    width: '210px',
                     backgroundColor: 'var(--bg-card)',
                     borderRadius: 'var(--radius-md)',
                     boxShadow: 'var(--shadow-lg)',
@@ -408,11 +381,11 @@ const Navbar = () => {
                       backgroundColor: 'var(--bg-subtle)'
                     }}
                   >
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)' }}>
                       {user?.name}
                     </p>
-                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                      Role: {user?.role}
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--primary-700)', textTransform: 'capitalize' }}>
+                      {user?.role?.replace('_', ' ').toLowerCase()}
                     </span>
                   </div>
 
@@ -425,7 +398,8 @@ const Navbar = () => {
                       gap: '8px',
                       padding: '10px 14px',
                       fontSize: '0.8125rem',
-                      color: 'var(--text-main)'
+                      color: 'var(--text-main)',
+                      fontWeight: 500
                     }}
                   >
                     <LayoutDashboard size={15} />
@@ -433,21 +407,58 @@ const Navbar = () => {
                   </Link>
 
                   {isCustomer && (
-                    <Link
-                      to="/orders"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 14px',
-                        fontSize: '0.8125rem',
-                        color: 'var(--text-main)'
-                      }}
-                    >
-                      <ShoppingBag size={15} />
-                      <span>My Orders</span>
-                    </Link>
+                    <>
+                      <Link
+                        to="/orders"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px 14px',
+                          fontSize: '0.8125rem',
+                          color: 'var(--text-main)',
+                          fontWeight: 500
+                        }}
+                      >
+                        <ShoppingBag size={15} />
+                        <span>My Orders</span>
+                      </Link>
+
+                      <Link
+                        to="/health-records"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px 14px',
+                          fontSize: '0.8125rem',
+                          color: 'var(--text-main)',
+                          fontWeight: 500
+                        }}
+                      >
+                        <ClipboardList size={15} />
+                        <span>Health Records</span>
+                      </Link>
+
+                      <Link
+                        to="/prescriptions"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px 14px',
+                          fontSize: '0.8125rem',
+                          color: 'var(--text-main)',
+                          fontWeight: 500
+                        }}
+                      >
+                        <FileText size={15} />
+                        <span>Prescriptions</span>
+                      </Link>
+                    </>
                   )}
 
                   <Link
@@ -459,7 +470,8 @@ const Navbar = () => {
                       gap: '8px',
                       padding: '10px 14px',
                       fontSize: '0.8125rem',
-                      color: 'var(--text-main)'
+                      color: 'var(--text-main)',
+                      fontWeight: 500
                     }}
                   >
                     <User size={15} />
@@ -478,7 +490,9 @@ const Navbar = () => {
                       fontSize: '0.8125rem',
                       color: 'var(--accent-600)',
                       borderTop: '1px solid var(--border-light)',
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      fontWeight: 600,
+                      cursor: 'pointer'
                     }}
                   >
                     <LogOut size={15} />
@@ -515,91 +529,157 @@ const Navbar = () => {
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-main)',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              cursor: 'pointer'
             }}
             className="mobile-hamburger-btn"
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer (Categorized Healthcare Navigation) */}
       {mobileMenuOpen && (
         <div
           style={{
-            padding: '1rem',
+            padding: '1.25rem',
             backgroundColor: 'var(--bg-card)',
             borderTop: '1px solid var(--border-light)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px'
+            gap: '16px',
+            maxHeight: 'calc(100vh - var(--navbar-height))',
+            overflowY: 'auto'
           }}
-          className="mobile-drawer"
+          className="mobile-drawer animate-fade-in"
         >
           <LocationPicker />
-          <Link
-            to="/medicines"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)' }}
-          >
-            Search Medicines
-          </Link>
-          <Link
-            to="/emergency"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: '#e11d48', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Zap size={16} />
-            SOS Emergency Essentials
-          </Link>
-          <Link
-            to="/doctors"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Stethoscope size={16} />
-            Consult Doctor
-          </Link>
-          <Link
-            to="/lab-tests"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <TestTubes size={16} />
-            Lab Tests
-          </Link>
-          <Link
-            to="/pharmacies"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)' }}
-          >
-            Nearby Pharmacies
-          </Link>
-          <Link
-            to="/pharmacy-network"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)' }}
-          >
-            Pharmacy Network Map
-          </Link>
-          <Link
-            to="/cart"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)' }}
-          >
-            Shopping Cart ({cart.totalItems})
-          </Link>
-          {isAuthenticated && (
-            <Link
-              to={getDashboardLink()}
-              onClick={() => setMobileMenuOpen(false)}
-              style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--primary-600)' }}
-            >
-              Go to Dashboard
-            </Link>
-          )}
+
+          {/* Clinical Care Section */}
+          <div>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>
+              Clinical Healthcare
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <Link
+                to="/doctors"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <Stethoscope size={17} color="var(--primary-600)" />
+                <span>Consult Doctor</span>
+              </Link>
+              <Link
+                to="/lab-tests"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <TestTubes size={17} color="var(--primary-600)" />
+                <span>Diagnostic Lab Tests</span>
+              </Link>
+              {isAuthenticated && isCustomer && (
+                <Link
+                  to="/health-records"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+                >
+                  <ClipboardList size={17} color="var(--primary-600)" />
+                  <span>My Health Records</span>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Pharmacy & Emergency Section */}
+          <div>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>
+              Pharmacy &amp; Medicines
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <Link
+                to="/medicines"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <Search size={17} />
+                <span>Search Medicines</span>
+              </Link>
+              <Link
+                to="/emergency"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: '#e11d48', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <Zap size={17} />
+                <span>SOS Emergency Essentials</span>
+              </Link>
+              <Link
+                to="/pharmacies"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <Store size={17} />
+                <span>Nearby Pharmacies</span>
+              </Link>
+              <Link
+                to="/pharmacy-network"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <Map size={17} />
+                <span>Pharmacy Network Map</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Account & Orders */}
+          <div>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>
+              My Account
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <Link
+                to="/cart"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              >
+                <ShoppingBag size={17} />
+                <span>Shopping Cart ({cart.totalItems})</span>
+              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to={getDashboardLink()}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--primary-600)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
+                  >
+                    <LayoutDashboard size={17} />
+                    <span>Go to Dashboard</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--accent-600)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <LogOut size={17} />
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ padding: '8px', fontSize: '0.9375rem', color: 'var(--primary-600)', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Sign In to QuickMeds
+                </Link>
+              )}
+            </div>
+          </div>
 
           {/* Mobile Download App Button */}
           <button
@@ -610,11 +690,11 @@ const Navbar = () => {
             }}
             style={{
               padding: '10px 14px',
-              fontSize: '0.9375rem',
+              fontSize: '0.875rem',
               color: 'var(--primary-700)',
               fontWeight: 700,
-              backgroundColor: 'var(--bg-subtle)',
-              border: '1px solid var(--border-medium)',
+              backgroundColor: 'var(--primary-50)',
+              border: '1px solid var(--primary-200)',
               borderRadius: 'var(--radius-md)',
               display: 'flex',
               alignItems: 'center',
@@ -624,14 +704,11 @@ const Navbar = () => {
               marginTop: '4px'
             }}
           >
-            <Smartphone size={18} color="var(--primary-600)" />
-            <span>📱 Download QuickMeds App</span>
+            <Smartphone size={16} color="var(--primary-600)" />
+            <span>Download QuickMeds App</span>
           </button>
-
         </div>
       )}
-
-
 
       {/* Download App Modal */}
       <AppDownloadModal

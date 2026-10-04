@@ -10,7 +10,14 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
-  Plus
+  Plus,
+  Stethoscope,
+  TestTubes,
+  ClipboardList,
+  Calendar,
+  Video,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from '../../context/LocationContext';
@@ -29,19 +36,23 @@ const CustomerDashboard = () => {
   const [activeOrder, setActiveOrder] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [nearbyPharmacies, setNearbyPharmacies] = useState([]);
+  const [upcomingConsultations, setUpcomingConsultations] = useState([]);
+  const [upcomingLabBookings, setUpcomingLabBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [ordersRes, pharmaciesRes] = await Promise.all([
+        const [ordersRes, pharmaciesRes, consultRes, labRes] = await Promise.allSettled([
           api.get('/orders?limit=5'),
-          api.get(`/pharmacies/nearby?lat=${location.lat}&lng=${location.lng}&limit=4`)
+          api.get(`/pharmacies/nearby?lat=${location.lat}&lng=${location.lng}&limit=4`),
+          api.get('/consultations/my?limit=5'),
+          api.get('/lab-tests/bookings/my?limit=5')
         ]);
 
-        if (ordersRes.success && ordersRes.data) {
-          const orders = ordersRes.data.orders || [];
+        if (ordersRes.status === 'fulfilled' && ordersRes.value?.success && ordersRes.value?.data) {
+          const orders = ordersRes.value.data.orders || [];
           setRecentOrders(orders);
           // Find any non-delivered active order
           const active = orders.find(
@@ -50,8 +61,20 @@ const CustomerDashboard = () => {
           setActiveOrder(active || null);
         }
 
-        if (pharmaciesRes.success && pharmaciesRes.data) {
-          setNearbyPharmacies(pharmaciesRes.data.pharmacies?.slice(0, 3) || []);
+        if (pharmaciesRes.status === 'fulfilled' && pharmaciesRes.value?.success && pharmaciesRes.value?.data) {
+          setNearbyPharmacies(pharmaciesRes.value.data.pharmacies?.slice(0, 3) || []);
+        }
+
+        if (consultRes.status === 'fulfilled' && consultRes.value?.data) {
+          const consults = consultRes.value.data.consultations || (Array.isArray(consultRes.value.data) ? consultRes.value.data : []);
+          const activeConsults = consults.filter(c => ['REQUESTED', 'CONFIRMED', 'IN_PROGRESS'].includes(c.status));
+          setUpcomingConsultations(activeConsults.slice(0, 2));
+        }
+
+        if (labRes.status === 'fulfilled' && labRes.value?.data) {
+          const bookings = labRes.value.data.bookings || (Array.isArray(labRes.value.data) ? labRes.value.data : []);
+          const activeBookings = bookings.filter(b => ['BOOKED', 'SAMPLE_COLLECTED', 'PROCESSING'].includes(b.status));
+          setUpcomingLabBookings(activeBookings.slice(0, 2));
         }
       } catch (err) {
         console.warn('Dashboard data fetch error:', err);
@@ -168,114 +191,274 @@ const CustomerDashboard = () => {
         </div>
       )}
 
-      {/* 3. Quick Action Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem'
-        }}
-      >
-        <Card
-          hoverable
-          onClick={() => navigate('/medicines')}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+      {/* 3. Clinical & Pharmacy Quick Access Grid */}
+      <div>
+        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.75rem', letterSpacing: '-0.01em' }}>
+          Healthcare Services & Essentials
+        </h3>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '1rem'
+          }}
         >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--primary-50)',
-              color: 'var(--primary-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+          <Card
+            hoverable
+            className="card-healthcare"
+            onClick={() => navigate('/doctors')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '1.25rem' }}
           >
-            <Search size={22} />
-          </div>
-          <div>
-            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Search Medicine</h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Check live stock</span>
-          </div>
-        </Card>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--primary-100)',
+                color: 'var(--primary-700)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Stethoscope size={24} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Consult Doctor</h4>
+                <span className="badge-available-now" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                  <span className="pulse-dot-green" /> Live
+                </span>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Verified doctors & video slot</span>
+            </div>
+          </Card>
 
-        <Card
-          hoverable
-          onClick={() => navigate('/pharmacies')}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--secondary-50)',
-              color: 'var(--secondary-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+          <Card
+            hoverable
+            className="card-healthcare"
+            onClick={() => navigate('/lab-tests')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '1.25rem' }}
           >
-            <Store size={22} />
-          </div>
-          <div>
-            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Nearby Chemists</h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Within your area</span>
-          </div>
-        </Card>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: '#ecfdf5',
+                color: '#059669',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <TestTubes size={24} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Lab Tests</h4>
+                <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#ecfdf5', color: '#047857', fontWeight: 700 }}>
+                  Home Sample
+                </span>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Certified diagnostic checkups</span>
+            </div>
+          </Card>
 
-        <Card
-          hoverable
-          onClick={() => navigate('/prescriptions/upload')}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--accent-50)',
-              color: 'var(--accent-600)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+          <Card
+            hoverable
+            className="card-healthcare"
+            onClick={() => navigate('/health-records')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '1.25rem' }}
           >
-            <FileText size={22} />
-          </div>
-          <div>
-            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Upload Rx</h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pharmacist check</span>
-          </div>
-        </Card>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: '#f5f3ff',
+                color: '#7c3aed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Health Records</h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rx, test reports & history</span>
+            </div>
+          </Card>
 
-        <Card
-          hoverable
-          onClick={() => navigate('/orders')}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#fef3c7',
-              color: '#b45309',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+          <Card
+            hoverable
+            className="card-healthcare"
+            onClick={() => navigate('/medicines')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '1.25rem' }}
           >
-            <ShoppingBag size={22} />
-          </div>
-          <div>
-            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>My Orders</h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>History & reorder</span>
-          </div>
-        </Card>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--primary-50)',
+                color: 'var(--primary-600)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Search size={24} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Order Medicines</h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Search catalog with live stock</span>
+            </div>
+          </Card>
+
+          <Card
+            hoverable
+            className="card-healthcare"
+            onClick={() => navigate('/prescriptions/upload')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '1.25rem' }}
+          >
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--accent-50)',
+                color: 'var(--accent-600)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <FileText size={24} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Upload Rx</h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pharmacist verification</span>
+            </div>
+          </Card>
+
+          <Card
+            hoverable
+            className="card-healthcare"
+            onClick={() => navigate('/pharmacies')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '1.25rem' }}
+          >
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--secondary-50)',
+                color: 'var(--secondary-600)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Store size={24} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Nearby Chemists</h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Licensed stores in 10km</span>
+            </div>
+          </Card>
+        </div>
       </div>
+
+      {/* 4. Upcoming Healthcare Appointments (Doctor Consultations & Lab Tests) */}
+      {(upcomingConsultations.length > 0 || upcomingLabBookings.length > 0) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Calendar size={20} color="var(--primary-600)" />
+              Upcoming Healthcare Appointments
+            </h3>
+            <Link to="/health-records" style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--primary-600)' }}>
+              All Records →
+            </Link>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+            {upcomingConsultations.map((c) => (
+              <Card key={c._id} className="card-healthcare" style={{ padding: '1.25rem', borderLeft: '4px solid var(--primary-600)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'var(--primary-100)', color: 'var(--primary-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Stethoscope size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, margin: 0 }}>Dr. {c.doctorId?.name || 'Doctor Consultation'}</h4>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.doctorId?.specialty || 'General Care'} • {c.type === 'SCHEDULED' ? 'Scheduled Video' : 'Instant Video'}</span>
+                    </div>
+                  </div>
+                  <Badge variant={c.status === 'CONFIRMED' ? 'success' : 'primary'} size="sm">
+                    {c.status}
+                  </Badge>
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                  <Clock size={14} color="var(--text-muted)" />
+                  <span>{new Date(c.scheduledTime || c.createdAt).toLocaleString()}</span>
+                </div>
+                {c.symptoms && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    Symptoms: {c.symptoms}
+                  </p>
+                )}
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/doctors')}>
+                    View Consultation Details
+                  </Button>
+                </div>
+              </Card>
+            ))}
+
+            {upcomingLabBookings.map((b) => (
+              <Card key={b._id} className="card-healthcare" style={{ padding: '1.25rem', borderLeft: '4px solid #059669' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <TestTubes size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, margin: 0 }}>{(b.tests || []).map(t => t.name).join(', ') || 'Diagnostic Test'}</h4>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Home Sample Collection</span>
+                    </div>
+                  </div>
+                  <Badge variant="success" size="sm">
+                    {b.status.replace(/_/g, ' ')}
+                  </Badge>
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                  <Calendar size={14} color="var(--text-muted)" />
+                  <span>{new Date(b.scheduledDate).toLocaleDateString()} ({b.scheduledSlot})</span>
+                </div>
+                {b.collectionOTP && b.status === 'BOOKED' && (
+                  <div style={{ fontSize: '0.75rem', color: '#065f46', backgroundColor: '#d1fae5', padding: '4px 8px', borderRadius: '4px', marginTop: '6px', display: 'inline-block' }}>
+                    Phlebotomist OTP: <strong>{b.collectionOTP}</strong>
+                  </div>
+                )}
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/lab-tests')}>
+                    View Booking Details
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 4. SOS — Emergency Essentials Section */}
       <EmergencyEssentialsSection

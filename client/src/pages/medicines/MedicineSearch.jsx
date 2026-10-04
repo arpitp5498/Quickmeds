@@ -471,6 +471,7 @@ const MedicineSearch = () => {
               <Card
                 key={med._id}
                 hoverable
+                className="card-healthcare"
                 onClick={() => setSelectedMedicine(med)}
                 style={{
                   display: 'flex',

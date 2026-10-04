@@ -74,4 +74,9 @@
   --navbar-height: 70px;
   --sidebar-width: 260px;
   --max-content-width: 1240px;
+
+  /* Healthcare Design Tokens */
+  --card-border: #e2e8f0;
+  --card-hover-border: #bfdbfe;
+  --card-shadow-hover: 0 10px 25px -5px rgba(2, 132, 199, 0.07), 0 8px 10px -6px rgba(2, 132, 199, 0.04);
 }
