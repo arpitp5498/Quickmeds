@@ -4,6 +4,7 @@ const Pharmacy = require('../models/Pharmacy');
 const { calculateDistance } = require('../utils/geo');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const { getActivePromotionsMap, getPromotionForMedicine, calculatePromotionalPrice, findPromotionInMap, resolveEffectivePrice } = require('../services/discountService');
 
 // @desc    Search medicines with filters, pagination, and stock checks
 // @route   GET /api/medicines
@@ -123,6 +124,10 @@ const searchMedicines = async (req, res, next) => {
     const userLat = lat ? parseFloat(lat) : null;
     const userLng = lng ? parseFloat(lng) : null;
 
+    // Fetch active promotions for these medicines
+    const medCategories = [...new Set(medicines.map(m => m.category).filter(Boolean))];
+    const promoMap = await getActivePromotionsMap(medicineIds, medCategories);
+
     const results = medicines.map((med) => {
       const medObj = med.toObject();
 
@@ -158,6 +163,25 @@ const searchMedicines = async (req, res, next) => {
         }
       } else {
         medObj.lowestPrice = med.mrp;
+      }
+
+      // Apply platform promotion if available
+      const promo = findPromotionInMap(promoMap, med._id.toString(), med.category);
+      if (promo) {
+        const promoResult = calculatePromotionalPrice(med.mrp, promo);
+        if (promoResult) {
+          medObj.promotion = {
+            id: promoResult.promotionId,
+            name: promoResult.promotionName,
+            discountPercentage: promoResult.discountPercentage,
+            promotionalPrice: promoResult.promotionalPrice,
+            discountAmount: promoResult.discountAmount
+          };
+          // If promotional price is lower than current lowestPrice, use it
+          if (promoResult.promotionalPrice < medObj.lowestPrice) {
+            medObj.lowestPrice = promoResult.promotionalPrice;
+          }
+        }
       }
 
       return medObj;
@@ -211,6 +235,10 @@ const getMedicineById = async (req, res, next) => {
     const userLat = lat ? parseFloat(lat) : null;
     const userLng = lng ? parseFloat(lng) : null;
 
+    // Check for active platform promotion
+    const promo = await getPromotionForMedicine(medicine._id, medicine.category);
+    const promoResult = promo ? calculatePromotionalPrice(medicine.mrp, promo) : null;
+
     const pharmaciesWithStock = inventoryList
       .filter((item) => item.pharmacyId)
       .map((item) => {
@@ -226,6 +254,19 @@ const getMedicineById = async (req, res, next) => {
             ? Math.round(((medicine.mrp - item.price) / medicine.mrp) * 100)
             : (item.discountPercentage || 0);
 
+        // Apply platform promotion if it offers a better price
+        let effectivePrice = item.price;
+        let effectiveDiscount = discountPercentage;
+        let promoApplied = null;
+        if (promoResult && promoResult.promotionalPrice < item.price) {
+          effectivePrice = promoResult.promotionalPrice;
+          effectiveDiscount = promoResult.discountPercentage;
+          promoApplied = {
+            id: promoResult.promotionId,
+            name: promoResult.promotionName
+          };
+        }
+
         const isDemo = Boolean(pharmacy.isDemo);
         const isPriceSuspicious = Boolean(item.isPriceSuspicious);
 
@@ -240,6 +281,9 @@ const getMedicineById = async (req, res, next) => {
           isOpen: pharmacy.isOpen !== false,
           is24x7: Boolean(pharmacy.is24x7),
           price: item.price,
+          effectivePrice,
+          effectiveDiscount,
+          promotionApplied: promoApplied,
           mrp: medicine.mrp,
           discountPercentage,
           stockQuantity: item.stockQuantity,
@@ -265,7 +309,14 @@ const getMedicineById = async (req, res, next) => {
 
     return ApiResponse.success(res, {
       medicine,
-      pharmacies: pharmaciesWithStock
+      pharmacies: pharmaciesWithStock,
+      promotion: promoResult ? {
+        id: promoResult.promotionId,
+        name: promoResult.promotionName,
+        discountPercentage: promoResult.discountPercentage,
+        promotionalPrice: promoResult.promotionalPrice,
+        discountAmount: promoResult.discountAmount
+      } : null
     });
   } catch (error) {
     next(error);
@@ -306,7 +357,59 @@ const getPopularMedicines = async (req, res, next) => {
     })
       .limit(8)
       .sort({ createdAt: 1 });
-    return ApiResponse.success(res, { medicines });
+
+    const medicineIds = medicines.map((m) => m._id);
+    const medCategories = [...new Set(medicines.map((m) => m.category).filter(Boolean))];
+    const [inventories, promoMap] = await Promise.all([
+      PharmacyInventory.find({
+        medicineId: { $in: medicineIds },
+        isAvailable: true,
+        stockQuantity: { $gt: 0 }
+      }).populate({
+        path: 'pharmacyId',
+        match: { verificationStatus: 'VERIFIED' }
+      }),
+      getActivePromotionsMap(medicineIds, medCategories)
+    ]);
+
+    const results = medicines.map((med) => {
+      const medObj = med.toObject();
+      const verifiedInventories = inventories.filter(
+        (inv) =>
+          inv.medicineId.toString() === med._id.toString() &&
+          inv.pharmacyId &&
+          !inv.isPriceSuspicious &&
+          !inv.pharmacyId.isDemo
+      );
+      const activeInventories = verifiedInventories.length > 0
+        ? verifiedInventories
+        : inventories.filter((inv) => inv.medicineId.toString() === med._id.toString() && inv.pharmacyId);
+
+      medObj.availablePharmaciesCount = activeInventories.length;
+      medObj.lowestPrice = activeInventories.length > 0
+        ? Math.min(...activeInventories.map((i) => i.price))
+        : med.mrp;
+
+      const promo = findPromotionInMap(promoMap, med._id.toString(), med.category);
+      if (promo) {
+        const promoResult = calculatePromotionalPrice(med.mrp, promo);
+        if (promoResult) {
+          medObj.promotion = {
+            id: promoResult.promotionId,
+            name: promoResult.promotionName,
+            discountPercentage: promoResult.discountPercentage,
+            promotionalPrice: promoResult.promotionalPrice,
+            discountAmount: promoResult.discountAmount
+          };
+          if (promoResult.promotionalPrice < medObj.lowestPrice) {
+            medObj.lowestPrice = promoResult.promotionalPrice;
+          }
+        }
+      }
+      return medObj;
+    });
+
+    return ApiResponse.success(res, { medicines: results });
   } catch (error) {
     next(error);
   }
@@ -401,16 +504,20 @@ const getEmergencyEssentials = async (req, res, next) => {
       'VWash Plus Intimate Hygiene Wash (200ml)': 'HYGIENE_ESSENTIALS'
     };
 
-    // Populate inventory lowest prices
+    // Populate inventory lowest prices and active promotions
     const medicineIds = medicines.map((m) => m._id);
-    const inventories = await PharmacyInventory.find({
-      medicineId: { $in: medicineIds },
-      isAvailable: true,
-      stockQuantity: { $gt: 0 }
-    }).populate({
-      path: 'pharmacyId',
-      match: { verificationStatus: 'VERIFIED' }
-    });
+    const medCategories = [...new Set(medicines.map((m) => m.category).filter(Boolean))];
+    const [inventories, promoMap] = await Promise.all([
+      PharmacyInventory.find({
+        medicineId: { $in: medicineIds },
+        isAvailable: true,
+        stockQuantity: { $gt: 0 }
+      }).populate({
+        path: 'pharmacyId',
+        match: { verificationStatus: 'VERIFIED' }
+      }),
+      getActivePromotionsMap(medicineIds, medCategories)
+    ]);
 
     const userLat = lat ? parseFloat(lat) : null;
     const userLng = lng ? parseFloat(lng) : null;
@@ -438,10 +545,29 @@ const getEmergencyEssentials = async (req, res, next) => {
         lowestPrice = Math.min(...activeInventories.map((i) => i.price));
       }
 
+      const promo = findPromotionInMap(promoMap, m._id.toString(), m.category);
+      let promoApplied = null;
+      if (promo) {
+        const promoResult = calculatePromotionalPrice(m.mrp, promo);
+        if (promoResult) {
+          promoApplied = {
+            id: promoResult.promotionId,
+            name: promoResult.promotionName,
+            discountPercentage: promoResult.discountPercentage,
+            promotionalPrice: promoResult.promotionalPrice,
+            discountAmount: promoResult.discountAmount
+          };
+          if (promoResult.promotionalPrice < lowestPrice) {
+            lowestPrice = promoResult.promotionalPrice;
+          }
+        }
+      }
+
       return {
         ...obj,
         sosCategory: catKey,
         lowestPrice,
+        promotion: promoApplied,
         availabilityStatus: 'Available at nearby verified pharmacies'
       };
     });

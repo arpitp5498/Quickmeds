@@ -34,6 +34,7 @@ const consultationRoutes = require('./routes/consultationRoutes');
 const labRoutes = require('./routes/labRoutes');
 const ambulanceRoutes = require('./routes/ambulanceRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
 
 // Initialize express app
 const app = express();
@@ -163,6 +164,7 @@ app.use('/api/consultations', consultationRoutes);
 app.use('/api/lab-tests', labRoutes);
 app.use('/api/ambulance', ambulanceRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 
 

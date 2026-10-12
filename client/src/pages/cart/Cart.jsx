@@ -162,6 +162,14 @@ const Cart = () => {
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {item.strength} • ₹{item.price} each
                   </span>
+                  {item.mrp && item.mrp > item.price && (
+                    <div style={{ fontSize: '0.6875rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)', textDecoration: 'line-through' }}>MRP ₹{item.mrp}</span>
+                      <span style={{ color: '#16a34a', fontWeight: 700 }}>
+                        Save {Math.round(((item.mrp - item.price) / item.mrp) * 100)}%
+                      </span>
+                    </div>
+                  )}
                   {item.pharmacyName && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
                       <Store size={12} color="var(--primary-600)" />
@@ -248,6 +256,23 @@ const Cart = () => {
 
         {/* Right: Smart Fulfilment Routing & Checkout CTA */}
         <div style={{ position: 'sticky', top: '90px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {cart.items.some(item => item.mrp && item.mrp > item.price) && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              backgroundColor: '#dcfce7',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '1rem',
+              fontSize: '0.8125rem',
+              color: '#166534',
+              fontWeight: 600
+            }}>
+              🎉 You save ₹{cart.items.reduce((sum, item) => sum + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0)} on this order!
+            </div>
+          )}
+
           <BasketOptimizationBreakdown
             cartItems={cart.items}
             coordinates={location ? [location.lng, location.lat] : [77.2090, 28.6139]}

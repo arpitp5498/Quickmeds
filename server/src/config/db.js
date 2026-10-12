@@ -27,6 +27,13 @@ const autoSeedIfEmpty = async () => {
     } else {
       console.log(`[MongoDB] Catalog ready with ${count} master medicines.`);
     }
+
+    const Promotion = require('../models/Promotion');
+    const promoCount = await Promotion.countDocuments();
+    if (promoCount === 0) {
+      const seedPromotions = require('../seed/seedPromotions');
+      await seedPromotions();
+    }
   } catch (seedErr) {
     console.warn('[MongoDB] Auto-seed check warning:', seedErr.message);
   }

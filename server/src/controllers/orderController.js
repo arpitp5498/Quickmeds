@@ -20,6 +20,7 @@ const { getIO } = require('../config/socket');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const logger = require('../utils/logger');
+const { getActivePromotionsMap, findPromotionInMap, calculatePromotionalPrice } = require('../services/discountService');
 
 // @desc    Create a new order from cart / checkout
 // @route   POST /api/orders
@@ -83,7 +84,19 @@ const createOrder = async (req, res, next) => {
     const eta = estimateDeliveryTime(distanceKm);
     const platformFee = 5; // Safety & Packaging charge
     const subtotal = cart.subtotal;
+
+    // Calculate total promotional discount applied across cart items
+    let totalPromotionDiscount = 0;
+    for (const item of cart.items) {
+      if (item.mrp && item.price < item.mrp) {
+        totalPromotionDiscount += (item.mrp - item.price) * item.quantity;
+      }
+    }
+
+    const discount = totalPromotionDiscount;
     const total = subtotal + deliveryFee + platformFee;
+    // Note: discount is already reflected in item prices (subtotal uses discounted prices),
+    // so we record it for display but don't subtract again
 
     // Validate and atomically decrement inventory stock
     await decrementInventory(orderPharmacyId, cart.items);
@@ -100,6 +113,7 @@ const createOrder = async (req, res, next) => {
       subtotal,
       deliveryFee,
       platformFee,
+      discount,
       total,
       deliveryAddress,
       prescriptionId: prescriptionId || null,

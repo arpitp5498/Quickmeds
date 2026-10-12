@@ -19,7 +19,12 @@ const cartItemSchema = new mongoose.Schema({
     ref: 'Pharmacy',
     default: null
   },
-  pharmacyName: { type: String, default: '' }
+  pharmacyName: { type: String, default: '' },
+  promotionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Promotion',
+    default: null
+  }
 });
 
 const cartSchema = new mongoose.Schema(

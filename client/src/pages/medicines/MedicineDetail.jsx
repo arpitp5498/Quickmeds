@@ -17,7 +17,8 @@ import {
   ArrowRight,
   Star,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Tag
 } from 'lucide-react';
 import api from '../../services/api';
 import { useLocation } from '../../context/LocationContext';
@@ -38,6 +39,7 @@ const MedicineDetail = () => {
 
   const [medicine, setMedicine] = useState(null);
   const [pharmacies, setPharmacies] = useState([]);
+  const [promotion, setPromotion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
@@ -49,8 +51,10 @@ const MedicineDetail = () => {
         setLoading(true);
         const res = await api.get(`/medicines/${id}?lat=${location.lat}&lng=${location.lng}`);
         if (res.success && res.data) {
-          setMedicine(res.data.medicine);
-          setPharmacies(res.data.pharmacies || []);
+          const { medicine: med, pharmacies: pharma, promotion: promo } = res.data;
+          setMedicine(med);
+          setPharmacies(pharma || []);
+          setPromotion(promo || null);
         }
       } catch (err) {
         showToast('Could not load medicine details', 'error');
@@ -67,7 +71,10 @@ const MedicineDetail = () => {
 
   const bestOffer = verifiedOffers.length > 0 ? verifiedOffers[0] : (pharmacies[0] || null);
   const activeOffer = selectedOffer || bestOffer;
-  const bestPrice = activeOffer ? activeOffer.price : (medicine?.mrp || 0);
+  const activeOfferEffectivePrice = activeOffer ? (activeOffer.effectivePrice || activeOffer.price) : null;
+  const bestPrice = activeOfferEffectivePrice !== null
+    ? activeOfferEffectivePrice
+    : (promotion?.promotionalPrice || medicine?.mrp || 0);
 
   const currentQty = medicine ? getItemQuantity(medicine._id) : 0;
   const cartItem = cart?.items?.find(
@@ -78,7 +85,7 @@ const MedicineDetail = () => {
   const handleAddToCart = async (offer = null) => {
     if (!medicine) return;
     const target = offer || activeOffer;
-    const priceToAdd = target ? target.price : medicine.mrp;
+    const priceToAdd = target ? (target.effectivePrice || target.price) : (promotion?.promotionalPrice || medicine.mrp);
     const pharmacyIdToAdd = target ? target.pharmacyId : null;
     const pharmacyNameToAdd = target ? target.name : null;
 
@@ -91,7 +98,8 @@ const MedicineDetail = () => {
     setSelectedOffer(offer);
     setOfferActionLoading(offer.pharmacyId);
     try {
-      await addToCart(medicine, 1, offer.price, offer.pharmacyId, offer.name);
+      const priceToSelect = offer.effectivePrice || offer.price;
+      await addToCart(medicine, 1, priceToSelect, offer.pharmacyId, offer.name);
     } finally {
       setOfferActionLoading(null);
     }
@@ -320,6 +328,23 @@ const MedicineDetail = () => {
                     Save {Math.round(((medicine.mrp - bestPrice) / medicine.mrp) * 100)}% OFF
                   </span>
                 )}
+                {promotion && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#dcfce7',
+                    color: '#166534',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    marginTop: '4px'
+                  }}>
+                    <Tag size={12} />
+                    {promotion.name} — {promotion.discountPercentage}% OFF
+                  </div>
+                )}
               </div>
             </div>
 
@@ -450,7 +475,8 @@ const MedicineDetail = () => {
             {verifiedOffers.map((offer, idx) => {
               const isBest = idx === 0;
               const isInCartForThisPharmacy = cartPharmacyId === offer.pharmacyId.toString();
-              const discount = offer.mrp > offer.price ? Math.round(((offer.mrp - offer.price) / offer.mrp) * 100) : 0;
+              const offerEffectivePrice = offer.effectivePrice || offer.price;
+              const discount = offer.mrp > offerEffectivePrice ? Math.round(((offer.mrp - offerEffectivePrice) / offer.mrp) * 100) : 0;
 
               return (
                 <Card
@@ -559,9 +585,9 @@ const MedicineDetail = () => {
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', justifyContent: 'flex-end' }}>
                           <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                            ₹{offer.price}
+                            ₹{offerEffectivePrice}
                           </span>
-                          {offer.mrp > offer.price && (
+                          {offer.mrp > offerEffectivePrice && (
                             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
                               ₹{offer.mrp}
                             </span>

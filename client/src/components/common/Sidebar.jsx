@@ -23,7 +23,8 @@ import {
   TestTubes,
   ClipboardList,
   CalendarCheck,
-  UserCircle
+  UserCircle,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -60,6 +61,7 @@ const Sidebar = ({ role = 'CUSTOMER', mobileOpen = false, onClose = () => {} }) 
             items: [
               { to: '/admin/orders', label: 'Order Monitor', icon: ShoppingBag },
               { to: '/admin/prescriptions', label: 'Prescription Queue', icon: FileText },
+              { to: '/admin/promotions', label: 'Promotions', icon: Tag },
               { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText }
             ]
           }

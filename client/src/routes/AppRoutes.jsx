@@ -78,6 +78,7 @@ import AdminPrescriptions from '../pages/admin/AdminPrescriptions';
 import AdminAnalytics from '../pages/admin/AdminAnalytics';
 import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 import AdminDoctors from '../pages/admin/AdminDoctors';
+import PromotionManager from '../pages/admin/PromotionManager';
 
 // Doctor Portal Pages
 import DoctorLayout from '../layouts/DoctorLayout';
@@ -214,6 +215,7 @@ const AppRoutes = () => {
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
         <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
         <Route path="/admin/doctors" element={<AdminDoctors />} />
+        <Route path="/admin/promotions" element={<PromotionManager />} />
       </Route>
 
       {/* Catch-all 404 redirect */}

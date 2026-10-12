@@ -561,41 +561,79 @@ const MedicineSearch = () => {
 
                 <div>
                   {/* Availability & Price Summary */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between',
-                      marginTop: '8px',
-                      marginBottom: '10px',
-                      borderTop: '1px solid var(--border-light)',
-                      paddingTop: '8px'
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                        ₹{med.lowestPrice || med.mrp}
-                      </span>
-                      {med.lowestPrice && med.lowestPrice < med.mrp && (
-                        <span
-                          style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--text-muted)',
-                            textDecoration: 'line-through',
-                            marginLeft: '6px'
-                          }}
-                        >
-                          ₹{med.mrp}
-                        </span>
-                      )}
-                    </div>
+                  {(() => {
+                    const price = med.lowestPrice || med.mrp;
+                    const hasDiscount = (med.lowestPrice && med.lowestPrice < med.mrp) || Boolean(med.promotion);
+                    const discountPercent = med.promotion
+                      ? med.promotion.discountPercentage
+                      : (med.lowestPrice && med.lowestPrice < med.mrp
+                          ? Math.round(((med.mrp - med.lowestPrice) / med.mrp) * 100)
+                          : 0);
+                    const savingsAmount = med.promotion
+                      ? med.promotion.discountAmount
+                      : (med.lowestPrice && med.lowestPrice < med.mrp
+                          ? Math.round(med.mrp - med.lowestPrice)
+                          : 0);
 
-                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                      {med.availablePharmaciesCount > 0
-                        ? '✓ In stock in network'
-                        : 'Check availability'}
-                    </div>
-                  </div>
+                    return (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          justifyContent: 'space-between',
+                          marginTop: '8px',
+                          marginBottom: '10px',
+                          borderTop: '1px solid var(--border-light)',
+                          paddingTop: '8px'
+                        }}
+                      >
+                        <div>
+                          <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            ₹{price}
+                          </span>
+                          {hasDiscount && discountPercent > 0 && (
+                            <span
+                              style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--text-muted)',
+                                textDecoration: 'line-through',
+                                marginLeft: '6px'
+                              }}
+                            >
+                              ₹{med.mrp}
+                            </span>
+                          )}
+                          {hasDiscount && discountPercent > 0 && (
+                            <span style={{
+                              display: 'inline-block',
+                              fontSize: '0.6875rem',
+                              fontWeight: 700,
+                              color: '#ffffff',
+                              backgroundColor: '#16a34a',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              marginLeft: '6px'
+                            }}>
+                              {discountPercent}% OFF
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
+                            {med.availablePharmaciesCount > 0
+                              ? '✓ In stock in network'
+                              : 'Check availability'}
+                          </div>
+                          {hasDiscount && savingsAmount > 0 && (
+                            <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>
+                              Save ₹{savingsAmount} on MRP ₹{med.mrp}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* E-Commerce Action Area: Prominent Add To Cart or Interactive Quantity Selector */}
                   <div onClick={(e) => e.stopPropagation()}>
@@ -743,36 +781,73 @@ const MedicineSearch = () => {
               </div>
 
               {/* Price Banner */}
-              <div
-                style={{
-                  backgroundColor: 'var(--bg-subtle)',
-                  border: '1.5px solid var(--primary-100)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-700)', display: 'block' }}>
-                    BEST NETWORK PRICE
-                  </span>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                    ₹{selectedMedicine.lowestPrice || selectedMedicine.mrp}
-                  </span>
-                  {selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp && (
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: '6px' }}>
-                      MRP ₹{selectedMedicine.mrp}
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                  {selectedMedicine.availablePharmaciesCount > 0
-                    ? '✓ In stock in network'
-                    : 'Check availability'}
-                </div>
-              </div>
+              {(() => {
+                const modalPrice = selectedMedicine.lowestPrice || selectedMedicine.mrp;
+                const hasDiscount = (selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp) || Boolean(selectedMedicine.promotion);
+                const discountPercent = selectedMedicine.promotion
+                  ? selectedMedicine.promotion.discountPercentage
+                  : (selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp
+                      ? Math.round(((selectedMedicine.mrp - selectedMedicine.lowestPrice) / selectedMedicine.mrp) * 100)
+                      : 0);
+                const savingsAmount = selectedMedicine.promotion
+                  ? selectedMedicine.promotion.discountAmount
+                  : (selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp
+                      ? Math.round(selectedMedicine.mrp - selectedMedicine.lowestPrice)
+                      : 0);
+
+                return (
+                  <div
+                    style={{
+                      backgroundColor: 'var(--bg-subtle)',
+                      border: '1.5px solid var(--primary-100)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-700)', display: 'block' }}>
+                        BEST NETWORK PRICE
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                          ₹{modalPrice}
+                        </span>
+                        {hasDiscount && discountPercent > 0 && (
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            MRP ₹{selectedMedicine.mrp}
+                          </span>
+                        )}
+                        {hasDiscount && discountPercent > 0 && (
+                          <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.6875rem',
+                            fontWeight: 700,
+                            color: '#ffffff',
+                            backgroundColor: '#16a34a',
+                            padding: '1px 6px',
+                            borderRadius: '4px'
+                          }}>
+                            {discountPercent}% OFF
+                          </span>
+                        )}
+                      </div>
+                      {hasDiscount && savingsAmount > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, marginTop: '2px' }}>
+                          Save ₹{savingsAmount} ({discountPercent}%)
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
+                      {selectedMedicine.availablePharmaciesCount > 0
+                        ? '✓ In stock in network'
+                        : 'Check availability'}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right: Detailed Information */}

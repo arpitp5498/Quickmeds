@@ -4,6 +4,7 @@ const Medicine = require('../models/Medicine');
 const Pharmacy = require('../models/Pharmacy');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const { getPromotionForMedicine, resolveEffectivePrice } = require('../services/discountService');
 
 // Helper to get or create cart
 const getOrCreateCart = async (userId) => {
@@ -115,6 +116,13 @@ const addToCart = async (req, res, next) => {
     const itemPrice = typeof clientPrice === 'number' && clientPrice > 0
       ? clientPrice
       : (inventory?.price !== undefined ? inventory.price : medicine.mrp);
+
+    // Check for active platform promotion
+    const promo = await getPromotionForMedicine(medicineId, medicine.category);
+    const resolved = resolveEffectivePrice(itemPrice, medicine.mrp, promo);
+    const finalPrice = resolved.effectivePrice;
+    const promotionId = resolved.promotionId || null;
+
     const availableStock = inventory?.stockQuantity || 50;
     const resolvedPharmacyId = pharmacy?._id || pharmacyId || null;
     const resolvedPharmacyName = pharmacy?.name || pharmacyName || null;
@@ -137,8 +145,11 @@ const addToCart = async (req, res, next) => {
       }
       cart.items[existingIndex].quantity = newQty;
       // If user selected a specific offer with price/pharmacy, update item attribution
-      if (typeof clientPrice === 'number' && clientPrice > 0) {
-        cart.items[existingIndex].price = itemPrice;
+      if ((typeof clientPrice === 'number' && clientPrice > 0) || finalPrice < cart.items[existingIndex].price) {
+        cart.items[existingIndex].price = finalPrice;
+        if (promotionId) {
+          cart.items[existingIndex].promotionId = promotionId;
+        }
       }
       if (resolvedPharmacyId) {
         cart.items[existingIndex].pharmacyId = resolvedPharmacyId;
@@ -151,12 +162,13 @@ const addToCart = async (req, res, next) => {
         strength: medicine.strength,
         dosageForm: medicine.dosageForm,
         image: medicine.image,
-        price: itemPrice,
+        price: finalPrice,
         mrp: medicine.mrp,
         quantity: parseInt(quantity, 10),
         requiresPrescription: medicine.requiresPrescription,
         pharmacyId: resolvedPharmacyId,
-        pharmacyName: resolvedPharmacyName
+        pharmacyName: resolvedPharmacyName,
+        promotionId: promotionId
       });
     }
 
