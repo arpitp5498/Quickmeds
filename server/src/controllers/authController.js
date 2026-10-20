@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Pharmacy = require('../models/Pharmacy');
 const DeliveryPartner = require('../models/DeliveryPartner');
+const Doctor = require('../models/Doctor');
 const { generateToken } = require('../services/authService');
 const { logAction } = require('../services/auditService');
 const ApiError = require('../utils/ApiError');
