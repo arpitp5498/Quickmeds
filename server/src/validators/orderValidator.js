@@ -1,7 +1,7 @@
 const { body } = require('express-validator');
 
 const createOrderValidator = [
-  body('pharmacyId').isMongoId().withMessage('Valid pharmacy ID is required'),
+  body('confirmedTotal').optional().isFloat({ min: 0 }).toFloat(),
   body('deliveryAddress').notEmpty().withMessage('Delivery address is required'),
   body('deliveryAddress.street').notEmpty().withMessage('Delivery street address is required'),
   body('deliveryAddress.city').notEmpty().withMessage('Delivery city is required'),

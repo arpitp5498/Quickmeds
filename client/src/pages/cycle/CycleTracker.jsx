@@ -116,10 +116,7 @@ const CycleTracker = () => {
     try {
       setSosLoading(true);
       for (const item of itemsToOrder) {
-        await api.post('/cart/items', {
-          medicineId: item.product._id,
-          quantity: item.quantity
-        });
+        if (!await addToCart(item.product, item.quantity)) return;
       }
       refreshCart();
       showToast('SOS emergency supplies added! Redirecting to instant checkout...', 'success');

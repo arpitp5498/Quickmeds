@@ -28,7 +28,7 @@ const { getActivePromotionsMap, findPromotionInMap, calculatePromotionalPrice } 
 const createOrder = async (req, res, next) => {
   try {
     const {
-      pharmacyId,
+      confirmedTotal,
       deliveryAddress,
       prescriptionId,
       paymentMethod = 'COD',
@@ -67,7 +67,11 @@ const createOrder = async (req, res, next) => {
       if (med.prescriptionSchedule === 'Schedule X' || med.regulatoryClass === 'Schedule X') throw ApiError.forbidden('Controlled medicine unavailable');
       const promo = await require('../services/discountService').getPromotionForMedicine(med._id, med.category);
       const quote = resolveEffectivePrice(inv.price, med.mrp, promo);
-      if (item.price !== quote.effectivePrice) throw ApiError.conflict('Price changed. Remove and re-add this item before checkout.');
+      if (confirmedTotal === undefined && item.price !== quote.effectivePrice) throw ApiError.conflict('Price changed. Remove and re-add this item before checkout.');
+      item.price = quote.effectivePrice;
+      item.pharmacyId = orderPharmacyId;
+      item.pharmacyName = pharmacy.name;
+      item.promotionId = quote.promotionId || null;
       item.requiresPrescription = med.requiresPrescription || [med.prescriptionSchedule, med.regulatoryClass].some(value => ['Schedule H','Schedule H1'].includes(value));
       orderItems.push({ ...item.toObject(), batchNumber: inv.batchNumber, expiryDate: inv.expiryDate });
     }
@@ -105,6 +109,8 @@ const createOrder = async (req, res, next) => {
 
     const discount = totalPromotionDiscount;
     const total = subtotal + deliveryFee + platformFee;
+    if (confirmedTotal !== undefined && confirmedTotal !== total) throw ApiError.conflict('The delivery quote changed. Refresh checkout to review the new total.');
+
     // Note: discount is already reflected in item prices (subtotal uses discounted prices),
     // so we record it for display but don't subtract again
 

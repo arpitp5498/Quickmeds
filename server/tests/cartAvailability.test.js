@@ -49,9 +49,39 @@ describe('Purchasable medicine inventory', () => {
     expect(res.body.data.cart.items[0].pharmacyId).toBe(String(second.pharmacyId));
     await update(4).expect(200);
     await update(5).expect(409);
-    expect((await update(1).expect(200)).body.data.cart.subtotal).toBe(80);
-    await add(2, first.pharmacyId).expect(409);
+    expect((await update(1).expect(200)).body.data.cart.subtotal).toBe(70);
+    const rerouted = await add(2, first.pharmacyId).expect(200);
+    expect(rerouted.body.data.cart.items[0].pharmacyId).toBe(String(second.pharmacyId));
     await clear();
+  });
+
+  it('assigns the nearby pharmacy even if the customer supplies a cheaper distant store', async () => {
+    const distant = await makeOffer('Distant fixture', 5, 8);
+    await Pharmacy.updateOne({ _id: distant.pharmacyId }, { 'location.coordinates': [78, 29] });
+    const coordinates = [77.2, 28.6];
+    const guest = await request(app).get('/api/medicines/' + medicine._id + '/quote')
+      .query({ quantity: 1, lng: coordinates[0], lat: coordinates[1] }).expect(200);
+    expect(guest.body.data.pharmacyId).toBe(String(first.pharmacyId));
+    const added = await request(app).post('/api/cart/items').set('Authorization', authorization)
+      .send({ coordinates, medicineId: medicine._id, quantity: 1, pharmacyId: distant.pharmacyId }).expect(200);
+    expect(added.body.data.cart.items[0].pharmacyId).toBe(String(first.pharmacyId));
+    const quote = await request(app).post('/api/cart/quote').set('Authorization', authorization)
+      .send({ coordinates, pharmacyId: distant.pharmacyId }).expect(200);
+    expect(quote.body.data.recommended.pharmacies[0]._id).toBe(String(first.pharmacyId));
+    expect(quote.body.data.recommended.priceBreakdown.itemsSubtotal).toBe(70);
+    // Complete an OTC purchase only in the disposable test database.
+    await Medicine.updateOne({ _id: medicine._id }, { requiresPrescription: false });
+    const deliveryAddress = { street: 'Test', city: 'Delhi', state: 'Delhi', pincode: '110001',
+      fullAddress: 'Test Delhi', coordinates };
+    const payload = { deliveryAddress, paymentMethod: 'COD', pharmacyId: distant.pharmacyId,
+      confirmedTotal: quote.body.data.recommended.totalOrderValue };
+    await request(app).post('/api/orders').set('Authorization', authorization)
+      .send({ ...payload, confirmedTotal: payload.confirmedTotal + 1 }).expect(409);
+    const placed = await request(app).post('/api/orders').set('Authorization', authorization).send(payload).expect(201);
+    expect(placed.body.data.order.pharmacyId).toBe(String(first.pharmacyId));
+    expect(placed.body.data.order.total).toBe(payload.confirmedTotal);
+    await Medicine.updateOne({ _id: medicine._id }, { requiresPrescription: true });
+    await Inventory.deleteOne({ _id: distant._id });
   });
 
   it('shows stocked matches before newer unconfirmed matches across pages', async () => {
@@ -72,12 +102,12 @@ describe('Purchasable medicine inventory', () => {
   });
 
   it('distinguishes confirmed zero, incomplete balances and missing mappings', async () => {
-    await add(2).expect(200);
+    await add(1).expect(200);
     await Inventory.updateMany({ medicineId: medicine._id }, { stockQuantity: 0 });
     expect(await search()).toMatchObject({ availablePharmaciesCount: 0, stockStatus: 'OUT_OF_STOCK' });
     await add(1).expect(409);
     const checkout = await request(app).post('/api/orders').set('Authorization', authorization)
-      .send({ pharmacyId: first.pharmacyId, paymentMethod: 'COD',
+      .send({ paymentMethod: 'COD',
         deliveryAddress: { street: 'Test', city: 'Delhi', pincode: '110001', coordinates: [77.2, 28.6] } }).expect(409);
     expect(checkout.body.message).toMatch(/fulfil|availability|stock/i);
     await Inventory.collection.updateOne({ _id: first._id }, { $unset: { stockQuantity: '' } });

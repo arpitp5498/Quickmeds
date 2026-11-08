@@ -1,3 +1,4 @@
+const { routedPlan, quoteItem } = require('../services/cartQuote');
 const Cart = require('../models/Cart');
 const { findPurchasableInventory } = require('../services/purchasableInventory');
 const Medicine = require('../models/Medicine');
@@ -37,7 +38,7 @@ const getCart = async (req, res, next) => {
 // @access  Private (CUSTOMER)
 const addToCart = async (req, res, next) => {
   try {
-    let { pharmacyId, medicineId, quantity = 1 } = req.body;
+    let { medicineId, quantity = 1 } = req.body;
 
     let medicine = await Medicine.findById(medicineId);
     if (!medicine) throw ApiError.notFound('Medicine not found');
@@ -57,19 +58,8 @@ const addToCart = async (req, res, next) => {
     const existingIndex = cart.items.findIndex(item => item.medicineId.equals(medicineId));
     const totalQuantity = (cart.items[existingIndex]?.quantity || 0) + quantity;
     if (totalQuantity > 100) throw ApiError.badRequest('Maximum quantity per medicine is 100');
-    const [inventory] = await findPurchasableInventory(medicineId, totalQuantity, pharmacyId);
-    if (!inventory) throw ApiError.conflict('Selected quantity unavailable');
-    const pharmacy = inventory.pharmacyId;
-    const itemPrice = inventory.price;
-
-    // Check for active platform promotion
-    const promo = await getPromotionForMedicine(medicineId, medicine.category);
-    const resolved = resolveEffectivePrice(itemPrice, medicine.mrp, promo);
-    const finalPrice = resolved.effectivePrice;
-    const promotionId = resolved.promotionId || null;
-
-    const resolvedPharmacyId = pharmacy._id;
-    const resolvedPharmacyName = pharmacy.name;
+    const { pharmacyId: resolvedPharmacyId, pharmacyName: resolvedPharmacyName, price: finalPrice, promotionId } =
+      await quoteItem(medicine, totalQuantity, req.body.coordinates);
     if (!cart.pharmacyId || existingIndex === 0) cart.pharmacyId = resolvedPharmacyId;
 
     if (existingIndex > -1) {
@@ -122,10 +112,11 @@ const updateCartItemQuantity = async (req, res, next) => {
     }
 
     const item = cart.items[itemIndex];
-    const pharmacyId = item.pharmacyId || cart.pharmacyId?._id;
     if (!Number.isSafeInteger(quantity) || quantity < 1) throw ApiError.badRequest('Invalid quantity');
-    const offers = pharmacyId && await findPurchasableInventory(medicineId, quantity, pharmacyId);
-    if (!offers?.length) throw ApiError.conflict('Selected quantity unavailable');
+    const medicine = await Medicine.findById(medicineId);
+    if (!medicine?.active || medicine.isMerged) throw ApiError.conflict('Medicine unavailable');
+    Object.assign(item, await quoteItem(medicine, quantity, req.body.coordinates));
+    if (itemIndex === 0) cart.pharmacyId = item.pharmacyId;
     item.quantity = quantity;
 
     cart.calculateTotals();
@@ -181,7 +172,32 @@ const clearCart = async (req, res, next) => {
   }
 };
 
+// Quote the complete basket for the delivery address without modifying the cart.
+async function quoteCheckout(req, res, next) {
+  try {
+    const cart = await Cart.findOne({ customerId: req.user._id }).lean();
+    if (!cart?.items.length) throw ApiError.badRequest('Your cart is empty');
+    const plan = await routedPlan(cart.items, req.body.coordinates);
+    const route = plan.recommended;
+    const lines = route.pharmacies[0].itemsFulfilled;
+    const medicines = await Medicine.find({ _id: { $in: lines.map(line => line.medicineId) }, active: true, isMerged: { $ne: true } });
+    for (const line of lines) {
+      const med = medicines.find(m => m._id.equals(line.medicineId));
+      if (!med) throw ApiError.conflict('Medicine unavailable');
+      const promo = await getPromotionForMedicine(med._id, med.category);
+      line.unitPrice = resolveEffectivePrice(line.unitPrice, med.mrp, promo).effectivePrice;
+      line.totalPrice = line.unitPrice * line.requestedQty;
+    }
+    const subtotal = lines.reduce((sum, line) => sum + line.totalPrice, 0);
+    route.priceBreakdown.itemsSubtotal = subtotal;
+    route.totalOrderValue = subtotal + route.priceBreakdown.deliveryFee + route.priceBreakdown.platformFee;
+    route.priceBreakdown.totalOrderValue = route.totalOrderValue;
+    return ApiResponse.success(res, plan);
+  } catch (error) { next(error); }
+}
+
 module.exports = {
+  quoteCheckout,
   getCart,
   addToCart,
   updateCartItemQuantity,

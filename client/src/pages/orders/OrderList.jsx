@@ -59,15 +59,14 @@ const OrderList = () => {
         'This order contains prescription medications. Please search and upload a fresh prescription to reorder.',
         'warning'
       );
-      navigate(`/pharmacies/${order.pharmacyId?._id || order.pharmacyId}`);
+      navigate('/medicines');
       return;
     }
 
     let addedCount = 0;
     for (const item of eligibleItems) {
       const success = await addToCart(
-        order.pharmacyId?._id || order.pharmacyId,
-        item.medicineId,
+        item.medicineId?._id || item.medicineId,
         item.quantity
       );
       if (success) addedCount++;

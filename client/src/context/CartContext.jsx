@@ -1,3 +1,4 @@
+import { useLocation } from './LocationContext';
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
@@ -33,16 +34,14 @@ const saveCartToStorage = (cartData) => {
   }
 };
 
-async function getGuestOffer(medicineId, quantity, pharmacyId) {
-  const { data } = await api.get(`/medicines/${medicineId}`);
-  const offer = data.pharmacies.find(candidate =>
-    (!pharmacyId || candidate.pharmacyId === pharmacyId) && candidate.stockQuantity >= quantity
-  );
-  if (!offer || quantity > 100) throw new Error('Selected quantity unavailable');
-  return offer;
+async function getGuestOffer(medicineId, quantity, [lng, lat]) {
+  const { data } = await api.get(`/medicines/${medicineId}/quote`, { params: { quantity, lng, lat } });
+  return data;
 }
 
 export const CartProvider = ({ children }) => {
+  const { location } = useLocation();
+  const coordinates = [location.lng, location.lat];
   const [cart, setCart] = useState(getInitialCart);
   const [stockWarnings, setStockWarnings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -84,10 +83,7 @@ export const CartProvider = ({ children }) => {
               if (medId) {
                 await api.post('/cart/items', {
                   medicineId: medId,
-                  quantity: item.quantity || 1,
-
-                  ...(item.pharmacyId && { pharmacyId: item.pharmacyId }),
-                  pharmacyName: item.pharmacyName
+                  quantity: item.quantity || 1, coordinates
                 });
               }
             }
@@ -118,20 +114,17 @@ export const CartProvider = ({ children }) => {
     return item ? item.quantity : 0;
   }, [cart]);
 
-  const addToCart = async (medicineOrId, maybeQtyOrPrice = 1, unitPrice = null, maybePharmacyId = null, maybePharmacyName = null) => {
+  const addToCart = async (medicineOrId, maybeQtyOrPrice = 1, unitPrice = null) => {
     let medicineId = null;
     let qty = 1;
     let price = null;
     let medMeta = {};
-    let selectedPharmacyId = maybePharmacyId || null;
-    let selectedPharmacyName = maybePharmacyName || null;
+
 
     if (typeof medicineOrId === 'object' && medicineOrId !== null) {
       medicineId = medicineOrId._id || medicineOrId.id;
       qty = maybeQtyOrPrice;
       price = typeof unitPrice === 'number' ? unitPrice : (medicineOrId.lowestPrice || medicineOrId.price || medicineOrId.mrp);
-      if (!selectedPharmacyId && medicineOrId.pharmacyId) selectedPharmacyId = medicineOrId.pharmacyId;
-      if (!selectedPharmacyName && medicineOrId.pharmacyName) selectedPharmacyName = medicineOrId.pharmacyName;
 
       medMeta = {
         name: medicineOrId.name,
@@ -141,11 +134,6 @@ export const CartProvider = ({ children }) => {
         mrp: medicineOrId.mrp || price,
         requiresPrescription: !!medicineOrId.requiresPrescription
       };
-    } else if (typeof maybeQtyOrPrice === 'string') {
-      // legacy addToCart(pharmacyId, medicineId, quantity)
-      medicineId = maybeQtyOrPrice;
-      selectedPharmacyId = medicineOrId;
-      qty = unitPrice ?? 1;
     } else {
       // addToCart(medicineId, quantity, unitPrice)
       medicineId = medicineOrId;
@@ -164,30 +152,16 @@ export const CartProvider = ({ children }) => {
 
     if (isAuthenticated && isCustomer) {
       try {
-        const payload = {
-          medicineId,
-          quantity: qty
-        };
-        if (price && price > 0) {
-          payload.price = price;
-        }
-        if (selectedPharmacyId) {
-          payload.pharmacyId = selectedPharmacyId;
-        }
-        if (selectedPharmacyName) {
-          payload.pharmacyName = selectedPharmacyName;
-        }
-
-        const res = await api.post('/cart/items', payload);
+        const res = await api.post('/cart/items', { medicineId, quantity: qty, coordinates });
 
         if (res.success && res.data) {
           setCart(res.data.cart);
 
-          const fulfilledNote = selectedPharmacyName ? ` (Fulfilled by ${selectedPharmacyName})` : '';
+
           if (medMeta.requiresPrescription || res.data.cart.hasPrescriptionRequiredItems) {
-            showToast(`Added to cart!${fulfilledNote} Doctor prescription required at checkout.`, 'info');
+            showToast(`Added to cart! Doctor prescription required at checkout.`, 'info');
           } else {
-            showToast(`Added to cart!${fulfilledNote}`, 'success');
+            showToast(`Added to cart!`, 'success');
           }
           return true;
         }
@@ -206,13 +180,12 @@ export const CartProvider = ({ children }) => {
 
       let offer;
       try {
-        offer = await getGuestOffer(medicineId, (currentItems[existingIdx]?.quantity || 0) + qty, selectedPharmacyId);
+        offer = await getGuestOffer(medicineId, (currentItems[existingIdx]?.quantity || 0) + qty, coordinates);
       } catch (error) {
         showToast(error.message, 'error');
         return false;
       }
-      selectedPharmacyId = offer.pharmacyId;
-      selectedPharmacyName = offer.name;
+
       const finalPrice = offer.effectivePrice ?? offer.price;
 
       if (existingIdx > -1) {
@@ -220,8 +193,8 @@ export const CartProvider = ({ children }) => {
           ...currentItems[existingIdx],
           quantity: currentItems[existingIdx].quantity + qty,
           price: finalPrice,
-          pharmacyId: selectedPharmacyId || currentItems[existingIdx].pharmacyId,
-          pharmacyName: selectedPharmacyName || currentItems[existingIdx].pharmacyName
+          pharmacyId: offer.pharmacyId,
+          pharmacyName: offer.pharmacyName
         };
       } else {
         currentItems.push({
@@ -234,8 +207,8 @@ export const CartProvider = ({ children }) => {
           mrp: medMeta.mrp || finalPrice,
           quantity: qty,
           requiresPrescription: !!medMeta.requiresPrescription,
-          pharmacyId: selectedPharmacyId,
-          pharmacyName: selectedPharmacyName
+          pharmacyId: offer.pharmacyId,
+          pharmacyName: offer.pharmacyName
         });
       }
 
@@ -254,11 +227,11 @@ export const CartProvider = ({ children }) => {
       setCart(updatedCart);
       saveCartToStorage(updatedCart);
 
-      const fulfilledNote = selectedPharmacyName ? ` (Fulfilled by ${selectedPharmacyName})` : '';
+
       if (medMeta.requiresPrescription) {
-        showToast(`Added to cart!${fulfilledNote} Doctor prescription required at checkout.`, 'info');
+        showToast(`Added to cart! Doctor prescription required at checkout.`, 'info');
       } else {
-        showToast(`Added to cart!${fulfilledNote}`, 'success');
+        showToast(`Added to cart!`, 'success');
       }
       return true;
     }
@@ -277,7 +250,7 @@ export const CartProvider = ({ children }) => {
 
     if (isAuthenticated && isCustomer) {
       try {
-        const res = await api.put(`/cart/items/${targetId}`, { quantity: qty });
+        const res = await api.put(`/cart/items/${targetId}`, { quantity: qty, coordinates });
         if (res.success && res.data) {
           setCart(res.data.cart);
 
@@ -297,9 +270,9 @@ export const CartProvider = ({ children }) => {
 
       if (idx > -1) {
         try {
-          const offer = await getGuestOffer(targetId, qty, currentItems[idx].pharmacyId);
+          const offer = await getGuestOffer(targetId, qty, coordinates);
           currentItems[idx] = { ...currentItems[idx], quantity: qty, price: offer.effectivePrice ?? offer.price,
-            pharmacyId: offer.pharmacyId, pharmacyName: offer.name };
+            pharmacyId: offer.pharmacyId, pharmacyName: offer.pharmacyName };
         } catch (error) {
           showToast(error.message, 'error');
           return false;

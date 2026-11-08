@@ -17,7 +17,7 @@ const uploadPrescription = async (req, res, next) => {
       throw ApiError.badRequest('Please upload a prescription document file.');
     }
 
-    const { patientName, doctorName, customerNotes, pharmacyId, orderId } = req.body;
+    const { patientName, doctorName, customerNotes } = req.body;
 
     const bytes = req.file.buffer;
     const signatures = {
@@ -43,7 +43,7 @@ const uploadPrescription = async (req, res, next) => {
     const prescription = await Prescription.create({
       customerId: req.user._id,
       orderId: null,
-      pharmacyId: pharmacyId || null,
+      pharmacyId: null,
       fileId: file._id,
       originalName: req.file.originalname,
       mimeType: req.file.mimetype,
@@ -54,20 +54,6 @@ const uploadPrescription = async (req, res, next) => {
       status: 'UPLOADED',
       authenticityCheck
     });
-
-    // Notify pharmacy if order or pharmacy ID is linked
-    if (pharmacyId) {
-      const pharmacy = await Pharmacy.findById(pharmacyId);
-      if (pharmacy) {
-        await sendNotification({
-          userId: pharmacy.userId,
-          type: 'PRESCRIPTION_APPROVED', // Notification category
-          title: 'Prescription Uploaded for Review',
-          message: `A new prescription has been uploaded by ${req.user.name}. Please verify before dispensing.`,
-          link: `/pharmacy/prescriptions`
-        });
-      }
-    }
 
     return ApiResponse.created(
       res,

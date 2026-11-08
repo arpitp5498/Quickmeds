@@ -8,8 +8,9 @@ const scalarQuantity = value => typeof value === 'number' || typeof value === 's
 const validate = require('../middleware/validate');
 router.use(authenticate, authorize('CUSTOMER'));
 
+router.post('/quote', cartController.quoteCheckout);
 router.get('/', cartController.getCart);
-router.post('/items', body('medicineId').isMongoId(), body('quantity').optional().custom(scalarQuantity).bail().isInt({ min: 1, max: 100 }).toInt(), body('pharmacyId').optional().isMongoId(), validate, cartController.addToCart);
+router.post('/items', body('medicineId').isMongoId(), body('quantity').optional().custom(scalarQuantity).bail().isInt({ min: 1, max: 100 }).toInt(), validate, cartController.addToCart);
 router.put('/items/:medicineId', param('medicineId').isMongoId(), body('quantity').custom(scalarQuantity).bail().isInt({ min: 1, max: 100 }).toInt(), validate, cartController.updateCartItemQuantity);
 router.delete('/items/:medicineId', cartController.removeFromCart);
 router.delete('/', cartController.clearCart);

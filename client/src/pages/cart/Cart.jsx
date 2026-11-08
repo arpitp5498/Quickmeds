@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingBag,
@@ -30,6 +30,7 @@ const Cart = () => {
     clearCart
   } = useCart();
   const { location } = useLocation();
+  const coordinates = useMemo(() => [location.lng, location.lat], [location.lng, location.lat]);
   const [optimizedPlan, setOptimizedPlan] = useState(null);
   const navigate = useNavigate();
 
@@ -275,7 +276,7 @@ const Cart = () => {
 
           <BasketOptimizationBreakdown
             cartItems={cart.items}
-            coordinates={location ? [location.lng, location.lat] : [77.2090, 28.6139]}
+            coordinates={coordinates}
             onPlanOptimized={setOptimizedPlan}
             showPricingBreakdown={true}
           />

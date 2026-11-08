@@ -1,24 +1,15 @@
 import { stockLabel } from '../../utils/medicineStock';
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Pill,
   ShieldCheck,
-  Store,
-  MapPin,
-  Clock,
   AlertTriangle,
-  FileCheck,
   ArrowLeft,
-  Check,
   ShoppingBag,
   Minus,
   Plus,
   Trash2,
-  ArrowRight,
-  Star,
-  Sparkles,
-  CheckCircle2,
   Tag
 } from 'lucide-react';
 import api from '../../services/api';
@@ -43,8 +34,6 @@ const MedicineDetail = () => {
   const [promotion, setPromotion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [selectedOffer, setSelectedOffer] = useState(null);
-  const [offerActionLoading, setOfferActionLoading] = useState(null);
 
   useEffect(() => {
     let current = true;
@@ -55,7 +44,6 @@ const MedicineDetail = () => {
         if (!current) return;
         if (!res.success || !res.data?.medicine) throw new Error('Invalid medicine response');
         const { medicine: med, pharmacies: pharma, promotion: promo } = res.data;
-        setSelectedOffer(null);
         setMedicine(med);
         const offers = Array.isArray(pharma) && stockLabel(med) === 'In Stock' ? pharma : [];
         setPharmacies(offers.filter(p => p?.pharmacyId && Number.isSafeInteger(p.stockQuantity) && p.stockQuantity > 0));
@@ -64,7 +52,6 @@ const MedicineDetail = () => {
         if (!current) return;
         setMedicine(null);
         setPharmacies([]);
-        setSelectedOffer(null);
         showToast('Could not load medicine details', 'error');
       } finally {
         if (current) setLoading(false);
@@ -76,10 +63,9 @@ const MedicineDetail = () => {
   }, [id, location.lat, location.lng]);
 
   const verifiedOffers = pharmacies.filter((p) => !p.isDemo && !p.isPriceSuspicious);
-  const otherOffers = pharmacies.filter((p) => p.isDemo || p.isPriceSuspicious);
 
   const bestOffer = verifiedOffers.length > 0 ? verifiedOffers[0] : (pharmacies[0] || null);
-  const activeOffer = stockLabel(medicine) === 'In Stock' ? selectedOffer || bestOffer : null;
+  const activeOffer = stockLabel(medicine) === 'In Stock' ? bestOffer : null;
   const activeOfferEffectivePrice = activeOffer ? (activeOffer.effectivePrice || activeOffer.price) : null;
   const bestPrice = activeOfferEffectivePrice !== null
     ? activeOfferEffectivePrice
@@ -89,29 +75,11 @@ const MedicineDetail = () => {
   const cartItem = cart?.items?.find(
     (i) => (i.medicineId?._id || i.medicineId)?.toString() === medicine?._id?.toString()
   );
-  const cartPharmacyId = cartItem?.pharmacyId ? cartItem.pharmacyId.toString() : null;
 
-  const handleAddToCart = async (offer = null) => {
-    if (!medicine) return;
-    const target = offer || activeOffer;
-    const priceToAdd = target ? (target.effectivePrice || target.price) : (promotion?.promotionalPrice || medicine.mrp);
-    const pharmacyIdToAdd = target ? target.pharmacyId : null;
-    const pharmacyNameToAdd = target ? target.name : null;
-
+  const handleAddToCart = async () => {
     setAddingToCart(true);
-    await addToCart(medicine, 1, priceToAdd, pharmacyIdToAdd, pharmacyNameToAdd);
-    setAddingToCart(false);
-  };
-
-  const handleSelectOffer = async (offer) => {
-    setSelectedOffer(offer);
-    setOfferActionLoading(offer.pharmacyId);
-    try {
-      const priceToSelect = offer.effectivePrice || offer.price;
-      await addToCart(medicine, 1, priceToSelect, offer.pharmacyId, offer.name);
-    } finally {
-      setOfferActionLoading(null);
-    }
+    try { await addToCart(medicine, 1); }
+    finally { setAddingToCart(false); }
   };
 
   const handleIncreaseQty = async () => {
@@ -300,7 +268,7 @@ const MedicineDetail = () => {
                     letterSpacing: '0.04em'
                   }}
                 >
-                  {activeOffer ? `BEST FULFILMENT VIA ${activeOffer.name.toUpperCase()}` : 'BEST FULFILMENT PRICE'}
+                  Estimated price
                 </div>
                 <div
                   style={{
@@ -309,9 +277,7 @@ const MedicineDetail = () => {
                     marginTop: '2px'
                   }}
                 >
-                  {activeOffer
-                    ? `${activeOffer.distanceKm} km away • ~${activeOffer.estimatedMinutes} mins delivery • ${activeOffer.stockQuantity} in stock`
-                    : 'Based on availability, cost, delivery, ETA'}
+                  QuickMeds assigns a pharmacy for your basket and delivery address.
                 </div>
               </div>
 
@@ -436,206 +402,19 @@ const MedicineDetail = () => {
               <Button
                 variant="primary"
                 disabled={!activeOffer}
-                onClick={() => handleAddToCart(activeOffer)}
+                onClick={handleAddToCart}
                 loading={addingToCart}
                 style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
                 icon={ShoppingBag}
               >
-                {activeOffer ? `Add to Cart • ₹${bestPrice}` : stockLabel(medicine) === 'Out of Stock' ? 'Out of Stock' : 'Availability Unknown'}
+                {activeOffer ? `Add to Cart • from ₹${bestPrice}` : stockLabel(medicine) === 'Out of Stock' ? 'Out of Stock' : 'Availability Unknown'}
               </Button>
             )}
           </div>
         </div>
       </Card>
 
-      {/* Available Pharmacy Offers Section */}
-      <div style={{ marginTop: '2.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '1.25rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Store size={22} color="var(--primary-600)" />
-              Available Pharmacy Offers ({verifiedOffers.length})
-            </h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Real-time prices, verified stock, and delivery ETAs from licensed partner pharmacies in your network.
-            </p>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--secondary-700)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ShieldCheck size={16} color="var(--secondary-600)" />
-              100% Genuine Pharmacy Stock
-            </span>
-          </div>
-        </div>
-
-        {verifiedOffers.length === 0 ? (
-          <Card style={{ padding: '2rem', textAlign: 'center' }}>
-            <Store size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px' }}>No verified local pharmacy offers found right now</h4>
-          </Card>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {verifiedOffers.map((offer, idx) => {
-              const isBest = idx === 0;
-              const isInCartForThisPharmacy = cartPharmacyId === offer.pharmacyId.toString();
-              const offerEffectivePrice = offer.effectivePrice || offer.price;
-              const discount = offer.mrp > offerEffectivePrice ? Math.round(((offer.mrp - offerEffectivePrice) / offer.mrp) * 100) : 0;
-
-              return (
-                <Card
-                  key={offer.pharmacyId}
-                  style={{
-                    border: isBest ? '2px solid var(--primary-500)' : '1px solid var(--border-light)',
-                    backgroundColor: isBest ? 'var(--primary-50)' : '#ffffff',
-                    padding: '1.25rem 1.5rem',
-                    borderRadius: 'var(--radius-xl)',
-                    transition: 'all 0.2s ease',
-                    position: 'relative'
-                  }}
-                >
-                  {isBest && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '-11px',
-                        left: '20px',
-                        backgroundColor: 'var(--primary-600)',
-                        color: '#ffffff',
-                        padding: '2px 10px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: '0.7rem',
-                        fontWeight: 800,
-                        letterSpacing: '0.04em',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Sparkles size={12} /> BEST VALUE &amp; FASTEST DELIVERY
-                    </div>
-                  )}
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '1.25rem'
-                    }}
-                  >
-                    {/* Left: Pharmacy Info */}
-                    <div style={{ minWidth: '240px', flex: '1 1 300px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                          {offer.name}
-                        </h4>
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            backgroundColor: '#fef3c7',
-                            color: '#92400e',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            padding: '2px 6px',
-                            borderRadius: 'var(--radius-sm)'
-                          }}
-                        >
-                          <Star size={11} fill="#f59e0b" color="#f59e0b" />
-                          {offer.rating} ({offer.totalRatings || 45})
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <MapPin size={14} color="var(--primary-600)" />
-                          {offer.distanceKm} km away
-                        </span>
-                        <span>•</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={14} color="var(--secondary-600)" />
-                          <strong>~{offer.estimatedMinutes} mins</strong> delivery
-                        </span>
-                        <span>•</span>
-                        <span style={{ color: offer.isOpen ? 'var(--secondary-700)' : 'var(--accent-600)', fontWeight: 600 }}>
-                          {offer.isOpen ? '● Open Now' : 'Closed'}
-                        </span>
-                        {offer.is24x7 && (
-                          <span style={{ backgroundColor: 'var(--primary-100)', color: 'var(--primary-800)', fontSize: '0.7rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px' }}>
-                            24x7
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle2 size={13} color="var(--secondary-600)" />
-                          In Stock ({offer.stockQuantity} units available)
-                        </span>
-                        {offer.batchNumber && (
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            • Batch: {offer.batchNumber}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right: Pricing & Add/Select Action */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', justifyContent: 'flex-end' }}>
-                          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                            ₹{offerEffectivePrice}
-                          </span>
-                          {offer.mrp > offerEffectivePrice && (
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                              ₹{offer.mrp}
-                            </span>
-                          )}
-                        </div>
-                        {discount > 0 && (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a' }}>
-                            Save {discount}% OFF MRP
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-                        {isInCartForThisPharmacy ? (
-                          <Button
-                            variant="outline"
-                            size="md"
-                            onClick={() => navigate('/cart')}
-                            icon={Check}
-                            style={{ borderColor: 'var(--primary-600)', color: 'var(--primary-700)', fontWeight: 700, minWidth: '170px' }}
-                          >
-                            In Cart ({currentQty}) →
-                          </Button>
-                        ) : (
-                          <Button
-                            variant={isBest ? 'primary' : 'outline'}
-                            size="md"
-                            loading={offerActionLoading === offer.pharmacyId}
-                            onClick={() => handleSelectOffer(offer)}
-                            icon={ShoppingBag}
-                            style={{ fontWeight: 700, minWidth: '170px' }}
-                          >
-                            {isBest ? 'Select Best Offer' : 'Choose This Pharmacy'}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 };

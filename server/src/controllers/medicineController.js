@@ -1,3 +1,4 @@
+const { quoteItem } = require('../services/cartQuote');
 const Medicine = require('../models/Medicine');
 const { getCatalogInventory, eligiblePharmacy, stockFilter } = require('../services/purchasableInventory');
 const Pharmacy = require('../models/Pharmacy');
@@ -553,7 +554,18 @@ const getEmergencyEssentials = async (req, res, next) => {
   }
 };
 
+async function getItemQuote(req, res, next) {
+  try {
+    const medicine = await Medicine.findOne({ _id: req.params.id, active: true, isMerged: { $ne: true } });
+    if (!medicine) throw ApiError.notFound('Medicine unavailable');
+    const { quantity, lng, lat } = req.query;
+    const offer = await quoteItem(medicine, quantity, [lng, lat]);
+    return ApiResponse.success(res, offer);
+  } catch (error) { next(error); }
+}
+
 module.exports = {
+  getItemQuote,
   searchMedicines,
   getMedicineById,
   getCategories,

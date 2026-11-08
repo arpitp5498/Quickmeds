@@ -30,7 +30,8 @@ const Checkout = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [optimizedPlan, setOptimizedPlan] = useState(null);
+  const [quote, setQuote] = useState(null);
+  const [quoteAttempt, setQuoteAttempt] = useState(0);
 
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -73,7 +74,27 @@ const Checkout = () => {
     fetchData();
   }, []);
 
+  const coordinates = useCustomAddress || !selectedAddress
+    ? [location.lng, location.lat] : selectedAddress.coordinates;
+  const quoteKey = JSON.stringify([coordinates, cart.items.map(i => [i.medicineId, i.quantity]), quoteAttempt]);
+  const optimizedPlan = quote?.key === quoteKey ? quote.plan : null;
+  const quoteError = quote?.key === quoteKey ? quote.error : null;
+
+  useEffect(() => {
+    let current = true;
+    const [destination, items] = JSON.parse(quoteKey);
+    if (items.length) {
+      api.post('/cart/quote', { coordinates: destination }).then(response => {
+        if (current) setQuote({ key: quoteKey, plan: response.data });
+      }).catch(error => {
+        if (current) setQuote({ key: quoteKey, error: error.message || 'Delivery quote unavailable' });
+      });
+    }
+    return () => { current = false; };
+  }, [quoteKey]);
+
   const handlePlaceOrder = async () => {
+    if (!optimizedPlan?.recommended) return;
     let deliveryAddressPayload = null;
 
     if (useCustomAddress || !selectedAddress) {
@@ -110,7 +131,6 @@ const Checkout = () => {
       try {
         const formData = new FormData();
         formData.append('prescription', prescriptionFile);
-        formData.append('pharmacyId', cart.pharmacyId?._id || cart.pharmacyId);
         formData.append('patientName', user.name);
 
         const uploadRes = await api.post('/prescriptions/upload', formData, {
@@ -136,13 +156,8 @@ const Checkout = () => {
 
     try {
       setPlacingOrder(true);
-      const targetPharmacyId =
-        optimizedPlan?.recommended?.pharmacies?.[0]?._id ||
-        cart.pharmacyId?._id ||
-        cart.pharmacyId;
-
       const res = await api.post('/orders', {
-        pharmacyId: targetPharmacyId,
+        confirmedTotal: optimizedPlan.recommended.totalOrderValue,
         deliveryAddress: deliveryAddressPayload,
         prescriptionId: finalPrescriptionId,
         paymentMethod
@@ -154,6 +169,7 @@ const Checkout = () => {
         navigate(`/orders/${res.data.order._id}`);
       }
     } catch (err) {
+      setQuoteAttempt(n => n + 1);
       showToast(err.message || 'Failed to place order', 'error');
     } finally {
       setPlacingOrder(false);
@@ -477,12 +493,10 @@ const Checkout = () => {
 
         {/* Right: Smart Fulfilment Routing Breakdown & Order Action */}
         <div style={{ position: 'sticky', top: '90px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <BasketOptimizationBreakdown
-            cartItems={cart.items}
-            coordinates={location ? [location.lng, location.lat] : [77.2090, 28.6139]}
-            onPlanOptimized={setOptimizedPlan}
-            showPricingBreakdown={true}
-          />
+          {optimizedPlan ? <BasketOptimizationBreakdown optimizationData={optimizedPlan} showPricingBreakdown /> :
+            <Card><p role="status">{quoteError || 'Checking fulfilment for your delivery address…'}</p>
+              {quoteError && <Button onClick={() => setQuoteAttempt(n => n + 1)}>Retry quote</Button>}
+            </Card>}
 
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -495,7 +509,7 @@ const Checkout = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' }}>
-              {cart.items.map((item) => (
+              {optimizedPlan?.recommended.pharmacies[0].itemsFulfilled.map((item) => (
                 <div
                   key={item.medicineId}
                   style={{
@@ -505,9 +519,9 @@ const Checkout = () => {
                   }}
                 >
                   <span style={{ color: 'var(--text-main)' }}>
-                    {item.name} × {item.quantity}
+                    {item.name} × {item.requestedQty}
                   </span>
-                  <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
+                  <span style={{ fontWeight: 600 }}>₹{item.totalPrice}</span>
                 </div>
               ))}
             </div>
@@ -515,7 +529,7 @@ const Checkout = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.875rem', borderTop: '1px solid var(--border-light)', paddingTop: '10px', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Medicine Subtotal</span>
-                <span style={{ fontWeight: 600 }}>₹{optimizedPlan?.recommended?.priceBreakdown?.itemsSubtotal || cart.subtotal}</span>
+                <span style={{ fontWeight: 600 }}>₹{optimizedPlan?.recommended?.priceBreakdown?.itemsSubtotal ?? cart.subtotal}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Hyperlocal Delivery</span>
@@ -537,7 +551,7 @@ const Checkout = () => {
                 }}
               >
                 <span>Total Payable</span>
-                <span>₹{optimizedPlan?.recommended?.totalOrderValue || total}</span>
+                <span>₹{optimizedPlan?.recommended?.totalOrderValue ?? total}</span>
               </div>
             </div>
 
@@ -546,10 +560,11 @@ const Checkout = () => {
               size="lg"
               fullWidth
               onClick={handlePlaceOrder}
+              disabled={!optimizedPlan?.recommended}
               loading={placingOrder}
               icon={CheckCircle2}
             >
-              Place Order (₹{optimizedPlan?.recommended?.totalOrderValue || total})
+              Place Order (₹{optimizedPlan?.recommended?.totalOrderValue ?? total})
             </Button>
 
             <div
