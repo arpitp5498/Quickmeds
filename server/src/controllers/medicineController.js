@@ -1,3 +1,4 @@
+const { findDeliveryPharmacies, calculateETA } = require('../services/smartRoutingService');
 const { quoteItem } = require('../services/cartQuote');
 const Medicine = require('../models/Medicine');
 const { getCatalogInventory, eligiblePharmacy, stockFilter } = require('../services/purchasableInventory');
@@ -96,9 +97,12 @@ const searchMedicines = async (req, res, next) => {
 
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const total = await Medicine.countDocuments(query);
+    const hasAddress = lat !== undefined && lng !== undefined;
+    const nearby = hasAddress ? await findDeliveryPharmacies(Number(lng), Number(lat)) : null;
+    const nearbyIds = new Set(nearby?.map(p => String(p._id)));
     let medicines;
     if (sort === 'popular') {
-      const pharmacyIds = await Pharmacy.distinct('_id', eligiblePharmacy);
+      const pharmacyIds = nearby ? nearby.map(p => p._id) : await Pharmacy.distinct('_id', eligiblePharmacy);
       const rows = await Medicine.aggregate([
         { $match: query },
         { $lookup: {
@@ -131,8 +135,6 @@ const searchMedicines = async (req, res, next) => {
     const medicineIds = medicines.map((m) => m._id);
     const { offers: inventories, stockStatus } = await getCatalogInventory(medicineIds);
 
-    const userLat = lat ? parseFloat(lat) : null;
-    const userLng = lng ? parseFloat(lng) : null;
 
     // Fetch active promotions for these medicines
     const medCategories = [...new Set(medicines.map(m => m.category).filter(Boolean))];
@@ -146,19 +148,22 @@ const searchMedicines = async (req, res, next) => {
 
       medObj.stockStatus = stockStatus(med._id);
       medObj.availablePharmaciesCount = activeInventories.length;
-      medObj.isAvailableNearby = activeInventories.length > 0;
-
-      if (activeInventories.length > 0) {
-        // Find best price among verified authentic pharmacies
-        const prices = activeInventories.map((i) => i.price);
-        medObj.lowestPrice = Math.min(...prices);
-
-        if (userLat !== null && userLng !== null) {
-          const distances = activeInventories.map((i) => {
+      const localOffers = hasAddress
+        ? activeInventories.filter(i => nearbyIds.has(String(i.pharmacyId._id))) : [];
+      medObj.isAvailableNearby = hasAddress ? localOffers.length > 0 : null;
+      medObj.deliveryOptions = hasAddress ? localOffers.map(i => {
+        const [pLng, pLat] = i.pharmacyId.location.coordinates;
+        const distance = calculateDistance(Number(lat), Number(lng), pLat, pLng);
+        return { maxQuantity: Math.min(i.stockQuantity, 100), etaMinutes: calculateETA(distance).totalMinutes };
+      }) : null;
+      const pricedOffers = hasAddress ? localOffers : activeInventories;
+      if (pricedOffers.length > 0) {
+        medObj.lowestPrice = Math.min(...pricedOffers.map(i => i.price));
+        if (hasAddress) {
+          medObj.nearestDistanceKm = Math.min(...localOffers.map(i => {
             const [pLng, pLat] = i.pharmacyId.location.coordinates;
-            return calculateDistance(userLat, userLng, pLat, pLng);
-          });
-          medObj.nearestDistanceKm = Math.min(...distances);
+            return calculateDistance(Number(lat), Number(lng), pLat, pLng);
+          }));
         }
       } else {
         medObj.lowestPrice = med.mrp;

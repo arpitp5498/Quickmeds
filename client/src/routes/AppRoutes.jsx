@@ -75,6 +75,7 @@ const AdminPharmacyDetail = React.lazy(() => import('../pages/admin/AdminPharmac
 const AdminUsers = React.lazy(() => import('../pages/admin/AdminUsers'));
 const AdminOrders = React.lazy(() => import('../pages/admin/AdminOrders'));
 const AdminPrescriptions = React.lazy(() => import('../pages/admin/AdminPrescriptions'));
+const AdminInventoryHealth = React.lazy(() => import('../pages/admin/AdminInventoryHealth'));
 const AdminAnalytics = React.lazy(() => import('../pages/admin/AdminAnalytics'));
 const AdminAuditLogs = React.lazy(() => import('../pages/admin/AdminAuditLogs'));
 const AdminDoctors = React.lazy(() => import('../pages/admin/AdminDoctors'));
@@ -213,6 +214,7 @@ const AppRoutes = () => {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
         <Route path="/admin/prescriptions" element={<AdminPrescriptions />} />
+        <Route path="/admin/inventory-health" element={<AdminInventoryHealth />} />
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
         <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
         <Route path="/admin/doctors" element={<AdminDoctors />} />

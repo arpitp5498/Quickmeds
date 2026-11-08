@@ -80,6 +80,7 @@ const AdminDashboard = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button variant="outline" onClick={() => navigate('/admin/inventory-health')}>Inventory health</Button>
           <Button variant="outline" icon={TrendingUp} onClick={() => navigate('/admin/analytics')}>
             Detailed Analytics
           </Button>

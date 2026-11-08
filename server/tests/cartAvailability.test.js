@@ -38,6 +38,43 @@ describe('Purchasable medicine inventory', () => {
   const search = async () => (await request(app).get('/api/medicines').query({ q: medicine.name }).expect(200)).body.data.medicines.find(m => m._id === String(medicine._id));
   const clear = () => request(app).delete('/api/cart').set('Authorization', authorization).expect(200);
 
+  it('checks address and quantity against the same delivery candidates used to quote an item', async () => {
+    const searchAt = (lng, lat) => request(app).get('/api/medicines').query({ q: medicine.name, lng, lat });
+    const local = (await searchAt(77.2, 28.6).expect(200)).body.data.medicines[0];
+    expect(local.deliveryOptions.map(o => o.maxQuantity).sort()).toEqual([2, 4]);
+    expect(local.deliveryOptions.every(o => o.etaMinutes === 12)).toBe(true);
+    expect(local.deliveryOptions.some(o => o.maxQuantity >= 5)).toBe(false);
+    const distant = (await searchAt(0, 0).expect(200)).body.data.medicines[0];
+    expect(distant).toMatchObject({ stockStatus: 'IN_STOCK', deliveryOptions: [], isAvailableNearby: false });
+    await searchAt(181, 0).expect(400);
+    await request(app).get('/api/medicines?lat=10').expect(400);
+    expect((await search()).deliveryOptions).toBeNull();
+  });
+
+  it('restricts stock diagnostics to admins and distinguishes missing, broken and stale records', async () => {
+    const admin = await User.create({ name: 'Inventory Admin', email: 'inventory-admin@example.invalid',
+      password: 'Password@123', phone: '9898765432', role: 'ADMIN' });
+    const path = '/api/admin/inventory-health';
+    await request(app).get(path).expect(401);
+    await request(app).get(path).set('Authorization', authorization).expect(403);
+    const get = async issue => (await request(app).get(path).query({ issue })
+      .set('Authorization', 'Bearer ' + generateToken(admin)).expect(200)).body.data;
+    const copy = medicine.toObject();
+    delete copy._id;
+    const missing = await Medicine.create({ ...copy, name: 'AAA missing inventory fixture' });
+    const orphan = await Inventory.create({ pharmacyId: new mongoose.Types.ObjectId(), medicineId: medicine._id,
+      stockQuantity: 8, price: 42, lastSyncedAt: new Date(0) });
+    expect((await get('missing')).rows.some(r => r.medicineId === String(missing._id))).toBe(true);
+    const broken = (await get('broken')).rows.find(r => r._id === String(orphan._id));
+    expect(broken).toMatchObject({ medicine: medicine.name, pharmacyId: String(orphan.pharmacyId), stockQuantity: 8 });
+    expect(broken.pharmacy).toBeUndefined();
+    const stale = await get('stale');
+    expect(stale.rows.find(r => r._id === String(orphan._id)).lastSyncedAt).toBe(new Date(0).toISOString());
+    expect(stale.rows.some(r => r._id === String(first._id))).toBe(false);
+    await Inventory.deleteOne({ _id: orphan._id });
+    await Medicine.deleteOne({ _id: missing._id });
+  });
+
   it('selects eligible offers by price and by the full resulting cart quantity', async () => {
     expect(await search()).toMatchObject({ stockStatus: 'IN_STOCK', availablePharmaciesCount: 2, lowestPrice: 70 });
     const sos = await request(app).get('/api/medicines/sos').expect(200);

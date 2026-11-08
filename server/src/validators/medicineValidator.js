@@ -12,6 +12,8 @@ const medicineValidator = [
 ];
 
 const medicineSearchValidator = [
+  query('lat').if((value, { req }) => value !== undefined || req.query.lng !== undefined).isFloat({ min: -90, max: 90 }),
+  query('lng').if((value, { req }) => value !== undefined || req.query.lat !== undefined).isFloat({ min: -180, max: 180 }),
   query('q').optional().trim(),
   query('category').optional().trim(),
   query('requiresPrescription').optional().isBoolean(),

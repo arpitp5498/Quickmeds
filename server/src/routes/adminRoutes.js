@@ -16,6 +16,7 @@ router.get('/orders', adminController.getAllOrders);
 router.post('/orders/:id/assign-delivery', transactional(adminController.assignDeliveryPartnerManual));
 router.get('/prescriptions', adminController.getAllPrescriptions);
 router.get('/audit-logs', adminController.getAuditLogs);
+router.get('/inventory-health', require('../controllers/inventoryHealthController').getInventoryHealth);
 router.get('/inventory-sync-overview', adminController.getInventorySyncOverview);
 
 // Doctor management

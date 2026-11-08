@@ -182,6 +182,29 @@ const generateExplanation = (plan, type = 'SINGLE_STORE') => {
  * @param {Object|number} options - { maxDistanceKm, excludePharmacyIds } or maxDistanceKm
  * @returns {Object} Optimized routing payload
  */
+async function findDeliveryPharmacies(lng, lat, maxDistanceKm = DEFAULT_MAX_DISTANCE_KM, excludePharmacyIds = []) {
+  // 1. Fetch verified, open pharmacies within radius
+  const query = {
+    verificationStatus: 'VERIFIED', isDemo: { $ne: true },
+    isOpen: true
+  };
+
+  const formattedExcludeIds = excludePharmacyIds.map(id => id?.toString ? id.toString() : String(id));
+  if (formattedExcludeIds.length > 0) {
+    query._id = { $nin: formattedExcludeIds };
+  }
+
+  // Checkout runs inside a MongoDB transaction, where $nearSphere is unsupported.
+  const nearby = await Pharmacy.find({
+    ...query, location: { $geoWithin: { $centerSphere: [[lng, lat], maxDistanceKm / 6371] } }
+  });
+  const distanceToCustomer = pharmacy => {
+    const [storeLng, storeLat] = pharmacy.location.coordinates;
+    return calculateDistance(lat, lng, storeLat, storeLng);
+  };
+  return nearby.sort((a, b) => distanceToCustomer(a) - distanceToCustomer(b)).slice(0, 15);
+}
+
 const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
   const opts = typeof options === 'number' ? { maxDistanceKm: options } : (options || {});
   const {
@@ -217,26 +240,7 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
     .filter(Boolean);
   const totalItemsCount = cartItems.length;
 
-  // 1. Fetch verified, open pharmacies within radius
-  const query = {
-    verificationStatus: 'VERIFIED', isDemo: { $ne: true },
-    isOpen: true
-  };
-
-  const formattedExcludeIds = excludePharmacyIds.map(id => id?.toString ? id.toString() : String(id));
-  if (formattedExcludeIds.length > 0) {
-    query._id = { $nin: formattedExcludeIds };
-  }
-
-  // Checkout runs inside a MongoDB transaction, where $nearSphere is unsupported.
-  const nearby = await Pharmacy.find({
-    ...query, location: { $geoWithin: { $centerSphere: [[lng, lat], maxDistanceKm / 6371] } }
-  });
-  const distanceToCustomer = pharmacy => {
-    const [storeLng, storeLat] = pharmacy.location.coordinates;
-    return calculateDistance(lat, lng, storeLat, storeLng);
-  };
-  const pharmacies = nearby.sort((a, b) => distanceToCustomer(a) - distanceToCustomer(b)).slice(0, 15);
+  const pharmacies = await findDeliveryPharmacies(lng, lat, maxDistanceKm, excludePharmacyIds);
 
   if (!pharmacies || pharmacies.length === 0) {
     return {
@@ -637,6 +641,7 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
 };
 
 module.exports = {
+  findDeliveryPharmacies,
   SCORING_WEIGHTS,
   DEFAULT_MAX_DISTANCE_KM,
   MAX_ETA_MINUTES_HORIZON,

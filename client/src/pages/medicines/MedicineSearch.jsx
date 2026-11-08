@@ -1,4 +1,4 @@
-import { stockLabel } from '../../utils/medicineStock';
+import { deliveryAvailability } from '../../utils/medicineStock';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -228,7 +228,7 @@ const MedicineSearch = () => {
           Search Medicines &amp; Healthcare
         </h1>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-          Simulated live inventory &amp; pricing across verified pharmacies near <strong>{location.address}</strong>
+          Checking delivery to <strong>{location.address}</strong>
         </p>
       </div>
 
@@ -477,7 +477,7 @@ const MedicineSearch = () => {
         >
           {medicines.map((med) => {
             const qty = getItemQuantity(med._id);
-            const availability = stockLabel(med);
+            const availability = deliveryAvailability(med, qty || 1);
 
             return (
               <Card
@@ -633,7 +633,7 @@ const MedicineSearch = () => {
 
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                            {availability}
+                            {availability.label}
                           </div>
                           {hasDiscount && savingsAmount > 0 && (
                             <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>
@@ -647,9 +647,9 @@ const MedicineSearch = () => {
 
                   {/* E-Commerce Action Area: Prominent Add To Cart or Interactive Quantity Selector */}
                   <div onClick={(e) => e.stopPropagation()}>
-                    {availability !== 'In Stock' ? (
+                    {!availability.available && qty === 0 ? (
                       <Button variant="outline" size="sm" fullWidth disabled style={{ opacity: 0.6 }}>
-                        {availability}
+                        {availability.label}
                       </Button>
                     ) : qty > 0 ? (
                       <div
@@ -701,7 +701,7 @@ const MedicineSearch = () => {
                         <button
                           type="button"
                           onClick={(e) => handleIncreaseQty(e, med, qty)}
-                          disabled={actionLoadingId === med._id}
+                          disabled={actionLoadingId === med._id || !deliveryAvailability(med, qty + 1).available}
                           style={{
                             width: '30px',
                             height: '30px',
@@ -851,7 +851,7 @@ const MedicineSearch = () => {
                       )}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                      {stockLabel(selectedMedicine)}
+                      {deliveryAvailability(selectedMedicine, getItemQuantity(selectedMedicine._id) || 1).label}
                     </div>
                   </div>
                 );
@@ -984,7 +984,7 @@ const MedicineSearch = () => {
                         <button
                           type="button"
                           onClick={(e) => handleIncreaseQty(e, selectedMedicine, modalQty)}
-                          disabled={actionLoadingId === selectedMedicine._id}
+                          disabled={actionLoadingId === selectedMedicine._id || !deliveryAvailability(selectedMedicine, modalQty + 1).available}
                           style={{
                             width: '32px',
                             height: '32px',
@@ -1023,11 +1023,11 @@ const MedicineSearch = () => {
                       fullWidth
                       icon={ShoppingBag}
                       loading={actionLoadingId === selectedMedicine._id}
-                      disabled={stockLabel(selectedMedicine) !== 'In Stock'}
+                      disabled={!deliveryAvailability(selectedMedicine).available}
                       onClick={(e) => handleAddToCart(e, selectedMedicine)}
                       style={{ height: '42px', fontWeight: 700 }}
                     >
-                      {stockLabel(selectedMedicine) === 'In Stock' ? `Add to Cart • ₹${selectedMedicine.lowestPrice || selectedMedicine.mrp}` : stockLabel(selectedMedicine)}
+                      {deliveryAvailability(selectedMedicine).available ? `Add to Cart • ₹${selectedMedicine.lowestPrice || selectedMedicine.mrp}` : deliveryAvailability(selectedMedicine, getItemQuantity(selectedMedicine._id) || 1).label}
                     </Button>
                   );
                 })()}

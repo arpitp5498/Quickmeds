@@ -45,6 +45,7 @@ const Sidebar = ({ role = 'CUSTOMER', mobileOpen = false, onClose = () => {} }) 
             section: 'Platform Overview',
             items: [
               { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
+              { to: '/admin/inventory-health', label: 'Inventory health', icon: Boxes },
               { to: '/admin/analytics', label: 'Analytics & Trends', icon: BarChart3 }
             ]
           },
