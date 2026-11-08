@@ -456,7 +456,7 @@ const Checkout = () => {
                   <CreditCard size={20} color="var(--primary-600)" />
                   <div>
                     <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>
-                      UPI / Online Payment
+                      UPI / Online Payment (currently unavailable)
                     </span>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Pay via Google Pay, PhonePe, Paytm, or Cards.
@@ -466,7 +466,7 @@ const Checkout = () => {
                 <input
                   type="radio"
                   name="paymentMethod"
-                  value="ONLINE"
+                  value="ONLINE" disabled
                   checked={paymentMethod === 'ONLINE'}
                   onChange={() => setPaymentMethod('ONLINE')}
                 />

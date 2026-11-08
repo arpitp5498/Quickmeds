@@ -35,6 +35,7 @@ const createOrder = async (req, res, next) => {
       customerNotes
     } = req.body;
 
+    if (paymentMethod !== 'COD') throw ApiError.badRequest('Online payment is currently unavailable');
     const cart = await Cart.findOne({ customerId: req.user._id });
     if (!cart || cart.items.length === 0) {
       throw ApiError.badRequest('Your cart is empty. Please add items before checking out.');
@@ -43,27 +44,36 @@ const createOrder = async (req, res, next) => {
     const customerCoords = deliveryAddress?.coordinates || null;
     const optimization = await optimizeFulfilmentPlan(cart.items, customerCoords);
 
-    let orderPharmacyId = null;
-    let pharmacy = null;
-    let routingExplanation = 'QuickMeds Smart Fulfilment Engine automatically selected the optimal licensed pharmacy.';
 
-    if (optimization?.recommended?.pharmacies?.length > 0) {
-      const recPharm = optimization.recommended.pharmacies[0];
-      orderPharmacyId = recPharm._id || recPharm.pharmacyId;
-      pharmacy = await Pharmacy.findById(orderPharmacyId);
-      routingExplanation = optimization.recommended.explanation || optimization.explanation || routingExplanation;
-    } else if (pharmacyId || cart.pharmacyId) {
-      orderPharmacyId = pharmacyId || cart.pharmacyId;
-      pharmacy = await Pharmacy.findById(orderPharmacyId);
-    } else {
-      pharmacy = await findNearestPharmacyWithStock(cart.items, customerCoords);
-      if (pharmacy) orderPharmacyId = pharmacy._id;
-    }
+    const plan = optimization.recommended;
+    if (plan?.type !== 'SINGLE_STORE' || plan.basketCoverage !== 1)
+      throw ApiError.conflict('No single pharmacy can fulfil this basket');
+    const orderPharmacyId = plan.pharmacies[0]._id;
+    const pharmacy = await Pharmacy.findById(orderPharmacyId);
 
     if (!pharmacy || pharmacy.verificationStatus !== 'VERIFIED') {
       throw ApiError.badRequest('No nearby verified pharmacy currently has stock to fulfil your complete order. Please try again shortly.');
     }
 
+    const Medicine = require('../models/Medicine');
+    const Inventory = require('../models/PharmacyInventory');
+    const { resolveEffectivePrice } = require('../services/discountService');
+    const orderItems = [];
+    for (const item of cart.items) {
+      const med = await Medicine.findById(item.medicineId);
+      const inv = await Inventory.findOne({ pharmacyId: orderPharmacyId, medicineId: item.medicineId,
+        isAvailable: true, isPriceSuspicious: { $ne: true }, expiryDate: { $gt: new Date() }, stockQuantity: { $gte: item.quantity } });
+      if (!med || !inv || !Number.isSafeInteger(item.quantity) || item.quantity < 1) throw ApiError.conflict('Basket availability changed');
+      if (med.prescriptionSchedule === 'Schedule X' || med.regulatoryClass === 'Schedule X') throw ApiError.forbidden('Controlled medicine unavailable');
+      const promo = await require('../services/discountService').getPromotionForMedicine(med._id, med.category);
+      const quote = resolveEffectivePrice(inv.price, med.mrp, promo);
+      if (item.price !== quote.effectivePrice) throw ApiError.conflict('Price changed. Remove and re-add this item before checkout.');
+      item.requiresPrescription = med.requiresPrescription || [med.prescriptionSchedule, med.regulatoryClass].some(value => ['Schedule H','Schedule H1'].includes(value));
+      orderItems.push({ ...item.toObject(), batchNumber: inv.batchNumber, expiryDate: inv.expiryDate });
+    }
+    cart.calculateTotals();
+    if (prescriptionId && !await Prescription.exists({ _id: prescriptionId, customerId: req.user._id, orderId: null, status: { $in: ['UPLOADED','APPROVED'] } }))
+      throw ApiError.badRequest('Prescription unavailable');
     // Check if any item in cart requires prescription
     const hasRxItem = cart.items.some((i) => i.requiresPrescription);
     if (hasRxItem && !prescriptionId) {
@@ -109,7 +119,7 @@ const createOrder = async (req, res, next) => {
       orderId: orderNumber,
       customerId: req.user._id,
       pharmacyId: orderPharmacyId,
-      items: cart.items,
+      items: orderItems,
       subtotal,
       deliveryFee,
       platformFee,
@@ -119,11 +129,11 @@ const createOrder = async (req, res, next) => {
       prescriptionId: prescriptionId || null,
       prescriptionStatus: rxStatus,
       paymentMethod,
-      paymentStatus: paymentMethod === 'ONLINE' ? 'PAID' : 'PENDING',
+      paymentStatus: 'PENDING',
       orderStatus: initialStatus,
       distanceKm,
       estimatedDeliveryMinutes: eta.totalMinutes,
-      deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
+      deliveryOtp: require('node:crypto').randomInt(1000, 10000).toString(),
       deliveryOtpVerified: false,
       statusHistory: [
         {
@@ -238,7 +248,7 @@ const getMyOrders = async (req, res, next) => {
 // @access  Private
 const getOrderById = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id)
+    const order = await Order.findById(req.params.id).select(req.user.role === 'CUSTOMER' ? '+deliveryOtp' : '')
       .populate('customerId', 'name email phone avatar')
       .populate('pharmacyId')
       .populate('deliveryPartnerId', 'name phone')
@@ -384,6 +394,13 @@ const updateOrderStatus = async (req, res, next) => {
       throw ApiError.notFound('Order not found');
     }
 
+    if (req.user.role === 'DELIVERY_PARTNER') throw ApiError.forbidden('Use the assigned delivery workflow');
+    if (req.user.role === 'PHARMACY' && String(order.pharmacyId._id) !== String(req.user.pharmacyId))
+      throw ApiError.forbidden('Order belongs to another pharmacy');
+    if (!['ACCEPTED','PREPARING','READY_FOR_PICKUP','REJECTED','CANCELLED'].includes(status))
+      throw ApiError.forbidden('Use the assigned delivery workflow');
+    if (order.items.some(i => i.requiresPrescription) && ['ACCEPTED','PREPARING','READY_FOR_PICKUP'].includes(status) && order.prescriptionStatus !== 'APPROVED')
+      throw ApiError.conflict('Pharmacist approval required');
     // ─── PHARMACY REJECTION → AUTOMATIC FALLBACK REROUTING ───
     // When a pharmacy rejects, DO NOT finalize the order as REJECTED.
     // Instead, record the rejection event and trigger fallback routing.
@@ -454,6 +471,7 @@ const updateOrderStatus = async (req, res, next) => {
           `Pharmacy rejected the order. QuickMeds automatically reassigned it to ${newPharmacyName}.`
         );
       } catch (fallbackErr) {
+        if (fallbackErr.code !== 'NO_FALLBACK') throw fallbackErr;
         // Fallback FAILED — no eligible pharmacy available
         // NOW restore inventory for the rejecting pharmacy and finalize the order
         await restoreInventory(rejectingPharmacyId, order.items);
@@ -578,7 +596,7 @@ const updateOrderStatus = async (req, res, next) => {
     io.to('admin:room').emit('order_status_changed', statusPayload);
 
     // Trigger rider assignment when order is ready for pickup or explicitly requested
-    if (status === 'READY_FOR_PICKUP' || (req.body.autoAssign && !order.deliveryPartnerId)) {
+    if (status === 'READY_FOR_PICKUP') {
       logger.info(`[OrderStatus] RIDER_ASSIGNMENT_STARTED for order ${order.orderId}`);
       const assignResult = await autoAssignDeliveryPartner(order._id);
       if (assignResult?.success) {
@@ -752,6 +770,9 @@ const assignRiderToOrder = async (req, res, next) => {
       throw ApiError.notFound('Order not found');
     }
 
+    if (req.user.role === 'PHARMACY' && String(req.user.pharmacyId) !== String(order.pharmacyId))
+      throw ApiError.forbidden('Order belongs to another pharmacy');
+    if (order.orderStatus !== 'READY_FOR_PICKUP') throw ApiError.conflict('Order is not ready for pickup');
     const result = await autoAssignDeliveryPartner(order._id);
     if (!result.success) {
       return ApiResponse.success(

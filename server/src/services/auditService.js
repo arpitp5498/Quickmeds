@@ -8,7 +8,7 @@ const logAction = async ({
   entity,
   entityId = '',
   description,
-  ipAddress = '127.0.0.1',
+  ipAddress = '',
   metadata = {}
 }) => {
   try {
@@ -25,6 +25,7 @@ const logAction = async ({
     return logEntry;
   } catch (error) {
     logger.error(`Error logging audit action: ${error.message}`);
+    if (require('mongoose').transactionAsyncLocalStorage?.getStore()?.session) throw error;
     return null;
   }
 };

@@ -50,7 +50,15 @@ describe('Research Survey Controller Unit Tests', () => {
     };
     const next = jest.fn();
 
+    const Survey = require('../src/models/ResearchSurvey');
+    const save = jest.spyOn(Survey, 'findOneAndUpdate').mockResolvedValueOnce(req.body);
     await updateSurveyData(req, res, next);
+    expect(save).toHaveBeenCalledWith({}, { $set: { ...req.body, lastUpdated: expect.any(Date) } }, expect.objectContaining({ runValidators: true }));
+    const failure = new Error('Database unavailable');
+    save.mockRejectedValueOnce(failure);
+    await updateSurveyData(req, res, next);
+    expect(next).toHaveBeenCalledWith(failure);
+    save.mockRestore();
 
     expect(res.body).toBeDefined();
     expect(res.body.success).toBe(true);

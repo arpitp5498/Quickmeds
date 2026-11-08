@@ -23,7 +23,7 @@ async function getActivePromotionsMap(medicineIds = [], categories = []) {
     validFrom: { $lte: now },
     validTo: { $gte: now },
     $or: conditions
-  }).sort({ priority: -1 });
+  }).sort({ priority: -1, _id: 1 });
 
   // Build map: medicineId string -> best (highest priority) promotion
   const promoMap = new Map();
@@ -69,7 +69,7 @@ async function getPromotionForMedicine(medicineId, category) {
     validFrom: { $lte: now },
     validTo: { $gte: now },
     $or: orConditions
-  }).sort({ priority: -1 });
+  }).sort({ priority: -1, _id: 1 });
 }
 
 /**
@@ -90,9 +90,10 @@ function calculatePromotionalPrice(mrp, promotion) {
     discountAmount = Math.min(promotion.discountValue, mrp - 1);
   }
 
+  discountAmount = Math.min(discountAmount, mrp / 2);
   if (discountAmount <= 0) return null;
 
-  const promotionalPrice = Math.max(1, Math.round(mrp - discountAmount));
+  const promotionalPrice = Math.max(1, Math.round((mrp - discountAmount) * 100) / 100);
   const pct = mrp > 0 ? Math.round((discountAmount / mrp) * 100) : 0;
 
   return {
@@ -115,7 +116,7 @@ function calculatePromotionalPrice(mrp, promotion) {
  */
 function resolveEffectivePrice(pharmacyPrice, mrp, promotion) {
   const promoResult = calculatePromotionalPrice(mrp, promotion);
-  const safePharmacyPrice = (pharmacyPrice && pharmacyPrice > 0) ? pharmacyPrice : mrp;
+  const safePharmacyPrice = (pharmacyPrice && pharmacyPrice > 0) ? Math.min(mrp, Math.max(mrp / 2, pharmacyPrice)) : mrp;
 
   if (!promoResult) {
     // No active promotion — use pharmacy price
@@ -159,13 +160,9 @@ function findPromotionInMap(promoMap, medicineIdStr, category) {
   if (!promoMap || promoMap.size === 0) return null;
   // Direct medicine match takes priority
   const direct = promoMap.get(medicineIdStr);
-  if (direct) return direct;
-  // Fallback to category match
-  if (category) {
-    const catPromo = promoMap.get(`cat:${category}`);
-    if (catPromo) return catPromo;
-  }
-  return null;
+  const categoryPromo = promoMap.get('cat:' + category);
+  if (!categoryPromo) return direct || null;
+  return direct && direct.priority >= categoryPromo.priority ? direct : categoryPromo;
 }
 
 module.exports = {

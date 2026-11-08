@@ -22,7 +22,7 @@ const getPharmacyIdForUser = async (user) => {
 const handleBillingWebhook = async (req, res, next) => {
   try {
     const result = await processBillingWebhook({
-      headers: req.headers,
+      headers: req.headers, rawBody: req.rawBody,
       body: req.body
     });
 

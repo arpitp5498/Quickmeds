@@ -97,24 +97,25 @@ exports.createLabBooking = async (req, res, next) => {
       throw ApiError.badRequest('No tests selected');
     }
 
-    let totalAmount = 0;
-    const testDetails = [];
-
-    for (const item of tests) {
-      const test = await LabTest.findById(item.testId);
-      if (test) {
-        testDetails.push({
-          testId: test._id,
-          name: test.name,
-          price: test.price
-        });
-        totalAmount += test.price;
-      }
-    }
-
-    if (testDetails.length === 0) {
-      throw ApiError.badRequest('No valid tests found');
-    }
+    if (!Array.isArray(tests) || tests.length > 50 || !['6-8 AM','8-10 AM','10-12 PM'].includes(scheduledSlot) || !address?.street || !Number.isFinite(Date.parse(scheduledDate)) ||
+        new Date(scheduledDate).getTime() < Date.now() - 86400000) throw ApiError.badRequest('Invalid collection details');
+    const postalCode = String(address.pincode || '');
+    if (!/^[1-9][0-9]{5}$/.test(postalCode) || !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) throw ApiError.badRequest('Valid postal code and collection date required');
+    const hours = { '6-8 AM': '06', '8-10 AM': '08', '10-12 PM': '10' };
+    const startsAt = new Date(scheduledDate + 'T' + hours[scheduledSlot] + ':00:00+05:30');
+    if (startsAt <= new Date()) throw ApiError.conflict('Collection slot has passed');
+    const slotKey = [postalCode, scheduledDate, scheduledSlot].join('/');
+    const Slot = require('../models/CollectionSlot');
+    await Slot.updateOne({ _id: slotKey }, { $setOnInsert: { reserved: 0 } }, { upsert: true });
+    const capacity = Number(process.env.LAB_SLOT_CAPACITY || 1);
+    if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error('Invalid LAB_SLOT_CAPACITY');
+    const held = await Slot.updateOne({ _id: slotKey, reserved: { $lt: capacity } }, { $inc: { reserved: 1 } });
+    if (!held.modifiedCount) throw ApiError.conflict('Collection slot is full');
+    const ids = [...new Set(tests.map(item => item.testId))];
+    const records = await LabTest.find({ _id: { $in: ids }, isActive: { $ne: false } });
+    if (records.length !== tests.length) throw ApiError.badRequest('Selected tests unavailable or duplicated');
+    const testDetails = records.map(test => ({ testId: test._id, name: test.name, price: test.price }));
+    const totalAmount = testDetails.reduce((sum, test) => sum + test.price, 0);
 
     const collectionOTP = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -122,6 +123,7 @@ exports.createLabBooking = async (req, res, next) => {
       customerId: req.user._id,
       tests: testDetails,
       scheduledDate,
+      slotKey,
       scheduledSlot,
       address,
       totalAmount,
@@ -222,6 +224,11 @@ exports.updateLabBookingStatus = async (req, res, next) => {
       throw ApiError.notFound('Booking not found');
     }
 
+    const allowed = { BOOKED: ['SAMPLE_COLLECTED','CANCELLED'], SAMPLE_COLLECTED: ['PROCESSING'], PROCESSING: ['REPORT_READY'] };
+    if (!allowed[booking.status]?.includes(status)) throw ApiError.conflict('Invalid booking transition');
+    if (status === 'SAMPLE_COLLECTED' && (!booking.collectionOTP || booking.collectionOTP !== req.body.otp)) throw ApiError.badRequest('Collection code required');
+    if (status === 'REPORT_READY' && !reportUrl?.startsWith('https://')) throw ApiError.badRequest('Secure report URL required');
+    if (status === 'CANCELLED' && booking.slotKey) await require('../models/CollectionSlot').updateOne({ _id: booking.slotKey, reserved: { $gt: 0 } }, { $inc: { reserved: -1 } });
     booking.status = status;
     if (reportUrl) {
       booking.reportUrl = reportUrl;
@@ -291,15 +298,14 @@ exports.cancelLabBooking = async (req, res, next) => {
     if (booking.customerId.toString() !== req.user._id.toString()) {
       throw ApiError.forbidden('You can only cancel your own bookings');
     }
-    if (booking.status === 'REPORT_READY' || booking.status === 'CANCELLED') {
+    if (booking.status !== 'BOOKED') {
       throw ApiError.badRequest(`Cannot cancel a booking with status: ${booking.status}`);
     }
 
+    if (booking.slotKey) await require('../models/CollectionSlot').updateOne({ _id: booking.slotKey, reserved: { $gt: 0 } }, { $inc: { reserved: -1 } });
     booking.status = 'CANCELLED';
     booking.cancellationReason = reason || 'Cancelled by customer';
-    if (booking.paymentStatus === 'PAID') {
-      booking.paymentStatus = 'REFUNDED';
-    }
+
     booking.statusHistory.push({
       status: 'CANCELLED',
       timestamp: new Date(),

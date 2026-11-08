@@ -33,8 +33,6 @@ const MapView = ({
   routePolyline = null
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [riderProgress, setRiderProgress] = useState(0.5); // 0 to 1 along the curve
-  const [secondsRemaining, setSecondsRemaining] = useState(null);
   const [hoveredPharmacy, setHoveredPharmacy] = useState(null);
 
   // Parse driver coordinates
@@ -43,57 +41,6 @@ const MapView = ({
       ? { lng: driverLocation[0], lat: driverLocation[1] }
       : driverLocation
     : null;
-
-  // Real-time animation loop for rider motion when OUT_FOR_DELIVERY
-  useEffect(() => {
-    if (orderStatus === 'OUT_FOR_DELIVERY') {
-      let animFrame;
-      let start = Date.now();
-      const duration = 12000; // Rider position interpolation animation
-
-      const animate = () => {
-        const elapsed = (Date.now() - start) % duration;
-        const progress = elapsed / duration;
-        // Smooth sine ease
-        const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
-        setRiderProgress(0.15 + eased * 0.75); // moves between 15% and 90% of route
-        animFrame = requestAnimationFrame(animate);
-      };
-
-      animFrame = requestAnimationFrame(animate);
-      return () => cancelAnimationFrame(animFrame);
-    } else if (orderStatus === 'DELIVERED') {
-      setRiderProgress(1.0);
-    } else if (orderStatus === 'DELIVERY_ASSIGNED') {
-      setRiderProgress(0.1);
-    } else {
-      setRiderProgress(0.0);
-    }
-  }, [orderStatus]);
-
-  // Live countdown timer for ETA
-  useEffect(() => {
-    let initialSeconds = 15 * 60;
-    if (typeof etaText === 'string') {
-      const match = etaText.match(/(\d+)/);
-      if (match) initialSeconds = parseInt(match[1], 10) * 60;
-    }
-    setSecondsRemaining(initialSeconds);
-
-    if (orderStatus === 'OUT_FOR_DELIVERY' || orderStatus === 'DELIVERY_ASSIGNED') {
-      const timer = setInterval(() => {
-        setSecondsRemaining((prev) => (prev > 10 ? prev - 1 : 10));
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [etaText, orderStatus]);
-
-  const formatCountdown = (totalSec) => {
-    if (!totalSec || totalSec <= 0) return etaText || '15 mins';
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
-    return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
-  };
 
   // SVG Coordinates Mapping (Map bounds: viewBox 0 0 800 450)
   // Origin (Pharmacy): (200, 180)
@@ -124,7 +71,11 @@ const MapView = ({
     return { x, y };
   };
 
-  const riderPos = getBezierPoint(riderProgress);
+  const deltaLng = customerLocation.lng - pharmacyLocation.lng;
+  const deltaLat = customerLocation.lat - pharmacyLocation.lat;
+  const lengthSquared = deltaLng ** 2 + deltaLat ** 2;
+  const progress = driverCoords && lengthSquared ? ((driverCoords.lng - pharmacyLocation.lng) * deltaLng + (driverCoords.lat - pharmacyLocation.lat) * deltaLat) / lengthSquared : 0;
+  const riderPos = getBezierPoint(Math.max(0, Math.min(1, progress)));
 
   // For multi-pharmacy network rendering:
   // Convert lat/lng offsets relative to customer center (400, 225)
@@ -549,7 +500,7 @@ const MapView = ({
       </div>
 
       {/* Animated Live Vehicle / Rider Waypoint Marker (Single Order View) */}
-      {!showRadiusRings &&
+      {!showRadiusRings && driverCoords &&
         (orderStatus === 'OUT_FOR_DELIVERY' ||
           orderStatus === 'DELIVERY_ASSIGNED' ||
           orderStatus === 'DELIVERED') && (
@@ -593,7 +544,7 @@ const MapView = ({
               </span>
               <span>
                 {deliveryPartner?.name || 'QuickMeds Rider'}
-                {orderStatus === 'OUT_FOR_DELIVERY' ? ` • ${formatCountdown(secondsRemaining)}` : ''}
+                {orderStatus === 'OUT_FOR_DELIVERY' ? ` • ${etaText || 'Unavailable'}` : ''}
               </span>
             </div>
 
@@ -746,7 +697,7 @@ const MapView = ({
             }}
           >
             <Clock size={12} />
-            <span>ETA: ~{formatCountdown(secondsRemaining)}</span>
+            <span>ETA: ~{etaText || 'Unavailable'}</span>
           </div>
         )}
 

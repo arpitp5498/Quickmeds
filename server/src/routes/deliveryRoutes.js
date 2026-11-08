@@ -1,3 +1,4 @@
+const { transactional } = require('../middleware/transactional');
 const express = require('express');
 const router = express.Router();
 const deliveryController = require('../controllers/deliveryController');
@@ -11,9 +12,9 @@ router.use(authenticate);
 router.use(authorize('DELIVERY_PARTNER', 'ADMIN'));
 
 router.get('/active', deliveryController.getActiveDelivery);
-router.post('/status', deliveryController.updateDeliveryTaskStatus);
-router.post('/verify-otp', deliveryController.verifyDeliveryOtp);
-router.put('/availability', deliveryController.toggleAvailability);
+router.post('/status', transactional(deliveryController.updateDeliveryTaskStatus));
+router.post('/verify-otp', transactional(deliveryController.verifyDeliveryOtp));
+router.put('/availability', transactional(deliveryController.toggleAvailability));
 router.post('/location', deliveryController.updateDriverLocation);
 router.get('/history', deliveryController.getDeliveryHistory);
 

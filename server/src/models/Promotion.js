@@ -69,6 +69,10 @@ const promotionSchema = new mongoose.Schema(
   }
 );
 
+promotionSchema.pre('validate', function () {
+  if (this.discountType === 'PERCENTAGE' && this.discountValue > 50) this.invalidate('discountValue', 'Maximum percentage discount is 50%');
+  if (this.validTo <= this.validFrom) this.invalidate('validTo', 'End date must follow start date');
+});
 promotionSchema.index({ isActive: 1, validFrom: 1, validTo: 1 });
 promotionSchema.index({ medicineIds: 1 });
 promotionSchema.index({ categories: 1 });

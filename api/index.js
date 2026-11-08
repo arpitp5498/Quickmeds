@@ -1,5 +1,3 @@
-// Vercel Serverless Function Entry Point
-// Wraps the Express app for Vercel's serverless execution model
-const { app } = require('../server/src/index');
-
-module.exports = app;
+// Export the HTTP server so the same function handles API requests and socket upgrades.
+const { httpServer } = require('../server/src/index');
+module.exports = httpServer;

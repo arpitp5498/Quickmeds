@@ -18,21 +18,28 @@ const prescriptionSchema = new mongoose.Schema(
       ref: 'Pharmacy',
       default: null
     },
+    type: { type: String, enum: ['UPLOADED','DIGITAL'], default: 'UPLOADED' },
+    doctorRegistration: String,
+    consultationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation' },
+    medicines: [{ name: String, dose: String, frequency: String, duration: String }],
+    instructions: String,
+    fileId: { type: mongoose.Schema.Types.ObjectId, ref: 'PrescriptionFile' },
     fileUrl: {
+      select: false,
       type: String,
-      required: [true, 'Prescription file URL is required']
+      required() { return this.type !== 'DIGITAL' && !this.fileId; }
     },
     originalName: {
       type: String,
-      required: true
+      required() { return this.type !== 'DIGITAL'; }
     },
     mimeType: {
       type: String,
-      required: true
+      required() { return this.type !== 'DIGITAL'; }
     },
     fileSize: {
       type: Number,
-      required: true
+      required() { return this.type !== 'DIGITAL'; }
     },
     status: {
       type: String,
@@ -52,6 +59,7 @@ const prescriptionSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    reviewerRegistration: String,
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

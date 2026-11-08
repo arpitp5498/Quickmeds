@@ -61,7 +61,9 @@ const updateAddress = async (req, res, next) => {
       await Address.updateMany({ userId: req.user._id }, { isDefault: false });
     }
 
-    Object.assign(address, req.body);
+    for (const key of ['label','recipientName','phone','street','city','state','pincode','landmark','fullAddress','coordinates','isDefault']) {
+      if (Object.hasOwn(req.body, key)) address[key] = req.body[key];
+    }
     await address.save();
 
     return ApiResponse.success(res, { address }, 'Address updated successfully');

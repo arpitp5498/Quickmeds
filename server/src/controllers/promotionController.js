@@ -27,7 +27,7 @@ const getPromotions = async (req, res, next) => {
     }
 
     if (search) {
-      query.name = new RegExp(search.trim(), 'i');
+      query.name = new RegExp(String(search).trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     }
 
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);

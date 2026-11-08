@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 
 const CartContext = createContext();
-const CART_STORAGE_KEY = 'quickmeds_cart';
+const CART_STORAGE_KEY = 'quickmeds_guest_cart';
 
 const getInitialCart = () => {
   try {
@@ -52,7 +52,7 @@ export const CartProvider = ({ children }) => {
       const res = await api.get('/cart');
       if (res.success && res.data) {
         setCart(res.data.cart);
-        saveCartToStorage(res.data.cart);
+
         setStockWarnings(res.data.stockWarnings || []);
       }
     } catch (error) {
@@ -76,12 +76,13 @@ export const CartProvider = ({ children }) => {
                 await api.post('/cart/items', {
                   medicineId: medId,
                   quantity: item.quantity || 1,
-                  price: item.price,
+
                   pharmacyId: item.pharmacyId,
                   pharmacyName: item.pharmacyName
                 });
               }
             }
+            localStorage.removeItem(CART_STORAGE_KEY);
           } catch (_) {
             // Non-blocking sync
           } finally {
@@ -93,6 +94,7 @@ export const CartProvider = ({ children }) => {
     }
     if (!isAuthenticated) {
       syncAttemptedRef.current = false;
+      setCart(getInitialCart());
     }
     fetchCart();
   }, [isAuthenticated, isCustomer, fetchCart]);
@@ -167,7 +169,7 @@ export const CartProvider = ({ children }) => {
 
         if (res.success && res.data) {
           setCart(res.data.cart);
-          saveCartToStorage(res.data.cart);
+
           const fulfilledNote = selectedPharmacyName ? ` (Fulfilled by ${selectedPharmacyName})` : '';
           if (medMeta.requiresPrescription || res.data.cart.hasPrescriptionRequiredItems) {
             showToast(`Added to cart!${fulfilledNote} Doctor prescription required at checkout.`, 'info');
@@ -255,7 +257,7 @@ export const CartProvider = ({ children }) => {
         const res = await api.put(`/cart/items/${targetId}`, { quantity: qty });
         if (res.success && res.data) {
           setCart(res.data.cart);
-          saveCartToStorage(res.data.cart);
+
           return true;
         }
       } catch (error) {
@@ -301,7 +303,7 @@ export const CartProvider = ({ children }) => {
         const res = await api.delete(`/cart/items/${targetId}`);
         if (res.success && res.data) {
           setCart(res.data.cart);
-          saveCartToStorage(res.data.cart);
+
           showToast('Item removed from cart', 'info');
           return true;
         }
@@ -341,7 +343,7 @@ export const CartProvider = ({ children }) => {
         const res = await api.delete('/cart');
         if (res.success && res.data) {
           setCart(res.data.cart);
-          saveCartToStorage(res.data.cart);
+
         }
       } catch (error) {
         showToast(error.message || 'Failed to clear cart', 'error');

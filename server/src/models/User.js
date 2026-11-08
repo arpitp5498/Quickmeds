@@ -66,7 +66,8 @@ const userSchema = new mongoose.Schema(
       ref: 'Doctor',
       default: null
     },
-    resetPasswordToken: String,
+    tokenVersion: { type: Number, default: 0 },
+    resetPasswordToken: { type: String, select: false },
     resetPasswordExpire: Date
   },
   {

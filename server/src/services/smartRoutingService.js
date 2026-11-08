@@ -201,15 +201,10 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
     };
   }
 
-  let lng = 77.2090;
-  let lat = 28.6139;
-  if (Array.isArray(coordinates) && coordinates.length === 2) {
-    lng = Number(coordinates[0]) || 77.2090;
-    lat = Number(coordinates[1]) || 28.6139;
-  } else if (coordinates && typeof coordinates === 'object') {
-    lat = Number(coordinates.lat || coordinates.latitude || 28.6139);
-    lng = Number(coordinates.lng || coordinates.longitude || 77.2090);
-  }
+  const [lng, lat] = Array.isArray(coordinates) ? coordinates : [coordinates?.lng ?? coordinates?.longitude, coordinates?.lat ?? coordinates?.latitude];
+  if (![lng, lat].every(Number.isFinite) || Math.abs(lng) > 180 || Math.abs(lat) > 90 ||
+      !Number.isFinite(maxDistanceKm) || maxDistanceKm <= 0 || maxDistanceKm > 100 || cartItems.length > 100)
+    throw require('../utils/ApiError').badRequest('Invalid delivery coordinates, radius or basket size');
 
   // Extract medicine IDs safely
   const medicineIds = cartItems
@@ -224,7 +219,7 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
 
   // 1. Fetch verified, open pharmacies within radius
   const query = {
-    verificationStatus: 'VERIFIED',
+    verificationStatus: 'VERIFIED', isDemo: { $ne: true },
     isOpen: true
   };
 
@@ -268,19 +263,26 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
   // 2. Fetch inventory for each pharmacy
   const candidateEvaluations = [];
 
+  const rows = await PharmacyInventory.find({
+    pharmacyId: { $in: pharmacies.map(p => p._id) }, medicineId: { $in: medicineIds },
+    isAvailable: true, isPriceSuspicious: { $ne: true }, expiryDate: { $gt: new Date() }
+  }).populate('medicineId', 'name mrp category');
+  const grouped = new Map();
+  for (const row of rows) {
+    const key = String(row.pharmacyId);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
   for (const pharmacy of pharmacies) {
-    const coords = pharmacy.location?.coordinates || [77.2090, 28.6139];
+    const coords = pharmacy.location?.coordinates;
+    if (!Array.isArray(coords) || coords.length !== 2 || !coords.every(Number.isFinite)) continue;
     const [pLng, pLat] = coords;
     const distanceKm = calculateDistance(lat, lng, pLat, pLng);
+    if (distanceKm > maxDistanceKm) continue;
     const etaObj = calculateETA(distanceKm);
     const deliveryFee = calculateDeliveryFee(distanceKm);
 
-    // Query inventory items for this pharmacy
-    const inventories = await PharmacyInventory.find({
-      pharmacyId: pharmacy._id,
-      medicineId: { $in: medicineIds },
-      isAvailable: true
-    }).populate('medicineId');
+    const inventories = grouped.get(String(pharmacy._id)) || [];
 
     const availableItems = [];
     const missingItems = [];
@@ -300,7 +302,7 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
       const isExpired = inv?.expiryDate ? new Date(inv.expiryDate) <= new Date() : false;
 
       if (medIdStr && inv && stock >= reqQty && !isExpired) {
-        const unitPrice = (item.price !== undefined && item.price > 0) ? item.price : (inv.price !== undefined ? inv.price : 50);
+        const unitPrice = inv.price;
         const itemTotal = unitPrice * reqQty;
         basketPrice += itemTotal;
         availableItems.push({
@@ -459,7 +461,8 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
 
     if (bestPair && bestPair.jointCoverage > (partialCandidates[0]?.availableCount / totalItemsCount)) {
       const { pA, pB, jointCoverage, jointScore } = bestPair;
-      const combinedSubtotal = pA.basketPrice + pB.basketPrice;
+      const covered = new Set(pA.availableItems.map(item => item.medicineId));
+      const combinedSubtotal = pA.basketPrice + pB.availableItems.filter(item => !covered.has(item.medicineId)).reduce((sum, item) => sum + item.totalPrice, 0);
       const combinedDeliveryFee = pA.deliveryFee + pB.deliveryFee;
       const maxEta = Math.max(pA.etaMinutes, pB.etaMinutes) + 3;
 

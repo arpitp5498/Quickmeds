@@ -1,3 +1,4 @@
+const { transactional } = require('../middleware/transactional');
 const express = require('express');
 const router = express.Router();
 const prescriptionController = require('../controllers/prescriptionController');
@@ -7,12 +8,12 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.use(authenticate);
 
 // Customer upload
-router.post('/upload', upload.single('prescription'), prescriptionController.uploadPrescription);
+router.post('/upload', authorize('CUSTOMER'), upload.single('prescription'), transactional(prescriptionController.uploadPrescription));
 router.get('/', prescriptionController.getMyPrescriptions);
 
 // Pharmacy verification queue
 router.get('/pharmacy/queue', authorize('PHARMACY', 'ADMIN'), prescriptionController.getPharmacyPrescriptionsQueue);
-router.put('/:id/review', authorize('PHARMACY', 'ADMIN'), prescriptionController.reviewPrescription);
+router.put('/:id/review', authorize('PHARMACY', 'ADMIN'), transactional(prescriptionController.reviewPrescription));
 
 // Get single prescription (IDOR protected)
 router.get('/:id', prescriptionController.getPrescriptionById);

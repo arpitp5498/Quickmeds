@@ -75,7 +75,7 @@ describe('Production Discount & Promotion System Test Suite', () => {
         expect(result.discountPercentage).toBe(13); // 25 / 200 = 12.5% -> round 13
       });
 
-      it('should cap fixed amount discount so selling price is at least Re 1', () => {
+      it('should apply the 50% policy cap to fixed discounts', () => {
         const promo = {
           _id: new mongoose.Types.ObjectId(),
           name: 'Excessive Flat Discount',
@@ -85,8 +85,8 @@ describe('Production Discount & Promotion System Test Suite', () => {
         const result = calculatePromotionalPrice(100, promo);
 
         expect(result).not.toBeNull();
-        expect(result.promotionalPrice).toBe(1);
-        expect(result.discountAmount).toBe(99);
+        expect(result.promotionalPrice).toBe(50);
+        expect(result.discountAmount).toBe(50);
       });
 
       it('should return null for invalid or zero MRP', () => {
@@ -169,7 +169,7 @@ describe('Production Discount & Promotion System Test Suite', () => {
     });
 
     describe('findPromotionInMap', () => {
-      it('should prioritize direct medicine ID match over category match', () => {
+      it('should prioritize the higher priority applicable promotion', () => {
         const medId = new mongoose.Types.ObjectId().toString();
         const directPromo = { name: 'Direct Med Promo', priority: 1 };
         const catPromo = { name: 'Category Promo', priority: 2 };
@@ -179,7 +179,7 @@ describe('Production Discount & Promotion System Test Suite', () => {
         map.set('cat:Pain & Fever', catPromo);
 
         const found = findPromotionInMap(map, medId, 'Pain & Fever');
-        expect(found).toBe(directPromo);
+        expect(found).toBe(catPromo);
       });
 
       it('should fallback to category promotion when no direct match exists', () => {
@@ -393,6 +393,13 @@ describe('Production Discount & Promotion System Test Suite', () => {
     });
 
     it('should securely apply promotional price in cart and ignore client price manipulation', async () => {
+      const Pharmacy = require('../src/models/Pharmacy');
+      const Inventory = require('../src/models/PharmacyInventory');
+      const pharmacy = await Pharmacy.create({ userId: adminUser._id, name: 'Cart fixture', licenseNumber: 'TEST-CART',
+        phone: '9876543210', email: 'cart@example.invalid', verificationStatus: 'VERIFIED', isOpen: true,
+        address: { street:'Test', city:'Delhi', state:'Delhi', pincode:'110001', fullAddress:'Test Delhi' },
+        location: { type:'Point', coordinates:[77.2,28.6] } });
+      await Inventory.create({ pharmacyId: pharmacy._id, medicineId: testMedicine._id, price: 100, stockQuantity: 5 });
       // Active 15% promotion is active on testMedicine (MRP = 100, promotionalPrice = 85)
       // Client maliciously tries to send price: 10 or price: 999
       const res = await request(app)

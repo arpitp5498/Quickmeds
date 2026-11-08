@@ -38,6 +38,7 @@ const promotionRoutes = require('./routes/promotionRoutes');
 
 // Initialize express app
 const app = express();
+app.set('query parser', 'simple');
 const httpServer = http.createServer(app);
 
 const mongoose = require('mongoose');
@@ -49,7 +50,7 @@ connectDB().catch((err) => {
 
 // Middleware to ensure DB connection is ready before handling requests (vital for Vercel serverless)
 app.use(async (req, res, next) => {
-  if (req.path.startsWith('/api')) {
+  if (req.path.startsWith('/api') && req.path !== '/api/health') {
     try {
       if (mongoose.connection.readyState !== 1) {
         await connectDB();
@@ -79,28 +80,12 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb', verify(req, res, buf) { if (req.path === '/api/integrations/billing/webhook') req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
-
-// Ensure database connection is ready for API calls
-app.use(async (req, res, next) => {
-  if (req.path.startsWith('/api') && req.path !== '/api/health') {
-    try {
-      await connectDB();
-    } catch (dbErr) {
-      return res.status(503).json({
-        success: false,
-        message: 'Database connection failed. Please check MongoDB Atlas network access (0.0.0.0/0).',
-        error: dbErr.message
-      });
-    }
-  }
-  next();
-});
 
 // Root welcome & frontend redirect
 app.get('/', (req, res) => {
@@ -142,6 +127,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.use('/api', require('./middleware/rateLimiter').apiLimiter);
+app.use('/api', (req, res, next) => {
+  for (const key of ['limit', 'page']) {
+    if (req.query[key] !== undefined && (!/^\d+$/.test(req.query[key]) || Number(req.query[key]) < 1 || Number(req.query[key]) > (key === 'limit' ? 100 : 10000)))
+      return res.status(400).json({ success: false, message: 'Invalid pagination' });
+  }
+  next();
+});
 // API Routes Mounting
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

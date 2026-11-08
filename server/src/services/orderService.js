@@ -50,7 +50,7 @@ const decrementInventory = async (pharmacyId, items) => {
       medicineId: medId
     });
 
-    if (!inventory || (inventory.stockQuantity !== undefined ? inventory.stockQuantity : inventory.stock || 0) < item.quantity) {
+    if (!Number.isSafeInteger(item.quantity) || item.quantity < 1 || !inventory?.isAvailable || inventory.isPriceSuspicious || !(inventory.expiryDate > new Date()) || (inventory.stockQuantity !== undefined ? inventory.stockQuantity : inventory.stock || 0) < item.quantity) {
       throw ApiError.badRequest(
         `Insufficient stock for "${item.name || 'item'}". Only ${inventory ? (inventory.stockQuantity !== undefined ? inventory.stockQuantity : inventory.stock || 0) : 0} units available at this pharmacy.`
       );
@@ -86,12 +86,12 @@ const restoreInventory = async (pharmacyId, items) => {
       if (inventory.stockQuantity !== undefined) {
         inventory.stockQuantity += item.quantity;
         if (inventory.stockQuantity > 0) {
-          inventory.isAvailable = true;
+          inventory.isAvailable = inventory.expiryDate > new Date();
         }
       } else if (inventory.stock !== undefined) {
         inventory.stock += item.quantity;
         if (inventory.stock > 0) {
-          inventory.isAvailable = true;
+          inventory.isAvailable = inventory.expiryDate > new Date();
         }
       }
       await inventory.save();
@@ -148,7 +148,7 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
   try {
     const oldPharmacyId = order.pharmacyId?._id || order.pharmacyId;
     const oldPharmacyName = order.pharmacyId?.name || 'Previous Pharmacy';
-    const customerCoords = order.deliveryAddress?.coordinates || [77.2090, 28.6139];
+    const customerCoords = order.deliveryAddress?.coordinates;
 
     // List of excluded pharmacies (already attempted)
     const excludedIds = [
@@ -161,8 +161,8 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
       excludePharmacyIds: excludedIds
     });
 
-    if (!routingResult.recommended || !routingResult.recommended.pharmacies || routingResult.recommended.pharmacies.length === 0) {
-      throw ApiError.badRequest('No eligible fallback pharmacy with matching stock available within radius.');
+    if (routingResult.recommended?.type !== 'SINGLE_STORE' || routingResult.recommended.basketCoverage !== 1 || !routingResult.recommended.pharmacies || routingResult.recommended.pharmacies.length === 0) {
+      throw Object.assign(ApiError.badRequest('No eligible fallback pharmacy with matching stock available within radius.'), { code: 'NO_FALLBACK' });
     }
 
     const newPharmacySummary = routingResult.recommended.pharmacies[0];
@@ -212,6 +212,12 @@ const executeFallbackReassignment = async (orderId, reason = 'PHARMACY_CONFIRMAT
       }
     );
 
+    if (order.prescriptionId) {
+      await require('../models/Prescription').updateOne({ _id: order.prescriptionId, orderId: order._id, customerId: order.customerId._id || order.customerId },
+        { $set: { pharmacyId: newPharmacyId, status: 'UNDER_REVIEW', reviewedBy: null, reviewedAt: null } });
+      order.prescriptionStatus = 'PENDING_REVIEW';
+      order.orderStatus = 'PHARMACY_REVIEW';
+    }
     order.pharmacyId = newPharmacyId;
     order.deliveryPartnerId = null; // Clear old pharmacy rider assignment
     order.fallbackTriggered = true;

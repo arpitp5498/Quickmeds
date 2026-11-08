@@ -8,7 +8,7 @@ import { useToast } from '../../context/ToastContext';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const token = new URLSearchParams(window.location.hash.slice(1)).get('token') || searchParams.get('token') || '';
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);

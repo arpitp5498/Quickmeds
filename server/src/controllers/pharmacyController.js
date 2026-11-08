@@ -37,7 +37,7 @@ const getNearbyPharmacies = async (req, res, next) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const searchRegex = new RegExp(String(search).trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       filter.$or = [
         { name: searchRegex },
         { 'address.city': searchRegex },

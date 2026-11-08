@@ -11,88 +11,89 @@ import AuthLayout from '../layouts/AuthLayout';
 import ProtectedRoute from './ProtectedRoute';
 
 // Public Pages
-import Landing from '../pages/public/Landing';
-import About from '../pages/public/About';
-import Safety from '../pages/public/Safety';
-import Disclaimer from '../pages/public/Disclaimer';
-import Privacy from '../pages/public/Privacy';
-import Terms from '../pages/public/Terms';
-import Contact from '../pages/public/Contact';
-import Security from '../pages/public/Security';
+const Landing = React.lazy(() => import('../pages/public/Landing'));
+const About = React.lazy(() => import('../pages/public/About'));
+const Safety = React.lazy(() => import('../pages/public/Safety'));
+const Disclaimer = React.lazy(() => import('../pages/public/Disclaimer'));
+const Privacy = React.lazy(() => import('../pages/public/Privacy'));
+const Terms = React.lazy(() => import('../pages/public/Terms'));
+const Contact = React.lazy(() => import('../pages/public/Contact'));
+const Security = React.lazy(() => import('../pages/public/Security'));
 
 // Auth Pages
-import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
-import ForgotPassword from '../pages/auth/ForgotPassword';
-import ResetPassword from '../pages/auth/ResetPassword';
+const Login = React.lazy(() => import('../pages/auth/Login'));
+const Register = React.lazy(() => import('../pages/auth/Register'));
+const ForgotPassword = React.lazy(() => import('../pages/auth/ForgotPassword'));
+const ResetPassword = React.lazy(() => import('../pages/auth/ResetPassword'));
 
 // Customer / Catalog Pages
-import MedicineSearch from '../pages/medicines/MedicineSearch';
-import MedicineDetail from '../pages/medicines/MedicineDetail';
-import MedicineCategories from '../pages/medicines/MedicineCategories';
-import EmergencyEssentials from '../pages/medicines/EmergencyEssentials';
-import NearbyPharmacies from '../pages/pharmacies/NearbyPharmacies';
-import PharmacyDetail from '../pages/pharmacies/PharmacyDetail';
-import PharmacyNetworkMap from '../pages/pharmacies/PharmacyNetworkMap';
-import Cart from '../pages/cart/Cart';
-import Checkout from '../pages/checkout/Checkout';
-import OrderList from '../pages/orders/OrderList';
-import OrderDetail from '../pages/orders/OrderDetail';
-import PrescriptionUpload from '../pages/prescriptions/PrescriptionUpload';
-import MyPrescriptions from '../pages/prescriptions/MyPrescriptions';
-import CustomerDashboard from '../pages/customer/CustomerDashboard';
-import Profile from '../pages/customer/Profile';
-import Addresses from '../pages/customer/Addresses';
-import Notifications from '../pages/notifications/Notifications';
-import WriteReview from '../pages/reviews/WriteReview';
-import MedicineReminders from '../pages/reminders/MedicineReminders';
-import CycleTracker from '../pages/cycle/CycleTracker';
+const MedicineSearch = React.lazy(() => import('../pages/medicines/MedicineSearch'));
+const MedicineDetail = React.lazy(() => import('../pages/medicines/MedicineDetail'));
+const MedicineCategories = React.lazy(() => import('../pages/medicines/MedicineCategories'));
+const EmergencyEssentials = React.lazy(() => import('../pages/medicines/EmergencyEssentials'));
+const NearbyPharmacies = React.lazy(() => import('../pages/pharmacies/NearbyPharmacies'));
+const PharmacyDetail = React.lazy(() => import('../pages/pharmacies/PharmacyDetail'));
+const PharmacyNetworkMap = React.lazy(() => import('../pages/pharmacies/PharmacyNetworkMap'));
+const Cart = React.lazy(() => import('../pages/cart/Cart'));
+const Checkout = React.lazy(() => import('../pages/checkout/Checkout'));
+const OrderList = React.lazy(() => import('../pages/orders/OrderList'));
+const OrderDetail = React.lazy(() => import('../pages/orders/OrderDetail'));
+const PrescriptionUpload = React.lazy(() => import('../pages/prescriptions/PrescriptionUpload'));
+const MyPrescriptions = React.lazy(() => import('../pages/prescriptions/MyPrescriptions'));
+const CustomerDashboard = React.lazy(() => import('../pages/customer/CustomerDashboard'));
+const Profile = React.lazy(() => import('../pages/customer/Profile'));
+const Addresses = React.lazy(() => import('../pages/customer/Addresses'));
+const Notifications = React.lazy(() => import('../pages/notifications/Notifications'));
+const WriteReview = React.lazy(() => import('../pages/reviews/WriteReview'));
+const MedicineReminders = React.lazy(() => import('../pages/reminders/MedicineReminders'));
+const CycleTracker = React.lazy(() => import('../pages/cycle/CycleTracker'));
 
 // New Production Feature Pages
-import PeriodCare from '../pages/medicines/PeriodCare';
-import DoctorConsultation from '../pages/customer/DoctorConsultation';
-import LabTests from '../pages/customer/LabTests';
-import AmbulanceAssistance from '../pages/customer/AmbulanceAssistance';
+const PeriodCare = React.lazy(() => import('../pages/medicines/PeriodCare'));
+const DoctorConsultation = React.lazy(() => import('../pages/customer/DoctorConsultation'));
+const LabTests = React.lazy(() => import('../pages/customer/LabTests'));
+const AmbulanceAssistance = React.lazy(() => import('../pages/customer/AmbulanceAssistance'));
 
 // Pharmacy Partner Pages
-import PharmacyDashboard from '../pages/pharmacy/PharmacyDashboard';
-import PharmacyOrders from '../pages/pharmacy/PharmacyOrders';
-import PharmacyOrderDetail from '../pages/pharmacy/PharmacyOrderDetail';
-import PharmacyInventory from '../pages/pharmacy/PharmacyInventory';
-import PharmacyPrescriptions from '../pages/pharmacy/PharmacyPrescriptions';
-import PharmacyProfile from '../pages/pharmacy/PharmacyProfile';
+const PharmacyDashboard = React.lazy(() => import('../pages/pharmacy/PharmacyDashboard'));
+const PharmacyOrders = React.lazy(() => import('../pages/pharmacy/PharmacyOrders'));
+const PharmacyOrderDetail = React.lazy(() => import('../pages/pharmacy/PharmacyOrderDetail'));
+const PharmacyInventory = React.lazy(() => import('../pages/pharmacy/PharmacyInventory'));
+const PharmacyPrescriptions = React.lazy(() => import('../pages/pharmacy/PharmacyPrescriptions'));
+const PharmacyProfile = React.lazy(() => import('../pages/pharmacy/PharmacyProfile'));
 
 // Delivery Partner Pages
-import DeliveryDashboard from '../pages/delivery/DeliveryDashboard';
-import DeliveryActive from '../pages/delivery/DeliveryActive';
-import DeliveryHistory from '../pages/delivery/DeliveryHistory';
-import DeliveryProfile from '../pages/delivery/DeliveryProfile';
+const DeliveryDashboard = React.lazy(() => import('../pages/delivery/DeliveryDashboard'));
+const DeliveryActive = React.lazy(() => import('../pages/delivery/DeliveryActive'));
+const DeliveryHistory = React.lazy(() => import('../pages/delivery/DeliveryHistory'));
+const DeliveryProfile = React.lazy(() => import('../pages/delivery/DeliveryProfile'));
 
 // Admin Pages
-import AdminDashboard from '../pages/admin/AdminDashboard';
-import AdminPharmacies from '../pages/admin/AdminPharmacies';
-import AdminPharmacyDetail from '../pages/admin/AdminPharmacyDetail';
-import AdminUsers from '../pages/admin/AdminUsers';
-import AdminOrders from '../pages/admin/AdminOrders';
-import AdminPrescriptions from '../pages/admin/AdminPrescriptions';
-import AdminAnalytics from '../pages/admin/AdminAnalytics';
-import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
-import AdminDoctors from '../pages/admin/AdminDoctors';
-import PromotionManager from '../pages/admin/PromotionManager';
+const AdminDashboard = React.lazy(() => import('../pages/admin/AdminDashboard'));
+const AdminPharmacies = React.lazy(() => import('../pages/admin/AdminPharmacies'));
+const AdminPharmacyDetail = React.lazy(() => import('../pages/admin/AdminPharmacyDetail'));
+const AdminUsers = React.lazy(() => import('../pages/admin/AdminUsers'));
+const AdminOrders = React.lazy(() => import('../pages/admin/AdminOrders'));
+const AdminPrescriptions = React.lazy(() => import('../pages/admin/AdminPrescriptions'));
+const AdminAnalytics = React.lazy(() => import('../pages/admin/AdminAnalytics'));
+const AdminAuditLogs = React.lazy(() => import('../pages/admin/AdminAuditLogs'));
+const AdminDoctors = React.lazy(() => import('../pages/admin/AdminDoctors'));
+const PromotionManager = React.lazy(() => import('../pages/admin/PromotionManager'));
 
 // Doctor Portal Pages
 import DoctorLayout from '../layouts/DoctorLayout';
-import DoctorDashboard from '../pages/doctor/DoctorDashboard';
-import DoctorAppointments from '../pages/doctor/DoctorAppointments';
-import DoctorConsultationDetail from '../pages/doctor/DoctorConsultationDetail';
-import DoctorProfile from '../pages/doctor/DoctorProfile';
+const DoctorDashboard = React.lazy(() => import('../pages/doctor/DoctorDashboard'));
+const DoctorAppointments = React.lazy(() => import('../pages/doctor/DoctorAppointments'));
+const DoctorConsultationDetail = React.lazy(() => import('../pages/doctor/DoctorConsultationDetail'));
+const DoctorProfile = React.lazy(() => import('../pages/doctor/DoctorProfile'));
 
 // Patient Health Records
-import HealthRecords from '../pages/customer/HealthRecords';
+const HealthRecords = React.lazy(() => import('../pages/customer/HealthRecords'));
 
 
 const AppRoutes = () => {
   return (
+    <React.Suspense fallback={<p role="status">Loading…</p>}>
     <Routes>
 
 
@@ -221,6 +222,7 @@ const AppRoutes = () => {
       {/* Catch-all 404 redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </React.Suspense>
   );
 };
 

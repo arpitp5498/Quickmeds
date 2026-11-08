@@ -14,6 +14,7 @@ const labBookingSchema = new mongoose.Schema(
         price: Number
       }
     ],
+    slotKey: String,
     scheduledDate: { type: Date, required: true },
     scheduledSlot: { type: String, required: true },
     address: {
@@ -60,7 +61,7 @@ const labBookingSchema = new mongoose.Schema(
     isTestData: { type: Boolean, default: false, index: true }
   },
   {
-    timestamps: true
+    optimisticConcurrency: true, timestamps: true
   }
 );
 

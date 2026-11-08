@@ -17,7 +17,7 @@ exports.getDoctors = async (req, res, next) => {
     // Only verified doctors (or legacy records predating the verification field) are listed.
     const conditions = [
       { isActive: { $ne: false } },
-      { $or: [{ verificationStatus: 'VERIFIED' }, { verificationStatus: { $exists: false } }] }
+      { verificationStatus: 'VERIFIED' }
     ];
 
     if (specialty) {
@@ -66,7 +66,7 @@ exports.getDoctors = async (req, res, next) => {
 // @access  Public
 exports.getDoctorById = async (req, res, next) => {
   try {
-    const doctor = await Doctor.findById(req.params.id);
+    const doctor = await Doctor.findOne({ _id: req.params.id, isActive: true, verificationStatus: 'VERIFIED' });
     if (!doctor) {
       throw ApiError.notFound('Doctor not found');
     }
@@ -82,19 +82,32 @@ exports.getDoctorById = async (req, res, next) => {
 exports.requestConsultation = async (req, res, next) => {
   try {
     const { doctorId, type, scheduledTime, symptoms } = req.body;
-    const doctor = await Doctor.findById(doctorId);
+    const doctor = await Doctor.findOne({ _id: doctorId, verificationStatus: 'VERIFIED', isAvailable: true, isActive: true });
     if (!doctor) {
       throw ApiError.notFound('Doctor not found');
     }
 
     // Check for slot conflicts (within 30-min window for scheduled)
-    if (type === 'SCHEDULED' && scheduledTime) {
-      const slotStart = new Date(new Date(scheduledTime).getTime() - 15 * 60000);
-      const slotEnd = new Date(new Date(scheduledTime).getTime() + 15 * 60000);
+    if (!['INSTANT','SCHEDULED'].includes(type)) throw ApiError.badRequest('Invalid booking type');
+    // A write to the doctor serializes competing reservations in the transaction.
+    await Doctor.updateOne({ _id: doctor._id }, { $inc: { bookingRevision: 1 } });
+    {
+      const start = type === 'INSTANT' ? new Date() : new Date(scheduledTime);
+      if (!Number.isFinite(start.getTime()) || (type === 'SCHEDULED' && start <= new Date())) throw ApiError.badRequest('Future appointment time required');
+      if (type === 'SCHEDULED') {
+        const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(start);
+        const field = key => parts.find(part => part.type === key)?.value;
+        const minutes = time => { const [h,m] = time.split(':').map(Number); return h * 60 + m; };
+        const requested = minutes(field('hour') + ':' + field('minute'));
+        if (!doctor.availableSlots.some(slot => slot.day === field('weekday') && requested >= minutes(slot.startTime) && requested + 30 <= minutes(slot.endTime)))
+          throw ApiError.conflict('Outside clinician availability');
+      }
+      const slotStart = new Date(start.getTime() - 30 * 60000);
+      const slotEnd = new Date(start.getTime() + 30 * 60000);
       const conflict = await Consultation.findOne({
         doctorId,
-        status: { $in: ['CONFIRMED', 'IN_PROGRESS'] },
-        scheduledTime: { $gte: slotStart, $lte: slotEnd }
+        status: { $in: ['REQUESTED','CONFIRMED', 'IN_PROGRESS'] },
+        scheduledTime: { $gt: slotStart, $lt: slotEnd }
       });
       if (conflict) {
         throw ApiError.badRequest('Doctor has a conflicting appointment at this time. Please choose a different slot.');
@@ -189,12 +202,14 @@ exports.updateConsultationStatus = async (req, res, next) => {
 
     // If DOCTOR role, verify they own this consultation
     if (req.user.role === 'DOCTOR') {
-      const doctor = await Doctor.findOne({ userId: req.user._id });
+      const doctor = await Doctor.findOne({ userId: req.user._id, verificationStatus: 'VERIFIED', isActive: true });
       if (!doctor || doctor._id.toString() !== consultation.doctorId._id.toString()) {
         throw ApiError.forbidden('You can only update your own consultations');
       }
     }
 
+    const allowed = { REQUESTED: ['CONFIRMED','CANCELLED'], CONFIRMED: ['IN_PROGRESS','CANCELLED'], IN_PROGRESS: ['COMPLETED','CANCELLED'] };
+    if (!allowed[consultation.status]?.includes(status)) throw ApiError.conflict('Invalid consultation transition');
     consultation.status = status;
     if (notes) {
       consultation.notes = notes;
@@ -248,7 +263,7 @@ exports.updateConsultationStatus = async (req, res, next) => {
 // @access  Private (DOCTOR)
 exports.getDoctorAppointments = async (req, res, next) => {
   try {
-    const doctor = await Doctor.findOne({ userId: req.user._id });
+    const doctor = await Doctor.findOne({ userId: req.user._id, verificationStatus: 'VERIFIED', isActive: true });
     if (!doctor) {
       throw ApiError.notFound('Doctor profile not found. Please complete your registration.');
     }
@@ -288,7 +303,7 @@ exports.getDoctorAppointments = async (req, res, next) => {
 exports.updateConsultationNotes = async (req, res, next) => {
   try {
     const { diagnosis, notes, followUpDate, recommendedTests } = req.body;
-    const doctor = await Doctor.findOne({ userId: req.user._id });
+    const doctor = await Doctor.findOne({ userId: req.user._id, verificationStatus: 'VERIFIED', isActive: true });
     if (!doctor) {
       throw ApiError.notFound('Doctor profile not found');
     }
@@ -326,7 +341,7 @@ exports.updateConsultationNotes = async (req, res, next) => {
 exports.issueConsultationPrescription = async (req, res, next) => {
   try {
     const { medicines, instructions } = req.body;
-    const doctor = await Doctor.findOne({ userId: req.user._id });
+    const doctor = await Doctor.findOne({ userId: req.user._id, verificationStatus: 'VERIFIED', isActive: true });
     if (!doctor) {
       throw ApiError.notFound('Doctor profile not found');
     }
@@ -339,11 +354,12 @@ exports.issueConsultationPrescription = async (req, res, next) => {
       throw ApiError.forbidden('You can only issue prescriptions for your own consultations');
     }
 
+    if (consultation.status !== 'IN_PROGRESS' || consultation.prescriptionId) throw ApiError.conflict('Active consultation required');
     // Create digital prescription
     const prescription = await Prescription.create({
       customerId: consultation.patientId,
       type: 'DIGITAL',
-      status: 'APPROVED',
+      status: 'UPLOADED',
       doctorName: doctor.name,
       doctorRegistration: doctor.registrationNumber,
       medicines: medicines || [],
@@ -356,7 +372,7 @@ exports.issueConsultationPrescription = async (req, res, next) => {
 
     consultation.prescriptionId = prescription._id;
     consultation.status = 'COMPLETED';
-    consultation.paymentStatus = 'PAID';
+
     consultation.statusHistory.push({
       status: 'COMPLETED',
       timestamp: new Date(),
@@ -401,7 +417,7 @@ exports.cancelConsultation = async (req, res, next) => {
     const isPatient = consultation.patientId.toString() === req.user._id.toString();
     let isDoctor = false;
     if (req.user.role === 'DOCTOR') {
-      const doctor = await Doctor.findOne({ userId: req.user._id });
+      const doctor = await Doctor.findOne({ userId: req.user._id, verificationStatus: 'VERIFIED', isActive: true });
       isDoctor = doctor && doctor._id.toString() === consultation.doctorId._id.toString();
     }
     if (!isPatient && !isDoctor && req.user.role !== 'ADMIN') {
@@ -411,9 +427,7 @@ exports.cancelConsultation = async (req, res, next) => {
     consultation.status = 'CANCELLED';
     consultation.cancelledBy = req.user._id;
     consultation.cancellationReason = reason || 'No reason provided';
-    if (consultation.paymentStatus === 'PAID') {
-      consultation.paymentStatus = 'REFUNDED';
-    }
+
     consultation.statusHistory.push({
       status: 'CANCELLED',
       timestamp: new Date(),
@@ -459,7 +473,7 @@ exports.getConsultationById = async (req, res, next) => {
     const isPatient = consultation.patientId._id.toString() === req.user._id.toString();
     let isDoctor = false;
     if (req.user.role === 'DOCTOR') {
-      const doctor = await Doctor.findOne({ userId: req.user._id });
+      const doctor = await Doctor.findOne({ userId: req.user._id, verificationStatus: 'VERIFIED', isActive: true });
       isDoctor = doctor && doctor._id.toString() === consultation.doctorId._id.toString();
     }
     if (!isPatient && !isDoctor && req.user.role !== 'ADMIN') {
