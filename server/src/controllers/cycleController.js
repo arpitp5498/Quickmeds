@@ -1,3 +1,4 @@
+const { findPurchasableInventory } = require('../services/purchasableInventory');
 const CycleTracker = require('../models/CycleTracker');
 const Medicine = require('../models/Medicine');
 const { generatePredictions, recalculateAverages } = require('../services/cyclePredictionService');
@@ -244,6 +245,7 @@ const updateNotificationSettings = async (req, res, next) => {
 const getSOSProducts = async (req, res, next) => {
   try {
     const sosProducts = await Medicine.find({
+      isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' },
       active: true,
       $or: [
         { category: 'Women Care' },
@@ -261,7 +263,10 @@ const getSOSProducts = async (req, res, next) => {
       ]
     }).sort({ category: 1, name: 1 });
 
-    return ApiResponse.success(res, { products: sosProducts }, 'SOS products fetched.');
+    const offers = await findPurchasableInventory({ $in: sosProducts.map(product => product._id) });
+    const stockedIds = new Set(offers.map(offer => String(offer.medicineId)));
+    const products = sosProducts.filter(product => stockedIds.has(String(product._id)));
+    return ApiResponse.success(res, { products }, 'SOS products fetched.');
   } catch (error) {
     next(error);
   }

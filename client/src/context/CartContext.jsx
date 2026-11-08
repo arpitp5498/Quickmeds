@@ -33,6 +33,15 @@ const saveCartToStorage = (cartData) => {
   }
 };
 
+async function getGuestOffer(medicineId, quantity, pharmacyId) {
+  const { data } = await api.get(`/medicines/${medicineId}`);
+  const offer = data.pharmacies.find(candidate =>
+    (!pharmacyId || candidate.pharmacyId === pharmacyId) && candidate.stockQuantity >= quantity
+  );
+  if (!offer || quantity > 100) throw new Error('Selected quantity unavailable');
+  return offer;
+}
+
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(getInitialCart);
   const [stockWarnings, setStockWarnings] = useState([]);
@@ -77,7 +86,7 @@ export const CartProvider = ({ children }) => {
                   medicineId: medId,
                   quantity: item.quantity || 1,
 
-                  pharmacyId: item.pharmacyId,
+                  ...(item.pharmacyId && { pharmacyId: item.pharmacyId }),
                   pharmacyName: item.pharmacyName
                 });
               }
@@ -119,7 +128,7 @@ export const CartProvider = ({ children }) => {
 
     if (typeof medicineOrId === 'object' && medicineOrId !== null) {
       medicineId = medicineOrId._id || medicineOrId.id;
-      qty = typeof maybeQtyOrPrice === 'number' ? maybeQtyOrPrice : 1;
+      qty = maybeQtyOrPrice;
       price = typeof unitPrice === 'number' ? unitPrice : (medicineOrId.lowestPrice || medicineOrId.price || medicineOrId.mrp);
       if (!selectedPharmacyId && medicineOrId.pharmacyId) selectedPharmacyId = medicineOrId.pharmacyId;
       if (!selectedPharmacyName && medicineOrId.pharmacyName) selectedPharmacyName = medicineOrId.pharmacyName;
@@ -136,14 +145,18 @@ export const CartProvider = ({ children }) => {
       // legacy addToCart(pharmacyId, medicineId, quantity)
       medicineId = maybeQtyOrPrice;
       selectedPharmacyId = medicineOrId;
-      qty = typeof unitPrice === 'number' ? unitPrice : 1;
+      qty = unitPrice ?? 1;
     } else {
       // addToCart(medicineId, quantity, unitPrice)
       medicineId = medicineOrId;
-      qty = typeof maybeQtyOrPrice === 'number' ? maybeQtyOrPrice : 1;
+      qty = maybeQtyOrPrice;
       price = typeof unitPrice === 'number' ? unitPrice : null;
     }
 
+    if (!Number.isSafeInteger(qty) || qty < 1 || qty > 100) {
+      showToast('Invalid quantity', 'error');
+      return false;
+    }
     if (!medicineId) {
       showToast('Invalid medicine selected', 'error');
       return false;
@@ -184,20 +197,29 @@ export const CartProvider = ({ children }) => {
       }
     } else {
       // Guest cart support in localStorage
-      const currentItems = [...(cart.items || [])];
+      const currentItems = [...getInitialCart().items];
       const targetId = medicineId.toString();
       const existingIdx = currentItems.findIndex((item) => {
         const itemMedId = typeof item.medicineId === 'object' ? item.medicineId?._id : item.medicineId;
         return (itemMedId && itemMedId.toString() === targetId) || (item._id && item._id.toString() === targetId);
       });
 
-      const finalPrice = typeof price === 'number' && price > 0 ? price : (medMeta.mrp || 0);
+      let offer;
+      try {
+        offer = await getGuestOffer(medicineId, (currentItems[existingIdx]?.quantity || 0) + qty, selectedPharmacyId);
+      } catch (error) {
+        showToast(error.message, 'error');
+        return false;
+      }
+      selectedPharmacyId = offer.pharmacyId;
+      selectedPharmacyName = offer.name;
+      const finalPrice = offer.effectivePrice ?? offer.price;
 
       if (existingIdx > -1) {
         currentItems[existingIdx] = {
           ...currentItems[existingIdx],
           quantity: currentItems[existingIdx].quantity + qty,
-          price: finalPrice > 0 ? finalPrice : currentItems[existingIdx].price,
+          price: finalPrice,
           pharmacyId: selectedPharmacyId || currentItems[existingIdx].pharmacyId,
           pharmacyName: selectedPharmacyName || currentItems[existingIdx].pharmacyName
         };
@@ -243,11 +265,12 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = async (medicineId, quantity) => {
-    const qty = parseInt(quantity, 10);
+    const qty = quantity;
     if (!medicineId) return false;
 
-    if (qty <= 0) {
-      return removeFromCart(medicineId);
+    if (!Number.isSafeInteger(qty) || qty < 1 || qty > 100) {
+      showToast('Invalid quantity', 'error');
+      return false;
     }
 
     const targetId = (typeof medicineId === 'object' ? medicineId?._id : medicineId).toString();
@@ -266,14 +289,21 @@ export const CartProvider = ({ children }) => {
       }
     } else {
       // Guest update
-      const currentItems = [...(cart.items || [])];
+      const currentItems = [...getInitialCart().items];
       const idx = currentItems.findIndex((item) => {
         const itemMedId = typeof item.medicineId === 'object' ? item.medicineId?._id : item.medicineId;
         return (itemMedId && itemMedId.toString() === targetId) || (item._id && item._id.toString() === targetId);
       });
 
       if (idx > -1) {
-        currentItems[idx] = { ...currentItems[idx], quantity: qty };
+        try {
+          const offer = await getGuestOffer(targetId, qty, currentItems[idx].pharmacyId);
+          currentItems[idx] = { ...currentItems[idx], quantity: qty, price: offer.effectivePrice ?? offer.price,
+            pharmacyId: offer.pharmacyId, pharmacyName: offer.name };
+        } catch (error) {
+          showToast(error.message, 'error');
+          return false;
+        }
         const totalItems = currentItems.reduce((sum, item) => sum + item.quantity, 0);
         const subtotal = currentItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const hasPrescriptionRequiredItems = currentItems.some((item) => item.requiresPrescription);

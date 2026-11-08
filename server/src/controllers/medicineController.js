@@ -1,5 +1,5 @@
 const Medicine = require('../models/Medicine');
-const PharmacyInventory = require('../models/PharmacyInventory');
+const { findPurchasableInventory } = require('../services/purchasableInventory');
 const Pharmacy = require('../models/Pharmacy');
 const { calculateDistance } = require('../utils/geo');
 const ApiResponse = require('../utils/ApiResponse');
@@ -112,14 +112,7 @@ const searchMedicines = async (req, res, next) => {
 
     // Check available pharmacies count for each medicine
     const medicineIds = medicines.map((m) => m._id);
-    const inventories = await PharmacyInventory.find({
-      medicineId: { $in: medicineIds },
-      isAvailable: true,
-      stockQuantity: { $gt: 0 }
-    }).populate({
-      path: 'pharmacyId',
-      match: { verificationStatus: 'VERIFIED' }
-    });
+    const inventories = await findPurchasableInventory({ $in: medicineIds });
 
     const userLat = lat ? parseFloat(lat) : null;
     const userLng = lng ? parseFloat(lng) : null;
@@ -132,19 +125,7 @@ const searchMedicines = async (req, res, next) => {
       const medObj = med.toObject();
 
       // Exclude demo stores and suspicious prices from lowestPrice and available count
-      const verifiedInventories = inventories.filter(
-        (inv) =>
-          inv.medicineId.toString() === med._id.toString() &&
-          inv.pharmacyId &&
-          !inv.isPriceSuspicious &&
-          !inv.pharmacyId.isDemo
-      );
-
-      const allInventories = inventories.filter(
-        (inv) => inv.medicineId.toString() === med._id.toString() && inv.pharmacyId
-      );
-
-      const activeInventories = verifiedInventories.length > 0 ? verifiedInventories : allInventories;
+      const activeInventories = inventories.filter(inv => inv.medicineId.equals(med._id));
 
       medObj.availablePharmaciesCount = activeInventories.length;
       medObj.isAvailableNearby = activeInventories.length > 0;
@@ -222,15 +203,10 @@ const getMedicineById = async (req, res, next) => {
       }
     }
 
+    if (!medicine.active || medicine.isMerged || medicine.verificationStatus === 'MERGED') throw ApiError.notFound('Medicine not found');
+
     // Find all verified pharmacies stocking this medicine
-    const inventoryList = await PharmacyInventory.find({
-      medicineId: medicine._id,
-      isAvailable: true,
-      stockQuantity: { $gt: 0 }
-    }).populate({
-      path: 'pharmacyId',
-      match: { verificationStatus: 'VERIFIED' }
-    });
+    const inventoryList = await findPurchasableInventory(medicine._id);
 
     const userLat = lat ? parseFloat(lat) : null;
     const userLng = lng ? parseFloat(lng) : null;
@@ -361,29 +337,13 @@ const getPopularMedicines = async (req, res, next) => {
     const medicineIds = medicines.map((m) => m._id);
     const medCategories = [...new Set(medicines.map((m) => m.category).filter(Boolean))];
     const [inventories, promoMap] = await Promise.all([
-      PharmacyInventory.find({
-        medicineId: { $in: medicineIds },
-        isAvailable: true,
-        stockQuantity: { $gt: 0 }
-      }).populate({
-        path: 'pharmacyId',
-        match: { verificationStatus: 'VERIFIED' }
-      }),
+      findPurchasableInventory({ $in: medicineIds }),
       getActivePromotionsMap(medicineIds, medCategories)
     ]);
 
     const results = medicines.map((med) => {
       const medObj = med.toObject();
-      const verifiedInventories = inventories.filter(
-        (inv) =>
-          inv.medicineId.toString() === med._id.toString() &&
-          inv.pharmacyId &&
-          !inv.isPriceSuspicious &&
-          !inv.pharmacyId.isDemo
-      );
-      const activeInventories = verifiedInventories.length > 0
-        ? verifiedInventories
-        : inventories.filter((inv) => inv.medicineId.toString() === med._id.toString() && inv.pharmacyId);
+      const activeInventories = inventories.filter(inv => inv.medicineId.equals(med._id));
 
       medObj.availablePharmaciesCount = activeInventories.length;
       medObj.lowestPrice = activeInventories.length > 0
@@ -508,14 +468,7 @@ const getEmergencyEssentials = async (req, res, next) => {
     const medicineIds = medicines.map((m) => m._id);
     const medCategories = [...new Set(medicines.map((m) => m.category).filter(Boolean))];
     const [inventories, promoMap] = await Promise.all([
-      PharmacyInventory.find({
-        medicineId: { $in: medicineIds },
-        isAvailable: true,
-        stockQuantity: { $gt: 0 }
-      }).populate({
-        path: 'pharmacyId',
-        match: { verificationStatus: 'VERIFIED' }
-      }),
+      findPurchasableInventory({ $in: medicineIds }),
       getActivePromotionsMap(medicineIds, medCategories)
     ]);
 
@@ -526,19 +479,7 @@ const getEmergencyEssentials = async (req, res, next) => {
       const obj = m.toObject();
       const catKey = m.sosCategory || categoryMapping[m.name] || 'COMFORT_RELIEF';
 
-      const verifiedInventories = inventories.filter(
-        (inv) =>
-          inv.medicineId.toString() === m._id.toString() &&
-          inv.pharmacyId &&
-          !inv.isPriceSuspicious &&
-          !inv.pharmacyId.isDemo
-      );
-
-      const allInventories = inventories.filter(
-        (inv) => inv.medicineId.toString() === m._id.toString() && inv.pharmacyId
-      );
-
-      const activeInventories = verifiedInventories.length > 0 ? verifiedInventories : allInventories;
+      const activeInventories = inventories.filter(inv => inv.medicineId.equals(m._id));
 
       let lowestPrice = m.mrp;
       if (activeInventories.length > 0) {
@@ -568,7 +509,8 @@ const getEmergencyEssentials = async (req, res, next) => {
         sosCategory: catKey,
         lowestPrice,
         promotion: promoApplied,
-        availabilityStatus: 'Available at nearby verified pharmacies'
+        availablePharmaciesCount: activeInventories.length,
+        availabilityStatus: activeInventories.length ? 'Available at nearby verified pharmacies' : 'Out of stock'
       };
     });
 

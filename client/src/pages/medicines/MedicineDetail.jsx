@@ -52,6 +52,7 @@ const MedicineDetail = () => {
         const res = await api.get(`/medicines/${id}?lat=${location.lat}&lng=${location.lng}`);
         if (res.success && res.data) {
           const { medicine: med, pharmacies: pharma, promotion: promo } = res.data;
+          setSelectedOffer(null);
           setMedicine(med);
           setPharmacies(pharma || []);
           setPromotion(promo || null);
@@ -426,12 +427,13 @@ const MedicineDetail = () => {
             ) : (
               <Button
                 variant="primary"
+                disabled={!activeOffer}
                 onClick={() => handleAddToCart(activeOffer)}
                 loading={addingToCart}
                 style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
                 icon={ShoppingBag}
               >
-                Add to Cart • ₹{bestPrice}
+                {activeOffer ? `Add to Cart • ₹${bestPrice}` : 'Out of Stock'}
               </Button>
             )}
           </div>
@@ -463,12 +465,6 @@ const MedicineDetail = () => {
           <Card style={{ padding: '2rem', textAlign: 'center' }}>
             <Store size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
             <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px' }}>No verified local pharmacy offers found right now</h4>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '480px', margin: '0 auto 1rem auto' }}>
-              This item can still be ordered at standard MRP (₹{medicine.mrp}) and will be fulfilled from our centralized distribution network.
-            </p>
-            <Button variant="primary" onClick={() => handleAddToCart()} loading={addingToCart}>
-              Order at Standard MRP (₹{medicine.mrp})
-            </Button>
           </Card>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

@@ -196,7 +196,7 @@ const Cart = () => {
                 >
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.medicineId, item.quantity - 1)}
+                    onClick={() => item.quantity === 1 ? removeFromCart(item.medicineId) : updateQuantity(item.medicineId, item.quantity - 1)}
                     style={{ padding: '2px', cursor: 'pointer', display: 'flex' }}
                     aria-label="Decrease quantity"
                   >

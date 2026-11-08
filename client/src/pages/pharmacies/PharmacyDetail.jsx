@@ -453,7 +453,7 @@ const PharmacyDetail = () => {
                           icon={ShoppingBag}
                           onClick={async (e) => {
                             e.stopPropagation();
-                            await addToCart(med._id, 1, item.price);
+                            await addToCart(med, 1, item.price, pharmacy._id, pharmacy.name);
                           }}
                         >
                           Add to Cart

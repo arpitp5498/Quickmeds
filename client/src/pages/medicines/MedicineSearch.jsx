@@ -207,7 +207,7 @@ const MedicineSearch = () => {
     if (category === 'All' && !debouncedSearch.trim()) {
       return `Browse all ${pagination.total || medicines.length} master items with live inventory matching.`;
     }
-    return `Showing ${medicines.length} of ${pagination.total || medicines.length} medicines available nearby.`;
+    return `Showing ${medicines.length} of ${pagination.total || medicines.length} medicines.`;
   };
 
   return (
@@ -465,7 +465,7 @@ const MedicineSearch = () => {
         >
           {medicines.map((med) => {
             const qty = getItemQuantity(med._id);
-            const isOutOfStock = med.availablePharmaciesCount === 0 && med.stockQuantity === 0;
+            const isOutOfStock = med.availablePharmaciesCount === 0;
 
             return (
               <Card
@@ -623,7 +623,7 @@ const MedicineSearch = () => {
                           <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
                             {med.availablePharmaciesCount > 0
                               ? '✓ In stock in network'
-                              : 'Check availability'}
+                              : 'Out of stock'}
                           </div>
                           {hasDiscount && savingsAmount > 0 && (
                             <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>
@@ -843,7 +843,7 @@ const MedicineSearch = () => {
                     <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
                       {selectedMedicine.availablePharmaciesCount > 0
                         ? '✓ In stock in network'
-                        : 'Check availability'}
+                        : 'Out of stock'}
                     </div>
                   </div>
                 );
@@ -1015,10 +1015,11 @@ const MedicineSearch = () => {
                       fullWidth
                       icon={ShoppingBag}
                       loading={actionLoadingId === selectedMedicine._id}
+                      disabled={!selectedMedicine.availablePharmaciesCount}
                       onClick={(e) => handleAddToCart(e, selectedMedicine)}
                       style={{ height: '42px', fontWeight: 700 }}
                     >
-                      Add to Cart • ₹{selectedMedicine.lowestPrice || selectedMedicine.mrp}
+                      {selectedMedicine.availablePharmaciesCount ? `Add to Cart • ₹${selectedMedicine.lowestPrice || selectedMedicine.mrp}` : 'Out of Stock'}
                     </Button>
                   );
                 })()}

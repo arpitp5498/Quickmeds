@@ -318,7 +318,8 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                     return (
                       <div
                         key={item._id}
-                        onClick={() => toggleSelect(item._id)}
+                        aria-disabled={!item.availablePharmaciesCount}
+                        onClick={() => item.availablePharmaciesCount && toggleSelect(item._id)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -400,7 +401,7 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                               ₹{itemPrice}
                             </span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {item.strength || item.genericName}
+                              {item.availablePharmaciesCount ? item.strength || item.genericName : 'Out of stock'}
                             </span>
                             <div style={{ marginLeft: 'auto' }}>
                               {item.requiresPrescription ? (

@@ -1,3 +1,4 @@
+const { eligiblePharmacy, stockFilter } = require('../services/purchasableInventory');
 const Pharmacy = require('../models/Pharmacy');
 const PharmacyInventory = require('../models/PharmacyInventory');
 const Review = require('../models/Review');
@@ -145,10 +146,9 @@ const getPharmacyById = async (req, res, next) => {
     }
 
     // Fetch active inventory for this pharmacy
-    const inventory = await PharmacyInventory.find({
-      pharmacyId: pharmacy._id,
-      isAvailable: true
-    }).populate('medicineId');
+    const eligible = await Pharmacy.exists({ _id: pharmacy._id, ...eligiblePharmacy });
+    const inventory = eligible ? await PharmacyInventory.find({ pharmacyId: pharmacy._id, ...stockFilter() })
+      .populate({ path: 'medicineId', match: { active: true, isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' } } }) : [];
 
     // Fetch recent reviews
     const reviews = await Review.find({ pharmacyId: pharmacy._id })
@@ -168,7 +168,7 @@ const getPharmacyById = async (req, res, next) => {
 
     return ApiResponse.success(res, {
       pharmacy: pObj,
-      inventory,
+      inventory: inventory.filter(item => item.medicineId),
       reviews
     });
   } catch (error) {

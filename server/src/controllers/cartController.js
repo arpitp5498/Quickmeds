@@ -1,7 +1,6 @@
 const Cart = require('../models/Cart');
-const PharmacyInventory = require('../models/PharmacyInventory');
+const { findPurchasableInventory } = require('../services/purchasableInventory');
 const Medicine = require('../models/Medicine');
-const Pharmacy = require('../models/Pharmacy');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const { getPromotionForMedicine, resolveEffectivePrice } = require('../services/discountService');
@@ -20,21 +19,11 @@ const getCart = async (req, res, next) => {
   try {
     const cart = await getOrCreateCart(req.user._id);
 
-    // Validate item stock against pharmacy inventory if pharmacy is set
-    let stockWarnings = [];
-    if (cart.pharmacyId && cart.items.length > 0) {
-      for (const item of cart.items) {
-        const inventory = await PharmacyInventory.findOne({
-          pharmacyId: cart.pharmacyId._id,
-          medicineId: item.medicineId
-        });
-
-        if (!inventory || !inventory.isAvailable || inventory.stockQuantity < item.quantity) {
-          stockWarnings.push(
-            `"${item.name}" has only ${inventory ? inventory.stockQuantity : 0} units left in stock.`
-          );
-        }
-      }
+    const stockWarnings = [];
+    for (const item of cart.items) {
+      const pharmacyId = item.pharmacyId || cart.pharmacyId?._id;
+      const offers = pharmacyId && await findPurchasableInventory(item.medicineId, item.quantity, pharmacyId);
+      if (!offers?.length) stockWarnings.push(`"${item.name}" is unavailable in the selected quantity.`);
     }
 
     return ApiResponse.success(res, { cart, stockWarnings });
@@ -48,7 +37,7 @@ const getCart = async (req, res, next) => {
 // @access  Private (CUSTOMER)
 const addToCart = async (req, res, next) => {
   try {
-    let { pharmacyId, medicineId, quantity = 1, clearExisting = false, pharmacyName } = req.body;
+    let { pharmacyId, medicineId, quantity = 1 } = req.body;
 
     let medicine = await Medicine.findById(medicineId);
     if (!medicine) throw ApiError.notFound('Medicine not found');
@@ -62,44 +51,15 @@ const addToCart = async (req, res, next) => {
       }
     }
 
-    let inventory = null;
-    let pharmacy = null;
-
-    if (pharmacyId) {
-      pharmacy = await Pharmacy.findById(pharmacyId);
-      inventory = await PharmacyInventory.findOne({ pharmacyId, medicineId, isAvailable: true });
-    } else {
-      // Auto-find verified pharmacy with stock for this medicine, sorted by lowest genuine price first
-      const invMatches = await PharmacyInventory.find({
-        medicineId,
-        isAvailable: true,
-        isPriceSuspicious: { $ne: true },
-        stockQuantity: { $gte: parseInt(quantity, 10) }
-      })
-        .populate('pharmacyId')
-        .sort({ price: 1 });
-
-      const validMatch =
-        invMatches.find(
-          (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED' && !i.pharmacyId.isDemo && i.pharmacyId.isOpen
-        ) ||
-        invMatches.find(
-          (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED' && !i.pharmacyId.isDemo
-        ) ||
-        invMatches.find(
-          (i) => i.pharmacyId && i.pharmacyId.verificationStatus === 'VERIFIED'
-        );
-
-      if (validMatch) {
-        inventory = validMatch;
-        pharmacy = validMatch.pharmacyId;
-        pharmacyId = pharmacy._id;
-      }
-    }
-
-    if (!inventory || !pharmacy || pharmacy.verificationStatus !== 'VERIFIED' || !pharmacy.isOpen || !inventory._id ||
-        inventory.isPriceSuspicious || !(inventory.expiryDate > new Date()) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > inventory.stockQuantity)
-      throw ApiError.conflict('Selected quantity unavailable');
+    if (!medicine.active || medicine.isMerged || medicine.verificationStatus === 'MERGED') throw ApiError.notFound('Medicine not found');
+    if (!Number.isSafeInteger(quantity) || quantity < 1) throw ApiError.badRequest('Invalid quantity');
+    const cart = await getOrCreateCart(req.user._id);
+    const existingIndex = cart.items.findIndex(item => item.medicineId.equals(medicineId));
+    const totalQuantity = (cart.items[existingIndex]?.quantity || 0) + quantity;
+    if (totalQuantity > 100) throw ApiError.badRequest('Maximum quantity per medicine is 100');
+    const [inventory] = await findPurchasableInventory(medicineId, totalQuantity, pharmacyId);
+    if (!inventory) throw ApiError.conflict('Selected quantity unavailable');
+    const pharmacy = inventory.pharmacyId;
     const itemPrice = inventory.price;
 
     // Check for active platform promotion
@@ -108,38 +68,15 @@ const addToCart = async (req, res, next) => {
     const finalPrice = resolved.effectivePrice;
     const promotionId = resolved.promotionId || null;
 
-    const availableStock = inventory.stockQuantity;
-    const resolvedPharmacyId = pharmacy?._id || pharmacyId || null;
-    const resolvedPharmacyName = pharmacy?.name || pharmacyName || null;
-
-    let cart = await getOrCreateCart(req.user._id);
-
-    if (resolvedPharmacyId && !cart.pharmacyId) {
-      cart.pharmacyId = resolvedPharmacyId;
-    }
-
-    // Check if item is already in cart
-    const existingIndex = cart.items.findIndex(
-      (item) => item.medicineId.toString() === medicineId.toString()
-    );
+    const resolvedPharmacyId = pharmacy._id;
+    const resolvedPharmacyName = pharmacy.name;
+    if (!cart.pharmacyId || existingIndex === 0) cart.pharmacyId = resolvedPharmacyId;
 
     if (existingIndex > -1) {
-      const newQty = cart.items[existingIndex].quantity + parseInt(quantity, 10);
-      if (newQty > availableStock) {
-        throw ApiError.badRequest(`Cannot add more. Max stock is ${availableStock}.`);
-      }
-      cart.items[existingIndex].quantity = newQty;
-      // If user selected a specific offer with price/pharmacy, update item attribution
-      if (finalPrice !== cart.items[existingIndex].price) {
-        cart.items[existingIndex].price = finalPrice;
-        if (promotionId) {
-          cart.items[existingIndex].promotionId = promotionId;
-        }
-      }
-      if (resolvedPharmacyId) {
-        cart.items[existingIndex].pharmacyId = resolvedPharmacyId;
-        cart.items[existingIndex].pharmacyName = resolvedPharmacyName;
-      }
+      Object.assign(cart.items[existingIndex], {
+        quantity: totalQuantity, price: finalPrice, promotionId,
+        pharmacyId: resolvedPharmacyId, pharmacyName: resolvedPharmacyName
+      });
     } else {
       cart.items.push({
         medicineId: medicine._id,
@@ -149,7 +86,7 @@ const addToCart = async (req, res, next) => {
         image: medicine.image,
         price: finalPrice,
         mrp: medicine.mrp,
-        quantity: parseInt(quantity, 10),
+        quantity,
         requiresPrescription: medicine.requiresPrescription,
         pharmacyId: resolvedPharmacyId,
         pharmacyName: resolvedPharmacyName,
@@ -184,25 +121,12 @@ const updateCartItemQuantity = async (req, res, next) => {
       throw ApiError.notFound('Item not found in cart');
     }
 
-    const qty = parseInt(quantity, 10);
-    if (qty <= 0) {
-      cart.items.splice(itemIndex, 1);
-    } else {
-      if (cart.pharmacyId) {
-        const inventory = await PharmacyInventory.findOne({
-          pharmacyId: cart.pharmacyId,
-          medicineId
-        });
-        if (inventory && qty > inventory.stockQuantity) {
-          throw ApiError.badRequest(`Only ${inventory.stockQuantity} items in stock.`);
-        }
-      }
-      cart.items[itemIndex].quantity = qty;
-    }
-
-    if (cart.items.length === 0) {
-      cart.pharmacyId = null;
-    }
+    const item = cart.items[itemIndex];
+    const pharmacyId = item.pharmacyId || cart.pharmacyId?._id;
+    if (!Number.isSafeInteger(quantity) || quantity < 1) throw ApiError.badRequest('Invalid quantity');
+    const offers = pharmacyId && await findPurchasableInventory(medicineId, quantity, pharmacyId);
+    if (!offers?.length) throw ApiError.conflict('Selected quantity unavailable');
+    item.quantity = quantity;
 
     cart.calculateTotals();
     await cart.save();
