@@ -8,15 +8,8 @@ const { getPromotionForMedicine, resolveEffectivePrice } = require('../services/
 
 // Helper to get or create cart
 const getOrCreateCart = async (userId) => {
-  let cart = await Cart.findOne({ customerId: userId }).populate('pharmacyId');
-  if (!cart) {
-    cart = await Cart.create({
-      customerId: userId,
-      items: [],
-      totalItems: 0,
-      subtotal: 0
-    });
-  }
+  const cart = await Cart.findOneAndUpdate({ customerId: userId }, { $setOnInsert: { customerId: userId } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }).populate('pharmacyId');
   return cart;
 };
 
@@ -101,21 +94,13 @@ const addToCart = async (req, res, next) => {
         inventory = validMatch;
         pharmacy = validMatch.pharmacyId;
         pharmacyId = pharmacy._id;
-      } else {
-        // Fallback to any verified open pharmacy
-        pharmacy = await Pharmacy.findOne({ verificationStatus: 'VERIFIED', isDemo: { $ne: true }, isOpen: true });
-        if (pharmacy) {
-          pharmacyId = pharmacy._id;
-          inventory = { price: medicine.mrp, stockQuantity: 99 };
-        }
       }
     }
 
-    // Client price input (e.g. selected pharmacy offer price) or lowest inventory price
-    const clientPrice = req.body.price || req.body.unitPrice;
-    const itemPrice = typeof clientPrice === 'number' && clientPrice > 0
-      ? clientPrice
-      : (inventory?.price !== undefined ? inventory.price : medicine.mrp);
+    if (!inventory || !pharmacy || pharmacy.verificationStatus !== 'VERIFIED' || !pharmacy.isOpen || !inventory._id ||
+        inventory.isPriceSuspicious || !(inventory.expiryDate > new Date()) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > inventory.stockQuantity)
+      throw ApiError.conflict('Selected quantity unavailable');
+    const itemPrice = inventory.price;
 
     // Check for active platform promotion
     const promo = await getPromotionForMedicine(medicineId, medicine.category);
@@ -123,7 +108,7 @@ const addToCart = async (req, res, next) => {
     const finalPrice = resolved.effectivePrice;
     const promotionId = resolved.promotionId || null;
 
-    const availableStock = inventory?.stockQuantity || 50;
+    const availableStock = inventory.stockQuantity;
     const resolvedPharmacyId = pharmacy?._id || pharmacyId || null;
     const resolvedPharmacyName = pharmacy?.name || pharmacyName || null;
 
@@ -145,7 +130,7 @@ const addToCart = async (req, res, next) => {
       }
       cart.items[existingIndex].quantity = newQty;
       // If user selected a specific offer with price/pharmacy, update item attribution
-      if ((typeof clientPrice === 'number' && clientPrice > 0) || finalPrice < cart.items[existingIndex].price) {
+      if (finalPrice !== cart.items[existingIndex].price) {
         cart.items[existingIndex].price = finalPrice;
         if (promotionId) {
           cart.items[existingIndex].promotionId = promotionId;

@@ -13,7 +13,7 @@ let memServer = null;
 let connectionPromise = null;
 
 const autoSeedIfEmpty = async () => {
-  if (process.env.NODE_ENV === 'test' || process.env.VERCEL) {
+  if (process.env.NODE_ENV !== 'development' || process.env.VERCEL) {
     return;
   }
   try {
@@ -53,7 +53,7 @@ const connectDB = async () => {
       const sanitizedUri = (env.MONGO_URI || '').replace(/:([^@]+)@/, ':****@');
       console.log(`[MongoDB] Connecting to database: ${sanitizedUri} ...`);
       const conn = await mongoose.connect(env.MONGO_URI, {
-        autoIndex: false,
+        autoIndex: false, maxPoolSize: 10, minPoolSize: 0,
         serverSelectionTimeoutMS: 5000,
         connectTimeoutMS: 10000,
       });
@@ -73,18 +73,18 @@ const connectDB = async () => {
       }
 
       // Step 2: Fallback to embedded In-Memory MongoDB if available (dev only)
-      if (!process.env.VERCEL) {
+      if (!process.env.VERCEL && process.env.NODE_ENV === 'development') {
         try {
           console.log('[MongoDB] Attempting to launch embedded In-Memory database engine fallback...');
-          let MongoMemoryServer;
+          let MongoMemoryReplSet;
           try {
-            ({ MongoMemoryServer } = require('mongodb-memory-server'));
+            ({ MongoMemoryReplSet } = require('mongodb-memory-server'));
           } catch (requireErr) {
             throw new Error('mongodb-memory-server not installed (production mode)');
           }
           if (!memServer) {
-            memServer = await MongoMemoryServer.create({
-              instance: { dbName: 'medirush' }
+            memServer = await MongoMemoryReplSet.create({
+              replSet: { count: 1, dbName: 'medirush' }
             });
           }
           const memUri = memServer.getUri();
@@ -105,7 +105,7 @@ const connectDB = async () => {
 
       throw error;
     }
-  })();
+  })().finally(() => { connectionPromise = null; });
 
   return connectionPromise;
 };

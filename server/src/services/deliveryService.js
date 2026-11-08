@@ -49,25 +49,8 @@ const autoAssignDeliveryPartner = async (orderId) => {
       return { success: false, partner: null, reason: 'ORDER_NOT_FOUND' };
     }
 
-    // Idempotency: If a delivery partner is already assigned, confirm it and return
-    if (order.deliveryPartnerId) {
-      const existingPartner = await DeliveryPartner.findOne({
-        userId: order.deliveryPartnerId
-      }).populate('userId');
-
-      if (existingPartner) {
-        if (existingPartner.activeOrderId?.toString() !== order._id.toString()) {
-          existingPartner.activeOrderId = order._id;
-          existingPartner.status = 'BUSY';
-          await existingPartner.save();
-        }
-        logger.info(`[AutoAssign] Idempotent: rider ${existingPartner.userId?.name || existingPartner.userId} already assigned to order ${order.orderId}`);
-        return { success: true, partner: existingPartner };
-      }
-    }
-
-    // Step 1: Reconcile any stale busy partners in database
-    await reconcileDeliveryPartners();
+    if (order.orderStatus !== 'READY_FOR_PICKUP' || order.deliveryPartnerId)
+      return { success: false, reason: 'ORDER_NOT_ELIGIBLE' };
 
     // Step 2: Atomic attempt to claim a partner marked AVAILABLE with no active order
     let partner = await DeliveryPartner.findOneAndUpdate(
@@ -83,52 +66,6 @@ const autoAssignDeliveryPartner = async (orderId) => {
       },
       { new: true }
     ).populate('userId');
-
-    // Step 3: Fallback attempt: Any partner not currently busy (not OFFLINE)
-    if (!partner) {
-      partner = await DeliveryPartner.findOneAndUpdate(
-        {
-          activeOrderId: null,
-          status: { $ne: 'OFFLINE' }
-        },
-        {
-          $set: {
-            status: 'BUSY',
-            activeOrderId: order._id
-          }
-        },
-        { new: true }
-      ).populate('userId');
-    }
-
-    // Step 4: High-Resiliency Fallback for Low-Driver environments:
-    // If all partners are offline or in standby, pick the first available registered partner
-    if (!partner) {
-      const candidate = await DeliveryPartner.findOne({
-        activeOrderId: null
-      }).populate('userId');
-
-      if (candidate) {
-        candidate.status = 'BUSY';
-        candidate.activeOrderId = order._id;
-        await candidate.save();
-        partner = candidate;
-      }
-    }
-
-    // Global safety fallback if scoped pool is empty
-    if (!partner) {
-      const candidate = await DeliveryPartner.findOne({
-        activeOrderId: null
-      }).populate('userId');
-
-      if (candidate) {
-        candidate.status = 'BUSY';
-        candidate.activeOrderId = order._id;
-        await candidate.save();
-        partner = candidate;
-      }
-    }
 
     // If still no partner exists at all in the database
     if (!partner || !partner.userId) {
@@ -227,7 +164,7 @@ const autoAssignDeliveryPartner = async (orderId) => {
     return { success: true, partner };
   } catch (error) {
     logger.error(`[AutoAssign] Error in autoAssignDeliveryPartner: ${error.message}`);
-    return { success: false, partner: null, reason: error.message };
+    throw error;
   }
 };
 

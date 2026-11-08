@@ -79,24 +79,13 @@ const getSurveyData = async (req, res, next) => {
 // @access  Private (ADMIN) / Admin access
 const updateSurveyData = async (req, res, next) => {
   try {
-    const updatePayload = req.body;
-    updatePayload.lastUpdated = new Date();
-
-    let updatedSurvey = null;
-    if (mongoose.connection && mongoose.connection.readyState === 1) {
-      try {
-        updatedSurvey = await ResearchSurvey.findOneAndUpdate(
-          {},
-          { $set: updatePayload },
-          { new: true, upsert: true, setDefaultsOnInsert: true }
-        );
-      } catch (dbErr) {
-        console.warn('DB write error for survey:', dbErr.message);
-        updatedSurvey = { ...DEFAULT_SURVEY_DATA, ...updatePayload };
-      }
-    } else {
-      updatedSurvey = { ...DEFAULT_SURVEY_DATA, ...updatePayload };
+    const updatePayload = {};
+    for (const field of Object.keys(DEFAULT_SURVEY_DATA)) {
+      if (field !== 'lastUpdated' && Object.hasOwn(req.body, field)) updatePayload[field] = req.body[field];
     }
+    updatePayload.lastUpdated = new Date();
+    const updatedSurvey = await ResearchSurvey.findOneAndUpdate({}, { $set: updatePayload },
+      { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true });
 
     return ApiResponse.success(
       res,

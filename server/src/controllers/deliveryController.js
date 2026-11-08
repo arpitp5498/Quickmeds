@@ -14,7 +14,7 @@ const ApiError = require('../utils/ApiError');
 const getActiveDelivery = async (req, res, next) => {
   try {
     // 1. Reconcile any stale database state across partners
-    await reconcileDeliveryPartners();
+
 
     const partner = await DeliveryPartner.findOne({ userId: req.user._id });
     if (!partner) {
@@ -40,42 +40,6 @@ const getActiveDelivery = async (req, res, next) => {
       .populate('customerId', 'name phone')
       .populate('pharmacyId');
 
-    // If not found by deliveryPartnerId, check partner.activeOrderId as fallback
-    if (!activeOrder && partner.activeOrderId) {
-      const candidateOrder = await Order.findById(partner.activeOrderId)
-        .populate('customerId', 'name phone')
-        .populate('pharmacyId');
-
-      if (
-        candidateOrder &&
-        ACTIVE_RIDER_STATUSES.includes(candidateOrder.orderStatus) &&
-        (!candidateOrder.deliveryPartnerId || candidateOrder.deliveryPartnerId.toString() === req.user._id.toString())
-      ) {
-        activeOrder = candidateOrder;
-        if (!candidateOrder.deliveryPartnerId) {
-          candidateOrder.deliveryPartnerId = req.user._id;
-          await candidateOrder.save();
-        }
-      }
-    }
-
-    // 3. Keep partner record synchronized with activeOrder state
-    if (activeOrder) {
-      if (partner.activeOrderId?.toString() !== activeOrder._id.toString() || partner.status !== 'BUSY') {
-        partner.activeOrderId = activeOrder._id;
-        partner.status = 'BUSY';
-        await partner.save();
-      }
-    } else {
-      if (partner.activeOrderId !== null || partner.status === 'BUSY') {
-        partner.activeOrderId = null;
-        if (partner.status !== 'OFFLINE') {
-          partner.status = 'AVAILABLE';
-        }
-        await partner.save();
-      }
-    }
-
     return ApiResponse.success(res, {
       partner,
       activeOrder
@@ -92,7 +56,7 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
   try {
     const { orderId, status, note } = req.body;
 
-    const order = await Order.findById(orderId)
+    const order = await Order.findById(orderId).select('+deliveryOtp')
       .populate('customerId')
       .populate('pharmacyId');
 
@@ -122,7 +86,7 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
     const { validateStatusTransition } = require('../services/orderService');
     validateStatusTransition(order.orderStatus, status);
 
-    if (status === 'DELIVERED' && order.deliveryOtp) {
+    if (status === 'DELIVERED') {
       const providedOtp = (req.body.otp || '').toString().trim();
       if (!providedOtp || providedOtp !== order.deliveryOtp) {
         throw ApiError.badRequest(
@@ -242,6 +206,7 @@ const updateDeliveryTaskStatus = async (req, res, next) => {
       });
     }
 
+    order.deliveryOtp = undefined;
     return ApiResponse.success(res, { order, partner }, `Delivery marked as ${status}`);
   } catch (error) {
     next(error);
@@ -302,7 +267,7 @@ const updateDriverLocation = async (req, res, next) => {
       await partner.save();
     }
 
-    if (orderId) {
+    if (orderId && partner && await Order.exists({ _id: orderId, deliveryPartnerId: req.user._id, orderStatus: { $nin: ['CANCELLED','DELIVERED'] } })) {
       const io = getIO();
       io.to(`order:${orderId}`).emit('driver_moved', {
         orderId,
@@ -356,7 +321,7 @@ const simulateDeliveryStep = async (req, res, next) => {
       throw ApiError.badRequest('orderId is required in request body');
     }
 
-    const order = await Order.findById(orderId)
+    const order = await Order.findById(orderId).select('+deliveryOtp')
       .populate('customerId', 'name email phone')
       .populate('pharmacyId')
       .populate('deliveryPartnerId', 'name phone email')
@@ -579,7 +544,7 @@ const verifyDeliveryOtp = async (req, res, next) => {
       throw ApiError.badRequest('Order ID and 4-digit OTP are required.');
     }
 
-    const order = await Order.findById(orderId).populate('customerId').populate('pharmacyId');
+    const order = await Order.findById(orderId).select('+deliveryOtp').populate('customerId').populate('pharmacyId');
     if (!order) {
       throw ApiError.notFound('Order not found');
     }
@@ -588,7 +553,7 @@ const verifyDeliveryOtp = async (req, res, next) => {
       throw ApiError.forbidden('You are not assigned to this delivery.');
     }
 
-    if (order.deliveryOtp && otp.toString().trim() !== order.deliveryOtp) {
+    if (order.deliveryOtpVerified || !['OUT_FOR_DELIVERY','ARRIVED_NEAR_CUSTOMER'].includes(order.orderStatus) || !order.deliveryOtp || otp.toString().trim() !== order.deliveryOtp) {
       throw ApiError.badRequest('Invalid Delivery Verification OTP. Please check code with customer.');
     }
 
@@ -633,6 +598,7 @@ const verifyDeliveryOtp = async (req, res, next) => {
       description: `Rider delivered order ${order.orderId} with verified OTP.`
     });
 
+    order.deliveryOtp = undefined;
     return ApiResponse.success(res, { order }, 'Delivery verified and completed successfully.');
   } catch (error) {
     next(error);

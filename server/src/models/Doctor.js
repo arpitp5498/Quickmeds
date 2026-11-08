@@ -29,6 +29,7 @@ const doctorSchema = new mongoose.Schema(
     registrationNumber: { type: String, required: true, unique: true },
     fee: { type: Number, required: true },
     phone: { type: String },
+    bookingRevision: { type: Number, default: 0 },
     availableSlots: [
       {
         day: String,

@@ -1,3 +1,4 @@
+const { transactional } = require('../middleware/transactional');
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
@@ -8,14 +9,14 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.use(authenticate);
 
 // Customer endpoints
-router.post('/', createOrderValidator, validate, orderController.createOrder);
+router.post('/', authorize('CUSTOMER'), createOrderValidator, validate, transactional(orderController.createOrder));
 router.get('/', orderController.getMyOrders);
 router.get('/:id', orderController.getOrderById);
-router.post('/:id/cancel', orderController.cancelOrder);
+router.post('/:id/cancel', transactional(orderController.cancelOrder));
 
 // Pharmacy endpoints
 router.get('/pharmacy/list', authorize('PHARMACY', 'ADMIN'), orderController.getPharmacyOrders);
-router.post('/:id/assign-rider', authorize('PHARMACY', 'ADMIN'), orderController.assignRiderToOrder);
+router.post('/:id/assign-rider', authorize('PHARMACY', 'ADMIN'), transactional(orderController.assignRiderToOrder));
 
 
 
@@ -26,7 +27,7 @@ router.patch(
   authorize('PHARMACY', 'DELIVERY_PARTNER', 'ADMIN'),
   updateOrderStatusValidator,
   validate,
-  orderController.updateOrderStatus
+  transactional(orderController.updateOrderStatus)
 );
 
 module.exports = router;

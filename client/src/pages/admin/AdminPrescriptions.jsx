@@ -1,3 +1,4 @@
+import PrescriptionDocumentButton from '../../components/prescriptions/PrescriptionDocumentButton';
 import React, { useState, useEffect } from 'react';
 import { FileText, Eye, ExternalLink, ShieldCheck } from 'lucide-react';
 import api from '../../services/api';
@@ -84,22 +85,7 @@ const AdminPrescriptions = () => {
                       {new Date(rx.createdAt).toLocaleDateString('en-IN')}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      {rx.fileUrl && (
-                        <a
-                          href={rx.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            color: 'var(--primary-600)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontWeight: 600
-                          }}
-                        >
-                          <ExternalLink size={14} /> Open
-                        </a>
-                      )}
+                      {<PrescriptionDocumentButton prescription={rx} />}
                     </td>
                   </tr>
                 ))}

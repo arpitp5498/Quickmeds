@@ -245,9 +245,11 @@ describe('Pharmacy Inventory Ecosystem & Sync Service Tests', () => {
         ]
       };
 
+      const rawBody = Buffer.from(JSON.stringify(payload));
+      const signature = require('node:crypto').createHmac('sha256', 'whsec_test_secret_67890').update(rawBody).digest('hex');
       // 1st request: Process webhook
       const firstRes = await processBillingWebhook({
-        headers: { 'x-merchant-id': merchantId },
+        rawBody, headers: { 'x-merchant-id': merchantId, 'x-webhook-signature': signature },
         body: payload
       });
 
@@ -262,7 +264,7 @@ describe('Pharmacy Inventory Ecosystem & Sync Service Tests', () => {
 
       // 2nd request (duplicate eventId): Must NOT deduct stock again!
       const duplicateRes = await processBillingWebhook({
-        headers: { 'x-merchant-id': merchantId },
+        rawBody, headers: { 'x-merchant-id': merchantId, 'x-webhook-signature': signature },
         body: payload
       });
 

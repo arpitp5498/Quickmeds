@@ -1,3 +1,4 @@
+import PrescriptionDocumentButton from '../../components/prescriptions/PrescriptionDocumentButton';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -398,27 +399,7 @@ const PharmacyOrderDetail = () => {
               </p>
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {order.prescriptionId?.fileUrl && (
-                  <a
-                    href={order.prescriptionId.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '6px 12px',
-                      backgroundColor: '#ffffff',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.8125rem',
-                      fontWeight: 600,
-                      color: 'var(--primary-700)',
-                      border: '1px solid var(--primary-300)'
-                    }}
-                  >
-                    <ExternalLink size={14} /> Open Document File
-                  </a>
-                )}
+                {<PrescriptionDocumentButton prescription={order.prescriptionId} />}
 
                 {order.prescriptionStatus !== 'APPROVED' && (
                   <Button

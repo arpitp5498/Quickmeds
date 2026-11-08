@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.warn('Session verification failed:', error);
-          logout();
+          if (error.status === 401 || error.response?.status === 401) logout();
         }
       }
       setLoading(false);
@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    if (token) api.post('/auth/logout', {}, { headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
     setUser(null);
     setToken(null);
     localStorage.removeItem('quickmeds_token');

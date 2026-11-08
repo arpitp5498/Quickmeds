@@ -7,12 +7,13 @@ const SocketContext = createContext();
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user, token } = useAuth();
 
   useEffect(() => {
+    if (!token) { setSocket(null); setIsConnected(false); return; }
     // Initialize socket connection
     const socketInstance = io(import.meta.env.VITE_SOCKET_URL || '/', {
-      transports: ['websocket', 'polling'],
+      auth: { token }, transports: ['websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 2000
     });
@@ -53,7 +54,7 @@ export const SocketProvider = ({ children }) => {
     return () => {
       socketInstance.disconnect();
     };
-  }, []);
+  }, [token]);
 
   // Ensure active socket joins appropriate role rooms whenever user changes
   useEffect(() => {

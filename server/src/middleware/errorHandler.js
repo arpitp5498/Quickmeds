@@ -61,7 +61,7 @@ const errorHandler = (err, req, res, next) => {
 
   const response = {
     success: false,
-    message: error.message,
+    message: error.statusCode >= 500 && env.NODE_ENV === 'production' ? 'Service temporarily unavailable' : error.message,
     errors: error.errors || []
   };
 

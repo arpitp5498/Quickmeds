@@ -5,15 +5,11 @@ const generateToken = (user) => {
   return jwt.sign(
     {
       id: user._id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-      pharmacyId: user.pharmacyId || null,
-      deliveryPartnerId: user.deliveryPartnerId || null
+      tokenVersion: user.tokenVersion || 0
     },
     env.JWT_SECRET,
     {
-      expiresIn: env.JWT_EXPIRES_IN
+      expiresIn: env.JWT_EXPIRES_IN, algorithm: 'HS256', issuer: 'quickmeds', audience: 'quickmeds-web'
     }
   );
 };

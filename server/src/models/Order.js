@@ -153,7 +153,7 @@ const orderSchema = new mongoose.Schema(
     estimatedDeliveryTime: Date,
     // Secure Handover Verification
     deliveryOtp: {
-      type: String,
+      type: String, select: false,
       default: null
     },
     deliveryOtpVerified: {

@@ -224,50 +224,52 @@ const updateProfile = async (req, res, next) => {
 // @desc    Forgot password handler
 // @route   POST /api/auth/forgot-password
 // @access  Public
-const forgotPassword = async (req, res, next) => {
+const crypto = require('node:crypto');
+const bcrypt = require('bcryptjs');
+const digest = value => crypto.createHash('sha256').update(value).digest('hex');
+
+async function forgotPassword(req, res, next) {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
-
-    if (!user) {
-      // Return success to avoid email enumeration
-      return ApiResponse.success(
-        res,
-        null,
-        'If an account with that email exists, a password reset link has been dispatched.'
-      );
+    const { RESEND_API_KEY, RESET_EMAIL_FROM, CLIENT_URL } = process.env;
+    if (!RESEND_API_KEY || !RESET_EMAIL_FROM || !CLIENT_URL) throw new ApiError(503, 'Recovery email unavailable');
+    if (typeof req.body.email !== 'string') throw ApiError.badRequest('Valid email required');
+    const token = crypto.randomBytes(32).toString('hex');
+    const user = await User.findOneAndUpdate({ email: req.body.email.trim().toLowerCase(), isActive: true }, {
+      $set: { resetPasswordToken: digest(token), resetPasswordExpire: new Date(Date.now() + 15 * 60000) }
+    });
+    if (user) {
+      const link = new URL('/reset-password', CLIENT_URL);
+      link.hash = 'token=' + token;
+      try {
+        const receipt = await fetch('https://api.resend.com/emails', {
+          method: 'POST', signal: AbortSignal.timeout(5000),
+          headers: { Authorization: 'Bearer ' + RESEND_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: RESET_EMAIL_FROM, to: user.email, subject: 'Reset your QuickMeds password',
+            text: 'Use this link within 15 minutes to reset your password: ' + link.href })
+        });
+        if (!receipt.ok) throw new Error('Delivery failed');
+      } catch {
+        await User.updateOne({ _id: user._id, resetPasswordToken: digest(token) }, { $unset: { resetPasswordToken: 1, resetPasswordExpire: 1 } });
+        console.error('Password recovery delivery failed');
+      }
     }
+    return ApiResponse.success(res, null, 'If the account exists, check your email.');
+  } catch (error) { return next(error); }
+}
 
-    return ApiResponse.success(
-      res,
-      { resetToken: 'demo-reset-token-2026' },
-      'Password reset instructions dispatched.'
-    );
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Reset password handler
-// @route   POST /api/auth/reset-password
-// @access  Public
-const resetPassword = async (req, res, next) => {
+async function resetPassword(req, res, next) {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
-
-    if (!user) {
-      throw ApiError.notFound('Account not found.');
-    }
-
-    user.password = password;
-    await user.save();
-
-    return ApiResponse.success(res, null, 'Password has been reset successfully. You may now log in.');
-  } catch (error) {
-    next(error);
-  }
-};
+    const { token, newPassword } = req.body;
+    if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) throw ApiError.badRequest('Invalid reset link');
+    if (typeof newPassword !== 'string' || newPassword.length < 10 || Buffer.byteLength(newPassword) > 72)
+      throw ApiError.badRequest('Use at least 10 characters and at most 72 bytes');
+    const password = await bcrypt.hash(newPassword, 12);
+    const result = await User.updateOne({ resetPasswordToken: digest(token), resetPasswordExpire: { $gt: new Date() }, isActive: true },
+      { $set: { password }, $inc: { tokenVersion: 1 }, $unset: { resetPasswordToken: 1, resetPasswordExpire: 1 } });
+    if (!result.modifiedCount) throw ApiError.badRequest('Invalid or expired reset link');
+    return ApiResponse.success(res, null, 'Password reset successfully');
+  } catch (error) { return next(error); }
+}
 
 module.exports = {
   register,

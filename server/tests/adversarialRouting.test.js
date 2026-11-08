@@ -559,21 +559,10 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
         limit: jest.fn().mockResolvedValue(mockPharmacies)
       });
 
-      jest.spyOn(PharmacyInventory, 'find').mockImplementation((query) => {
-        if (query.pharmacyId === 'pharm_1') {
-          return {
-            populate: jest.fn().mockResolvedValue([
-              { medicineId: { _id: 'med_1', name: 'Paracetamol' }, stockQuantity: 10, price: 30, isAvailable: true }
-            ])
-          };
-        } else {
-          return {
-            populate: jest.fn().mockResolvedValue([
-              { medicineId: { _id: 'med_2', name: 'Azithral' }, stockQuantity: 5, price: 120, isAvailable: true }
-            ])
-          };
-        }
-      });
+      jest.spyOn(PharmacyInventory, 'find').mockReturnValue({ populate: jest.fn().mockResolvedValue([
+        { pharmacyId: 'pharm_1', medicineId: { _id: 'med_1' }, stockQuantity: 10, price: 30 },
+        { pharmacyId: 'pharm_2', medicineId: { _id: 'med_2' }, stockQuantity: 5, price: 120 }
+      ]) });
 
       const cartItems = [
         { medicineId: 'med_1', quantity: 1, name: 'Paracetamol', price: 30 },
@@ -627,11 +616,10 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
       );
       expect(res2).toBeDefined();
 
-      const res3 = await optimizeFulfilmentPlan(
+      await expect(optimizeFulfilmentPlan(
         [{ medicineId: 'med_1', quantity: 1 }],
         null
-      );
-      expect(res3).toBeDefined();
+      )).rejects.toThrow('Invalid delivery coordinates');
     });
 
     it('6.5 Handles malformed cart item with missing/null medicineId gracefully without throwing TypeError', async () => {

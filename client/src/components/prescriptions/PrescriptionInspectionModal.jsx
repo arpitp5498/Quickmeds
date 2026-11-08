@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import api from '../../services/api';
+import React, { useEffect, useState } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -47,7 +48,7 @@ const REJECTION_REASONS = [
 const PrescriptionInspectionModal = ({
   isOpen = false,
   onClose,
-  prescription = null,
+  prescription: summary = null,
   isPharmacist = false,
   onReviewSubmit = null,
   submitting = false
@@ -58,9 +59,22 @@ const PrescriptionInspectionModal = ({
   const [selectedReason, setSelectedReason] = useState(REJECTION_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
   const [reviewNotes, setReviewNotes] = useState('');
-  const [pharmacistConsent, setPharmacistConsent] = useState(true);
+  const [pharmacistConsent, setPharmacistConsent] = useState(false);
 
-  if (!prescription) return null;
+  const [detail, setDetail] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setDetail(null);
+    setLoadError(false);
+    if (isOpen && summary?._id) api.get('/prescriptions/' + summary._id)
+      .then(result => { if (active) setDetail(result.data.prescription); })
+      .catch(() => { if (active) setLoadError(true); });
+    return () => { active = false; };
+  }, [summary?._id, isOpen]);
+  if (!summary) return null;
+  if (!detail || detail._id !== summary._id) return <Modal isOpen={isOpen} onClose={onClose} title="Prescription"><p role="status">{loadError ? 'Unable to load this prescription.' : 'Loading document…'}</p></Modal>;
+  const prescription = detail;
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
@@ -82,13 +96,12 @@ const PrescriptionInspectionModal = ({
     onReviewSubmit({
       status: actionType,
       reviewNotes: reviewNotes || 'Prescription verified by pharmacist.',
-      rejectionReason: finalRejectionReason,
-      licenseNumber: 'DL-PH-2026-98124'
+      rejectionReason: finalRejectionReason
     });
   };
 
   const isPdf = prescription.mimeType === 'application/pdf' || prescription.fileUrl?.endsWith('.pdf');
-  const prescriptionImage = prescription.fileUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80';
+  const prescriptionImage = prescription.fileUrl || undefined;
 
   return (
     <Modal
@@ -127,7 +140,7 @@ const PrescriptionInspectionModal = ({
           createdAt={prescription.createdAt}
           reviewedAt={prescription.reviewedAt}
           rejectionReason={prescription.rejectionReason}
-          pharmacistLicense="DL-PH-2026-98124"
+          pharmacistLicense={prescription.reviewerRegistration || undefined}
         />
 
         <div
@@ -242,7 +255,7 @@ const PrescriptionInspectionModal = ({
                 position: 'relative'
               }}
             >
-              {isPdf ? (
+              {prescription.type === 'DIGITAL' ? (<p>{prescription.instructions}</p>) : isPdf ? (
                 <div style={{ textAlign: 'center', padding: '2rem' }}>
                   <FileText size={48} color="var(--primary-600)" style={{ margin: '0 auto 12px' }} />
                   <p style={{ fontSize: '0.875rem', fontWeight: 700 }}>PDF Prescription Upload</p>
@@ -530,7 +543,7 @@ const PrescriptionInspectionModal = ({
                       }}
                     >
                       <span>
-                        <strong>Pharmacist Registration ID:</strong> Lic #DL-PH-2026-98124 (In-Charge)
+                        <strong>Pharmacist Registration ID:</strong> {prescription.reviewerRegistration || 'Unrecorded'}
                       </span>
                     </div>
 
@@ -593,7 +606,7 @@ const PrescriptionInspectionModal = ({
 
                 {prescription.status === 'APPROVED' && (
                   <p style={{ fontSize: '0.75rem', color: 'var(--secondary-800)' }}>
-                    Verified by Licensed Pharmacist • Lic #DL-PH-2026-98124 on{' '}
+                    Reviewed on{' '}
                     {prescription.reviewedAt ? new Date(prescription.reviewedAt).toLocaleString('en-IN') : 'Recently'}
                   </p>
                 )}

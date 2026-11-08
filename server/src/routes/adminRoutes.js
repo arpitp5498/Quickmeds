@@ -1,3 +1,4 @@
+const { transactional } = require('../middleware/transactional');
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
@@ -12,7 +13,7 @@ router.patch('/users/:id/status', adminController.toggleUserStatus);
 router.get('/pharmacies', adminController.getAllPharmacies);
 router.patch('/pharmacies/:id/verify', adminController.verifyPharmacy);
 router.get('/orders', adminController.getAllOrders);
-router.post('/orders/:id/assign-delivery', adminController.assignDeliveryPartnerManual);
+router.post('/orders/:id/assign-delivery', transactional(adminController.assignDeliveryPartnerManual));
 router.get('/prescriptions', adminController.getAllPrescriptions);
 router.get('/audit-logs', adminController.getAuditLogs);
 router.get('/inventory-sync-overview', adminController.getInventorySyncOverview);

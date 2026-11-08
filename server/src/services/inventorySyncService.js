@@ -139,7 +139,8 @@ async function syncSingleItem({
 
   const unitPrice = price !== undefined && price !== null ? Number(price) : medicine.mrp;
   const unitMrp = mrp !== undefined && mrp !== null ? Number(mrp) : medicine.mrp;
-  const parsedQty = parseInt(quantity, 10) || 0;
+  const parsedQty = Number(quantity);
+  if (!Number.isSafeInteger(parsedQty) || parsedQty < 0) throw ApiError.badRequest('Invalid stock quantity');
   const expDate = expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
   let existing = await PharmacyInventory.findOne({ pharmacyId, medicineId });
@@ -551,14 +552,14 @@ async function parseInvoiceOCR(fileBuffer, mimeType = 'image/jpeg', fileName = '
 /**
  * Handles incoming billing software webhook with HMAC authentication and idempotency
  */
-async function processBillingWebhook({ headers, body }) {
+async function processBillingWebhook({ headers, body, rawBody }) {
   const merchantId = body.merchantId || headers['x-merchant-id'];
-  const eventId = body.eventId || headers['x-event-id'] || `EVT-${Date.now()}`;
+  const eventId = body.eventId || headers['x-event-id'];
   const signature = headers['x-webhook-signature'] || '';
   const eventType = body.event || body.eventType || 'inventory.updated';
   const items = body.items || [];
 
-  if (!merchantId) {
+  if (typeof eventId !== 'string' || !eventId || eventId.length > 150 || typeof merchantId !== 'string' || !merchantId) {
     throw ApiError.badRequest('Missing merchantId in billing webhook payload.');
   }
 
@@ -567,8 +568,14 @@ async function processBillingWebhook({ headers, body }) {
     throw ApiError.unauthorized('Invalid merchantId or billing integration not configured.');
   }
 
+  if (integration.status !== 'CONNECTED' || !integration.autoSyncEnabled || !integration.webhookSecret || !Buffer.isBuffer(rawBody) ||
+      !/^[a-f0-9]{64}$/i.test(signature) || !crypto.timingSafeEqual(Buffer.from(signature, 'hex'),
+      crypto.createHmac('sha256', integration.webhookSecret).update(rawBody).digest())) throw ApiError.unauthorized('Invalid webhook authentication');
   // Idempotency check: Have we processed this eventId before?
-  const existingEvent = await WebhookEvent.findOne({ eventId });
+  const scopedId = JSON.stringify([String(integration._id), eventId]);
+  const payloadHash = crypto.createHash('sha256').update(rawBody).digest('hex');
+  const existingEvent = await WebhookEvent.findOne({ eventId: { $in: [eventId, scopedId] }, pharmacyId: integration.pharmacyId, status: 'PROCESSED' });
+  if (existingEvent && existingEvent.payloadHash !== payloadHash) throw ApiError.conflict('Event identity already used');
   if (existingEvent) {
     return {
       success: true,
@@ -579,27 +586,7 @@ async function processBillingWebhook({ headers, body }) {
   }
 
   // Calculate payload hash
-  const payloadHash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
-
-  // Verify HMAC signature if secret is active
-  if (integration.webhookSecret && signature) {
-    const expectedSig = crypto
-      .createHmac('sha256', integration.webhookSecret)
-      .update(JSON.stringify(body))
-      .digest('hex');
-
-    if (signature !== expectedSig) {
-      await WebhookEvent.create({
-        eventId,
-        pharmacyId: integration.pharmacyId,
-        eventType,
-        payloadHash,
-        status: 'FAILED',
-        responseSummary: 'Invalid HMAC signature'
-      });
-      throw ApiError.unauthorized('Invalid webhook signature verification.');
-    }
-  }
+  if (!Array.isArray(items) || items.length > 250) throw ApiError.badRequest('Invalid billing item count');
 
   const pharmacyId = integration.pharmacyId;
   const processedItems = [];
@@ -640,7 +627,8 @@ async function processBillingWebhook({ headers, body }) {
 
   // Record successful webhook event
   await WebhookEvent.create({
-    eventId,
+    _id: crypto.createHash('sha256').update(scopedId).digest('hex').slice(0, 24),
+    eventId: scopedId,
     pharmacyId,
     eventType,
     payloadHash,
@@ -675,7 +663,8 @@ async function simulateBillingSale({ pharmacyId, inventoryId, quantitySold = 1, 
     throw ApiError.notFound('Inventory item not found.');
   }
 
-  const qty = parseInt(quantitySold, 10) || 1;
+  const qty = Number(quantitySold);
+  if (!Number.isSafeInteger(qty) || qty <= 0) throw ApiError.badRequest('Invalid sale quantity');
   const previousStock = inv.stockQuantity;
   const newStock = Math.max(0, previousStock - qty);
   const isAvailable = newStock > 0;

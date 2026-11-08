@@ -35,7 +35,7 @@ import { getMedicineImage } from '../../utils/medicineImages';
 
 const OrderDetail = () => {
   const { id } = useParams();
-  const { socket, trackOrder } = useSocket();
+  const { socket, trackOrder, isConnected } = useSocket();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -118,6 +118,12 @@ const OrderDetail = () => {
       window.removeEventListener('focus', handleFocus);
     };
   }, [id, socket]);
+
+  useEffect(() => {
+    if (isConnected || !order || ['DELIVERED','CANCELLED','FULFILMENT_UNAVAILABLE'].includes(order.orderStatus)) return;
+    const timer = setInterval(fetchOrder, 15000);
+    return () => clearInterval(timer);
+  }, [id, isConnected, order?.orderStatus]);
 
   const handleCancelOrder = async () => {
     try {

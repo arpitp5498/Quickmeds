@@ -337,6 +337,7 @@ const assignDeliveryPartnerManual = async (req, res, next) => {
       throw ApiError.notFound('Delivery partner not found');
     }
 
+    if (order.orderStatus !== 'READY_FOR_PICKUP' || order.deliveryPartnerId || partner.status !== 'AVAILABLE' || partner.activeOrderId) throw ApiError.conflict('Order or rider unavailable');
     partner.status = 'BUSY';
     partner.activeOrderId = order._id;
     await partner.save();
