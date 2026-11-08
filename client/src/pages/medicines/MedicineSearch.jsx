@@ -1,3 +1,4 @@
+import { stockLabel } from '../../utils/medicineStock';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -78,6 +79,7 @@ const MedicineSearch = () => {
   const [medicines, setMedicines] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [categoryCounts, setCategoryCounts] = useState(DEFAULT_CATEGORY_COUNTS);
+  const [catalogError, setCatalogError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const { location } = useLocation();
@@ -129,9 +131,12 @@ const MedicineSearch = () => {
   }, [debouncedSearch, category, setSearchParams]);
 
   useEffect(() => {
+    let current = true;
     const fetchMedicines = async () => {
       try {
         setLoading(true);
+        setCatalogError(false);
+        setSelectedMedicine(null);
         let url = `/medicines?page=${page}&limit=24&sort=${sort}&lat=${location.lat}&lng=${location.lng}`;
 
         if (debouncedSearch.trim()) {
@@ -147,26 +152,30 @@ const MedicineSearch = () => {
         }
 
         const res = await api.get(url);
-        if (res.success && res.data) {
-          setMedicines(res.data.medicines || []);
-          setPagination(res.data.pagination || { total: 0, pages: 1 });
-          if (res.data.categoryCounts) {
-            const counts = { ...DEFAULT_CATEGORY_COUNTS, ...res.data.categoryCounts };
-            // Total 'All' count
-            counts['All'] = Object.entries(counts)
-              .filter(([k]) => k !== 'All')
-              .reduce((acc, [, v]) => acc + v, 0);
-            setCategoryCounts(counts);
-          }
+        if (!current) return;
+        if (!res.success || !Array.isArray(res.data?.medicines)) throw new Error('Invalid catalog response');
+        setMedicines(res.data.medicines || []);
+        setPagination(res.data.pagination || { total: 0, pages: 1 });
+        if (res.data.categoryCounts) {
+          const counts = { ...DEFAULT_CATEGORY_COUNTS, ...res.data.categoryCounts };
+          // Total 'All' count
+          counts['All'] = Object.entries(counts)
+            .filter(([k]) => k !== 'All')
+            .reduce((acc, [, v]) => acc + v, 0);
+          setCategoryCounts(counts);
         }
       } catch (err) {
+        if (!current) return;
+        setCatalogError(true);
+        setMedicines([]);
         console.warn('Medicine search error:', err);
       } finally {
-        setLoading(false);
+        if (current) setLoading(false);
       }
     };
 
     fetchMedicines();
+    return () => { current = false; };
   }, [debouncedSearch, category, requiresPrescription, sort, page, location.lat, location.lng]);
 
   const handleCategoryClick = (cat) => {
@@ -203,6 +212,7 @@ const MedicineSearch = () => {
 
   const getSectionSubtitle = () => {
     if (loading) return 'Checking real-time stock across verified pharmacies...';
+    if (catalogError) return 'Availability Unknown';
     if (medicines.length === 0) return 'No matching items in this selection.';
     if (category === 'All' && !debouncedSearch.trim()) {
       return `Browse all ${pagination.total || medicines.length} master items with live inventory matching.`;
@@ -443,6 +453,8 @@ const MedicineSearch = () => {
             </div>
           ))}
         </div>
+      ) : catalogError ? (
+        <EmptyState icon={Pill} title="Availability Unknown" description="The catalog could not be loaded. Please try again." />
       ) : medicines.length === 0 ? (
         <EmptyState
           icon={Pill}
@@ -465,7 +477,7 @@ const MedicineSearch = () => {
         >
           {medicines.map((med) => {
             const qty = getItemQuantity(med._id);
-            const isOutOfStock = med.availablePharmaciesCount === 0;
+            const availability = stockLabel(med);
 
             return (
               <Card
@@ -621,9 +633,7 @@ const MedicineSearch = () => {
 
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                            {med.availablePharmaciesCount > 0
-                              ? '✓ In stock in network'
-                              : 'Out of stock'}
+                            {availability}
                           </div>
                           {hasDiscount && savingsAmount > 0 && (
                             <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>
@@ -637,9 +647,9 @@ const MedicineSearch = () => {
 
                   {/* E-Commerce Action Area: Prominent Add To Cart or Interactive Quantity Selector */}
                   <div onClick={(e) => e.stopPropagation()}>
-                    {isOutOfStock ? (
+                    {availability !== 'In Stock' ? (
                       <Button variant="outline" size="sm" fullWidth disabled style={{ opacity: 0.6 }}>
-                        Out of Stock
+                        {availability}
                       </Button>
                     ) : qty > 0 ? (
                       <div
@@ -841,9 +851,7 @@ const MedicineSearch = () => {
                       )}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                      {selectedMedicine.availablePharmaciesCount > 0
-                        ? '✓ In stock in network'
-                        : 'Out of stock'}
+                      {stockLabel(selectedMedicine)}
                     </div>
                   </div>
                 );
@@ -1015,11 +1023,11 @@ const MedicineSearch = () => {
                       fullWidth
                       icon={ShoppingBag}
                       loading={actionLoadingId === selectedMedicine._id}
-                      disabled={!selectedMedicine.availablePharmaciesCount}
+                      disabled={stockLabel(selectedMedicine) !== 'In Stock'}
                       onClick={(e) => handleAddToCart(e, selectedMedicine)}
                       style={{ height: '42px', fontWeight: 700 }}
                     >
-                      {selectedMedicine.availablePharmaciesCount ? `Add to Cart • ₹${selectedMedicine.lowestPrice || selectedMedicine.mrp}` : 'Out of Stock'}
+                      {stockLabel(selectedMedicine) === 'In Stock' ? `Add to Cart • ₹${selectedMedicine.lowestPrice || selectedMedicine.mrp}` : stockLabel(selectedMedicine)}
                     </Button>
                   );
                 })()}

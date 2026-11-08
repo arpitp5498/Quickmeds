@@ -1,3 +1,4 @@
+import { stockLabel } from '../../utils/medicineStock';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -318,8 +319,8 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                     return (
                       <div
                         key={item._id}
-                        aria-disabled={!item.availablePharmaciesCount}
-                        onClick={() => item.availablePharmaciesCount && toggleSelect(item._id)}
+                        aria-disabled={stockLabel(item) !== 'In Stock'}
+                        onClick={() => stockLabel(item) === 'In Stock' && toggleSelect(item._id)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -401,7 +402,7 @@ const EmergencyEssentialsSection = ({ className = '' }) => {
                               ₹{itemPrice}
                             </span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {item.availablePharmaciesCount ? item.strength || item.genericName : 'Out of stock'}
+                              {stockLabel(item) === 'In Stock' ? item.strength || item.genericName : stockLabel(item)}
                             </span>
                             <div style={{ marginLeft: 'auto' }}>
                               {item.requiresPrescription ? (

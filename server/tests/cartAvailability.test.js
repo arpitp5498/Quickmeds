@@ -35,11 +35,11 @@ describe('Purchasable medicine inventory', () => {
   const add = (quantity, pharmacyId) => request(app).post('/api/cart/items').set('Authorization', authorization)
     .send({ medicineId: medicine._id, quantity, pharmacyId });
   const update = quantity => request(app).put('/api/cart/items/' + medicine._id).set('Authorization', authorization).send({ quantity });
-  const search = async () => (await request(app).get('/api/medicines').query({ q: medicine.name }).expect(200)).body.data.medicines[0];
+  const search = async () => (await request(app).get('/api/medicines').query({ q: medicine.name }).expect(200)).body.data.medicines.find(m => m._id === String(medicine._id));
   const clear = () => request(app).delete('/api/cart').set('Authorization', authorization).expect(200);
 
   it('selects eligible offers by price and by the full resulting cart quantity', async () => {
-    expect(await search()).toMatchObject({ availablePharmaciesCount: 2, lowestPrice: 70 });
+    expect(await search()).toMatchObject({ stockStatus: 'IN_STOCK', availablePharmaciesCount: 2, lowestPrice: 70 });
     const sos = await request(app).get('/api/medicines/sos').expect(200);
     expect(sos.body.data.medicines.find(m => m._id === String(medicine._id)).availablePharmaciesCount).toBe(2);
     let res = await add(2).expect(200);
@@ -54,17 +54,41 @@ describe('Purchasable medicine inventory', () => {
     await clear();
   });
 
+  it('shows stocked matches before newer unconfirmed matches across pages', async () => {
+    const unstocked = medicine.toObject();
+    delete unstocked._id;
+    delete unstocked.createdAt;
+    delete unstocked.updatedAt;
+    const newer = await Medicine.create({ ...unstocked, name: 'Stock Fixture unconfirmed' });
+    const page = async number => (await request(app).get('/api/medicines')
+      .query({ q: 'Stock Fixture', limit: 1, page: number }).expect(200)).body.data.medicines[0];
+    expect(await page(1)).toMatchObject({ _id: String(medicine._id), stockStatus: 'IN_STOCK' });
+    expect(await page(2)).toMatchObject({ _id: String(newer._id), stockStatus: 'UNKNOWN' });
+  });
+
   it.each([0, -1, 1.5, 'many', [1], 101].map(value => [value]))('rejects invalid quantity %j', async quantity => {
     await add(quantity).expect(400);
     await update(quantity).expect(400);
   });
 
-  it('reports zero stock and missing inventory consistently', async () => {
+  it('distinguishes confirmed zero, incomplete balances and missing mappings', async () => {
+    await add(2).expect(200);
     await Inventory.updateMany({ medicineId: medicine._id }, { stockQuantity: 0 });
-    expect((await search()).availablePharmaciesCount).toBe(0);
+    expect(await search()).toMatchObject({ availablePharmaciesCount: 0, stockStatus: 'OUT_OF_STOCK' });
     await add(1).expect(409);
+    const checkout = await request(app).post('/api/orders').set('Authorization', authorization)
+      .send({ pharmacyId: first.pharmacyId, paymentMethod: 'COD',
+        deliveryAddress: { street: 'Test', city: 'Delhi', pincode: '110001', coordinates: [77.2, 28.6] } }).expect(409);
+    expect(checkout.body.message).toMatch(/fulfil|availability|stock/i);
+    await Inventory.collection.updateOne({ _id: first._id }, { $unset: { stockQuantity: '' } });
+    expect((await search()).stockStatus).toBe('UNKNOWN');
     await Inventory.deleteMany({ medicineId: medicine._id });
-    expect((await search()).availablePharmaciesCount).toBe(0);
+    expect((await search()).stockStatus).toBe('UNKNOWN');
+    await Inventory.collection.insertOne({ medicineId: medicine._id, pharmacyId: new mongoose.Types.ObjectId(),
+      stockQuantity: 9, price: 70, isAvailable: true, expiryDate: new Date(Date.now() + 86400000) });
+    const detail = (await request(app).get('/api/medicines/' + medicine._id).expect(200)).body.data;
+    expect(detail.medicine.stockStatus).toBe('UNKNOWN');
+    expect(detail.pharmacies).toHaveLength(0);
     await add(1).expect(409);
   });
 });

@@ -228,25 +228,15 @@ const optimizeFulfilmentPlan = async (cartItems, coordinates, options = {}) => {
     query._id = { $nin: formattedExcludeIds };
   }
 
-  let pharmacies = [];
-  try {
-    pharmacies = await Pharmacy.find({
-      ...query,
-      location: {
-        $nearSphere: {
-          $geometry: { type: 'Point', coordinates: [lng, lat] },
-          $maxDistance: maxDistanceKm * 1000
-        }
-      }
-    }).limit(15);
-  } catch (geoErr) {
-    pharmacies = await Pharmacy.find(query).limit(15);
-  }
-
-  // Fallback: If no pharmacy found via $nearSphere, query all matching verified
-  if (!pharmacies || pharmacies.length === 0) {
-    pharmacies = await Pharmacy.find(query).limit(10);
-  }
+  // Checkout runs inside a MongoDB transaction, where $nearSphere is unsupported.
+  const nearby = await Pharmacy.find({
+    ...query, location: { $geoWithin: { $centerSphere: [[lng, lat], maxDistanceKm / 6371] } }
+  });
+  const distanceToCustomer = pharmacy => {
+    const [storeLng, storeLat] = pharmacy.location.coordinates;
+    return calculateDistance(lat, lng, storeLat, storeLng);
+  };
+  const pharmacies = nearby.sort((a, b) => distanceToCustomer(a) - distanceToCustomer(b)).slice(0, 15);
 
   if (!pharmacies || pharmacies.length === 0) {
     return {

@@ -510,9 +510,7 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
         }
       ];
 
-      jest.spyOn(Pharmacy, 'find').mockReturnValue({
-        limit: jest.fn().mockResolvedValue(mockPharmacies)
-      });
+      jest.spyOn(Pharmacy, 'find').mockResolvedValue(mockPharmacies);
 
       // No inventory found for requested medicines
       jest.spyOn(PharmacyInventory, 'find').mockReturnValue({
@@ -555,9 +553,7 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
         }
       ];
 
-      jest.spyOn(Pharmacy, 'find').mockReturnValue({
-        limit: jest.fn().mockResolvedValue(mockPharmacies)
-      });
+      jest.spyOn(Pharmacy, 'find').mockResolvedValue(mockPharmacies);
 
       jest.spyOn(PharmacyInventory, 'find').mockReturnValue({ populate: jest.fn().mockResolvedValue([
         { pharmacyId: 'pharm_1', medicineId: { _id: 'med_1' }, stockQuantity: 10, price: 30 },
@@ -583,9 +579,7 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
     });
 
     it('6.3 Respects excludePharmacyIds and does not route to excluded stores', async () => {
-      const mockFind = jest.fn().mockReturnValue({
-        limit: jest.fn().mockResolvedValue([])
-      });
+      const mockFind = jest.fn().mockResolvedValue([]);
       jest.spyOn(Pharmacy, 'find').mockImplementation(mockFind);
 
       await optimizeFulfilmentPlan(
@@ -600,9 +594,7 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
     });
 
     it('6.4 Handles non-array coordinates objects ({ lat, lng } and { latitude, longitude }) gracefully', async () => {
-      jest.spyOn(Pharmacy, 'find').mockReturnValue({
-        limit: jest.fn().mockResolvedValue([])
-      });
+      jest.spyOn(Pharmacy, 'find').mockResolvedValue([]);
 
       const res1 = await optimizeFulfilmentPlan(
         [{ medicineId: 'med_1', quantity: 1 }],
@@ -623,9 +615,7 @@ describe('Adversarial & Boundary Verification for Smart Routing Service', () => 
     });
 
     it('6.5 Handles malformed cart item with missing/null medicineId gracefully without throwing TypeError', async () => {
-      jest.spyOn(Pharmacy, 'find').mockReturnValue({
-        limit: jest.fn().mockResolvedValue([])
-      });
+      jest.spyOn(Pharmacy, 'find').mockResolvedValue([]);
 
       // Passing an item with null or missing medicineId
       const malformedCart = [

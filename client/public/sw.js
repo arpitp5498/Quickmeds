@@ -46,6 +46,12 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests (Socket.IO, external APIs)
   if (url.origin !== self.location.origin) return;
 
+  // Stock and purchase decisions need a current response, including after going offline.
+  if (/^\/api\/(medicines|pharmacies|cart|routing)(\/|$)/.test(url.pathname)) {
+    event.respondWith(fetch(request, { cache: 'no-store' }));
+    return;
+  }
+
   // API calls: Network-first with cache fallback
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(

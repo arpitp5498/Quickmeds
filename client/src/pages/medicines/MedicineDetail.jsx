@@ -1,3 +1,4 @@
+import { stockLabel } from '../../utils/medicineStock';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -46,32 +47,39 @@ const MedicineDetail = () => {
   const [offerActionLoading, setOfferActionLoading] = useState(null);
 
   useEffect(() => {
+    let current = true;
     const fetchDetail = async () => {
       try {
         setLoading(true);
         const res = await api.get(`/medicines/${id}?lat=${location.lat}&lng=${location.lng}`);
-        if (res.success && res.data) {
-          const { medicine: med, pharmacies: pharma, promotion: promo } = res.data;
-          setSelectedOffer(null);
-          setMedicine(med);
-          setPharmacies(pharma || []);
-          setPromotion(promo || null);
-        }
+        if (!current) return;
+        if (!res.success || !res.data?.medicine) throw new Error('Invalid medicine response');
+        const { medicine: med, pharmacies: pharma, promotion: promo } = res.data;
+        setSelectedOffer(null);
+        setMedicine(med);
+        const offers = Array.isArray(pharma) && stockLabel(med) === 'In Stock' ? pharma : [];
+        setPharmacies(offers.filter(p => p?.pharmacyId && Number.isSafeInteger(p.stockQuantity) && p.stockQuantity > 0));
+        setPromotion(promo || null);
       } catch (err) {
+        if (!current) return;
+        setMedicine(null);
+        setPharmacies([]);
+        setSelectedOffer(null);
         showToast('Could not load medicine details', 'error');
       } finally {
-        setLoading(false);
+        if (current) setLoading(false);
       }
     };
 
     fetchDetail();
+    return () => { current = false; };
   }, [id, location.lat, location.lng]);
 
   const verifiedOffers = pharmacies.filter((p) => !p.isDemo && !p.isPriceSuspicious);
   const otherOffers = pharmacies.filter((p) => p.isDemo || p.isPriceSuspicious);
 
   const bestOffer = verifiedOffers.length > 0 ? verifiedOffers[0] : (pharmacies[0] || null);
-  const activeOffer = selectedOffer || bestOffer;
+  const activeOffer = stockLabel(medicine) === 'In Stock' ? selectedOffer || bestOffer : null;
   const activeOfferEffectivePrice = activeOffer ? (activeOffer.effectivePrice || activeOffer.price) : null;
   const bestPrice = activeOfferEffectivePrice !== null
     ? activeOfferEffectivePrice
@@ -136,7 +144,7 @@ const MedicineDetail = () => {
   if (!medicine) {
     return (
       <div className="container" style={{ padding: '3rem 1.25rem', textAlign: 'center' }}>
-        <h2>Medicine Not Found</h2>
+        <h2>Medicine details unavailable</h2>
         <Button variant="primary" onClick={() => navigate('/medicines')} style={{ marginTop: '1rem' }}>
           Back to Medicine Search
         </Button>
@@ -433,7 +441,7 @@ const MedicineDetail = () => {
                 style={{ width: '100%', padding: '14px', fontSize: '1.05rem', fontWeight: 800 }}
                 icon={ShoppingBag}
               >
-                {activeOffer ? `Add to Cart • ₹${bestPrice}` : 'Out of Stock'}
+                {activeOffer ? `Add to Cart • ₹${bestPrice}` : stockLabel(medicine) === 'Out of Stock' ? 'Out of Stock' : 'Availability Unknown'}
               </Button>
             )}
           </div>
