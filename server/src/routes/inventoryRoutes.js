@@ -11,6 +11,7 @@ router.use(authorize('PHARMACY'));
 
 // Standard Inventory CRUD
 router.get('/', inventoryController.getMyInventory);
+router.get('/catalog', inventoryController.getCatalogPage);
 router.get('/stats', inventoryController.getInventoryStatsEndpoint);
 router.get('/activities', inventoryController.getInventoryActivities);
 router.post('/', inventoryItemValidator, validate, inventoryController.addInventoryItem);

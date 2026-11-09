@@ -96,9 +96,15 @@ const searchMedicines = async (req, res, next) => {
     if (sort === 'popular') sortOptions = { createdAt: -1 };
 
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-    const total = await Medicine.countDocuments(query);
     const hasAddress = lat !== undefined && lng !== undefined;
-    const nearby = hasAddress ? await findDeliveryPharmacies(Number(lng), Number(lat)) : null;
+    const [total, nearby, categoryCountsAgg] = await Promise.all([
+      Medicine.countDocuments(query),
+      hasAddress ? findDeliveryPharmacies(Number(lng), Number(lat)) : null,
+      Medicine.aggregate([
+        { $match: { active: true, isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' } } },
+        { $group: { _id: '$category', count: { $sum: 1 } } }
+      ])
+    ]);
     const nearbyIds = new Set(nearby?.map(p => String(p._id)));
     let medicines;
     if (sort === 'popular') {
@@ -121,11 +127,6 @@ const searchMedicines = async (req, res, next) => {
       medicines = await Medicine.find(query).sort({ ...sortOptions, _id: 1 }).skip(skip).limit(Number(limit));
     }
 
-    // Category counts for quick discovery navigation (excluding merged duplicates)
-    const categoryCountsAgg = await Medicine.aggregate([
-      { $match: { active: true, isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' } } },
-      { $group: { _id: '$category', count: { $sum: 1 } } }
-    ]);
     const categoryCounts = {};
     categoryCountsAgg.forEach((c) => {
       if (c._id) categoryCounts[c._id] = c.count;
@@ -133,12 +134,10 @@ const searchMedicines = async (req, res, next) => {
 
     // Check available pharmacies count for each medicine
     const medicineIds = medicines.map((m) => m._id);
-    const { offers: inventories, stockStatus } = await getCatalogInventory(medicineIds);
-
-
-    // Fetch active promotions for these medicines
     const medCategories = [...new Set(medicines.map(m => m.category).filter(Boolean))];
-    const promoMap = await getActivePromotionsMap(medicineIds, medCategories);
+    const [{ offers: inventories, stockStatus }, promoMap] = await Promise.all([
+      getCatalogInventory(medicineIds), getActivePromotionsMap(medicineIds, medCategories)
+    ]);
 
     const results = medicines.map((med) => {
       const medObj = med.toObject();

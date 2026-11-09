@@ -660,7 +660,34 @@ const seedStarterCatalog = async (req, res, next) => {
   }
 };
 
+async function getAnalytics(req, res, next) {
+  try {
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - 6);
+    const [data] = await Order.aggregate([
+      { $match: { createdAt: { $gte: start } } },
+      { $facet: {
+        dailySales: [{ $match: { orderStatus: 'DELIVERED' } },
+          { $group: { _id: { $dateToString: { date: '$createdAt', format: '%Y-%m-%d' } },
+            sales: { $sum: '$total' }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }],
+        metrics: [{ $group: { _id: null, orders: { $sum: 1 },
+          fallback: { $sum: { $cond: ['$fallbackTriggered', 1, 0] } },
+          avgEta: { $avg: '$estimatedDeliveryMinutes' },
+          coverage: { $avg: '$routingMetadata.recommended.basketCoverage' },
+          delivered: { $sum: { $cond: [{ $eq: ['$orderStatus', 'DELIVERED'] }, 1, 0] } } } }],
+        categories: [{ $unwind: '$items' }, { $lookup: { from: 'medicines', localField: 'items.medicineId',
+          foreignField: '_id', as: 'medicine', pipeline: [{ $project: { category: 1 } }] } },
+          { $group: { _id: { $ifNull: [{ $first: '$medicine.category' }, 'Unclassified'] }, units: { $sum: '$items.quantity' } } },
+          { $sort: { units: -1, _id: 1 } }, { $limit: 5 }]
+      } }
+    ]);
+    return ApiResponse.success(res, { ...data, metrics: data.metrics[0] || null });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
+  getAnalytics,
   getDashboard,
   getAllUsers,
   toggleUserStatus,

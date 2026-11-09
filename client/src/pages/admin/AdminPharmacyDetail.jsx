@@ -35,7 +35,7 @@ const AdminPharmacyDetail = () => {
 
   const handleUpdateStatus = async (status) => {
     try {
-      await api.put(`/admin/pharmacies/${id}/status`, { status });
+      await api.patch(`/admin/pharmacies/${id}/verify`, { status });
       showToast(`Pharmacy status updated to ${status}`, 'success');
       fetchPharmacy();
     } catch (err) {

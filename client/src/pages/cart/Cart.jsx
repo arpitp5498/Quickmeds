@@ -33,6 +33,12 @@ const Cart = () => {
   const coordinates = useMemo(() => [location.lng, location.lat], [location.lng, location.lat]);
   const [optimizedPlan, setOptimizedPlan] = useState(null);
   const navigate = useNavigate();
+  const [pendingItem, setPendingItem] = useState(null);
+  async function changeCart(key, operation) {
+    setPendingItem(key);
+    try { await operation(); }
+    finally { setPendingItem(null); }
+  }
 
   const deliveryFee = 25;
   const platformFee = 5;
@@ -197,18 +203,20 @@ const Cart = () => {
                 >
                   <button
                     type="button"
-                    onClick={() => item.quantity === 1 ? removeFromCart(item.medicineId) : updateQuantity(item.medicineId, item.quantity - 1)}
+                    disabled={pendingItem !== null}
+                    onClick={() => changeCart(item.medicineId, () => item.quantity === 1 ? removeFromCart(item.medicineId) : updateQuantity(item.medicineId, item.quantity - 1))}
                     style={{ padding: '2px', cursor: 'pointer', display: 'flex' }}
                     aria-label="Decrease quantity"
                   >
                     <Minus size={14} />
                   </button>
                   <span style={{ fontSize: '0.875rem', fontWeight: 700, minWidth: '18px', textAlign: 'center' }}>
-                    {item.quantity}
+                    {pendingItem === item.medicineId ? <span role="status" aria-label="Updating quantity">…</span> : item.quantity}
                   </span>
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.medicineId, item.quantity + 1)}
+                    disabled={pendingItem !== null}
+                    onClick={() => changeCart(item.medicineId, () => updateQuantity(item.medicineId, item.quantity + 1))}
                     style={{ padding: '2px', cursor: 'pointer', display: 'flex' }}
                     aria-label="Increase quantity"
                   >
@@ -224,7 +232,8 @@ const Cart = () => {
                 {/* Remove button */}
                 <button
                   type="button"
-                  onClick={() => removeFromCart(item.medicineId)}
+                  disabled={pendingItem !== null}
+                    onClick={() => changeCart(item.medicineId, () => removeFromCart(item.medicineId))}
                   style={{
                     color: 'var(--accent-600)',
                     padding: '4px',
@@ -241,7 +250,9 @@ const Cart = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
             <button
               type="button"
-              onClick={clearCart}
+              disabled={pendingItem !== null}
+              loading={pendingItem === 'clear'}
+              onClick={() => changeCart('clear', clearCart)}
               style={{ fontSize: '0.8125rem', color: 'var(--accent-600)', fontWeight: 500 }}
             >
               Clear Cart
@@ -286,6 +297,7 @@ const Cart = () => {
               variant="primary"
               size="lg"
               fullWidth
+              disabled={pendingItem !== null}
               onClick={() => navigate('/checkout')}
               icon={ArrowRight}
               iconPosition="right"

@@ -94,6 +94,7 @@ const Button = ({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -101,8 +102,8 @@ const Button = ({
         gap: '8px',
         width: fullWidth ? '100%' : 'auto',
         opacity: disabled ? 0.6 : 1,
-        cursor: disabled || loading ? 'not-allowed' : 'pointer',
-        transition: 'all var(--transition-fast)',
+        cursor: loading ? 'progress' : disabled ? 'not-allowed' : 'pointer',
+        transition: 'background-color 120ms, box-shadow 120ms, transform 80ms',
         userSelect: 'none',
         ...getVariantStyles(),
         ...getSizeStyles(),
@@ -112,7 +113,7 @@ const Button = ({
       {...props}
     >
       {loading ? (
-        <Spinner size={size === 'sm' ? 14 : 18} color="currentColor" />
+        <><Spinner size={size === 'sm' ? 14 : 18} color="currentColor" />{children}</>
       ) : (
         <>
           {Icon && iconPosition === 'left' && <Icon size={size === 'sm' ? 14 : 18} />}

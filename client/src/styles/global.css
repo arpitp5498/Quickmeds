@@ -442,3 +442,21 @@ img {
 }
 
 
+
+.quickmeds-discovery {
+  padding: clamp(1.2rem, 4vw, 2rem);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+.discovery-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; }
+.discovery-links a { display: grid; gap: .7rem; padding: 1rem; background: var(--primary-50); color: var(--primary-800); border-radius: var(--radius-md); font-weight: 650; }
+.discovery-links a:nth-child(even) { background: var(--secondary-50); color: var(--secondary-700); }
+.discovery-links a:hover { box-shadow: inset 0 0 0 1px currentColor; }
+.quickmeds-discovery p { display: flex; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .875rem; }
+.custom-button:active:enabled { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) { .custom-button:active:enabled { transform: none; } html { scroll-behavior: auto; } }
+
+.route-loading { padding: 2.5rem 1.25rem; text-align: center; color: var(--text-muted); }
+.search-bar-container:focus-within input { box-shadow: 0 0 0 3px var(--primary-200) !important; }

@@ -30,16 +30,9 @@ const AdminAnalytics = () => {
 
   if (loading) return <Skeleton height="300px" />;
 
-  const dailyTrend = analytics?.dailySales || [
-    { date: 'Day 1', sales: 1200, count: 4 },
-    { date: 'Day 2', sales: 2400, count: 7 },
-    { date: 'Day 3', sales: 1800, count: 5 },
-    { date: 'Day 4', sales: 3100, count: 9 },
-    { date: 'Day 5', sales: 4500, count: 12 },
-    { date: 'Day 6', sales: 3900, count: 11 },
-    { date: 'Day 7', sales: 5200, count: 14 }
-  ];
-
+  if (!analytics) return <Card role="alert">Analytics could not be loaded. Reload to try again.</Card>;
+  const dailyTrend = analytics.dailySales;
+  const metrics = analytics.metrics;
   const maxSales = Math.max(...dailyTrend.map((d) => d.sales || 1), 1);
 
   return (
@@ -61,7 +54,7 @@ const AdminAnalytics = () => {
       >
         <StatCard
           title="Basket Coverage Ratio"
-          value={`${analytics?.basketCoveragePercent || '98.6'}%`}
+          value={metrics?.coverage != null ? `${(metrics.coverage * 100).toFixed(1)}%` : 'Unrecorded'}
           icon={CheckCircle2}
           color="var(--secondary-600)"
           bg="var(--secondary-50)"
@@ -69,7 +62,7 @@ const AdminAnalytics = () => {
 
         <StatCard
           title="Automated Fallback Rate"
-          value={`${analytics?.fallbackRatePercent || '4.2'}%`}
+          value={metrics ? `${(100 * metrics.fallback / metrics.orders).toFixed(1)}%` : '—'}
           icon={RefreshCw}
           color="#f59e0b"
           bg="#fef3c7"
@@ -77,15 +70,15 @@ const AdminAnalytics = () => {
 
         <StatCard
           title="Average Hyperlocal ETA"
-          value={`${analytics?.avgEtaMins || '18.4'} Mins`}
+          value={metrics?.avgEta != null ? `${metrics.avgEta.toFixed(1)} min` : '—'}
           icon={Clock}
           color="var(--primary-600)"
           bg="var(--primary-50)"
         />
 
         <StatCard
-          title="Routing Success Rate"
-          value={`${analytics?.routingSuccessPercent || '99.1'}%`}
+          title="Delivered orders"
+          value={metrics?.delivered ?? 0}
           icon={Zap}
           color="#6366f1"
           bg="#e0e7ff"
@@ -97,7 +90,7 @@ const AdminAnalytics = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div>
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>7-Day GMV Sales Velocity</h3>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Daily completed transactions (₹ INR)</span>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Delivered order value by order date (₹, UTC)</span>
           </div>
           <Badge variant="primary">Last 7 Days</Badge>
         </div>
@@ -112,6 +105,7 @@ const AdminAnalytics = () => {
             borderBottom: '1px solid var(--border-light)'
           }}
         >
+          {dailyTrend.length === 0 && <p>No completed orders for this period.</p>}
           {dailyTrend.map((d, i) => {
             const heightPercent = Math.round((d.sales / maxSales) * 100);
             return (
@@ -140,7 +134,7 @@ const AdminAnalytics = () => {
                   }}
                 />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                  {d.date}
+                  {d._id}
                 </span>
               </div>
             );
@@ -155,54 +149,14 @@ const AdminAnalytics = () => {
             Top Medicine Categories Demanded
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.875rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>1. Fever & Pain Relief</span>
-              <strong>38%</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>2. Cold, Cough & Flu</span>
-              <strong>24%</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>3. Digestive Care & Antacids</span>
-              <strong>18%</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>4. Cardiac & Diabetes Maintenance</span>
-              <strong>12%</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>5. First Aid & Antibiotics</span>
-              <strong>8%</strong>
-            </div>
+            {analytics.categories.length === 0 && <p>No order items for this period.</p>}
+            {analytics.categories.map(row => <div key={row._id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>{row._id}</span><strong>{row.units} units</strong>
+            </div>)}
           </div>
         </Card>
 
-        <Card>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>
-            Average Delivery Performance
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.875rem' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Average Hyperlocal ETA</span>
-                <strong>18.4 Minutes</strong>
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Pharmacy Packing Time</span>
-                <strong>4.2 Minutes</strong>
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Rider Transit Time</span>
-                <strong>14.2 Minutes</strong>
-              </div>
-            </div>
-          </div>
-        </Card>
+
       </div>
     </div>
   );

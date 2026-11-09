@@ -77,7 +77,7 @@ const AuthLayout = () => {
           }}
           className="animate-fade-in"
         >
-          <Outlet />
+          <React.Suspense fallback={<p className="route-loading" role="status">Loading page…</p>}><Outlet /></React.Suspense>
         </div>
       </div>
     </div>

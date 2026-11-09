@@ -16,8 +16,9 @@ async function findPurchasableInventory(medicineId, quantity = 1, pharmacyId) {
   if (pharmacyId) filter.pharmacyId = pharmacyId;
   const offers = await PharmacyInventory.find(filter).populate({
     path: 'pharmacyId',
-    match: eligiblePharmacy
-  }).sort({ price: 1, _id: 1 });
+    match: eligiblePharmacy,
+    select: 'name address phone rating totalRatings isOpen is24x7 isDemo operatingHours location verificationStatus'
+  }).sort({ price: 1, _id: 1 }).lean();
   return offers.filter(offer => offer.pharmacyId);
 }
 

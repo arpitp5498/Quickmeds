@@ -132,10 +132,16 @@ const PharmacyInventory = () => {
   // Fetch Master Medicines Catalog
   const fetchMasterMedicines = async () => {
     try {
-      const res = await api.get('/medicines?limit=150');
-      if (res.success && res.data) {
-        setMasterMedicines(res.data.medicines || []);
-      }
+      const medicines = [];
+      let page = 1;
+      let hasMore;
+      do {
+        const { data } = await api.get('/inventory/catalog', { params: { page } });
+        medicines.push(...data.medicines);
+        hasMore = data.hasMore;
+        page++;
+      } while (hasMore);
+      setMasterMedicines(medicines);
     } catch (err) {
       console.warn('Catalog fetch error:', err);
     }
@@ -173,9 +179,12 @@ const PharmacyInventory = () => {
 
   useEffect(() => {
     fetchInventory();
+  }, [statusFilter, sourceFilter]);
+
+  useEffect(() => {
     fetchStats();
     fetchMasterMedicines();
-  }, [statusFilter, sourceFilter]);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'billing') {
@@ -198,7 +207,7 @@ const PharmacyInventory = () => {
     return () => {
       socket.off('inventory_item_updated', handleInvUpdate);
     };
-  }, [socket, activeTab]);
+  }, [socket, activeTab, statusFilter, sourceFilter]);
 
   // Manual Add / Edit Handlers
   const openAddModal = (presetMedicine = null) => {
@@ -384,7 +393,7 @@ const PharmacyInventory = () => {
     setSimulatingSale(true);
     setSimSuccess(null);
     try {
-      const res = await api.post('/integrations/billing/simulate-sale', {
+      const res = await api.post('/integrations/billing/test-sale', {
         inventoryId: selectedSimItem,
         quantitySold: parseInt(simQtySold, 10) || 1
       });
@@ -1331,7 +1340,7 @@ const PharmacyInventory = () => {
                 </h3>
               </div>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                Simulate a counter/retail POS sale to see real-time stock deduction via the central InventorySyncService.
+                Recording a sale deducts the quantity from this pharmacy’s inventory and adds a billing activity.
               </p>
 
               <form onSubmit={handleSimulateSale}>
@@ -1383,7 +1392,7 @@ const PharmacyInventory = () => {
                 </div>
 
                 <Button type="submit" variant="accent" fullWidth loading={simulatingSale} icon={Zap}>
-                  Simulate Retail POS Sale
+                  Record sale and deduct stock
                 </Button>
               </form>
 

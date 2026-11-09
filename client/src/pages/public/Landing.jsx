@@ -123,27 +123,6 @@ const Landing = () => {
           >
             {/* Left: Headline & Search */}
             <div>
-              {/* Badges */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '1.25rem' }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: 'var(--primary-100)',
-                    color: 'var(--primary-800)',
-                    padding: '4px 12px',
-                    borderRadius: 'var(--radius-full)',
-                    fontSize: '0.8125rem',
-                    fontWeight: 700
-                  }}
-                >
-                  <Pill size={14} color="var(--primary-700)" />
-                  <span>QUICKMEDS — Nearest Medicine. Fastest Help.</span>
-                </div>
-
-              </div>
-
               {/* Main Headline */}
               <h1
                 style={{
@@ -154,8 +133,8 @@ const Landing = () => {
                   letterSpacing: '-0.03em'
                 }}
               >
-                Emergency Medicine Access,{' '}
-                <span style={{ color: 'var(--primary-600)' }}>Reimagined.</span>
+                Find your medicines.{' '}
+                <span style={{ color: 'var(--primary-600)' }}>Get them delivered.</span>
               </h1>
 
               {/* Sub-headline */}
@@ -168,7 +147,7 @@ const Landing = () => {
                   maxWidth: '560px'
                 }}
               >
-                A zero-inventory hyperlocal emergency fulfilment platform that dynamically aggregates verified neighborhood pharmacies, runs multi-factor basket routing, and enables rapid doorstep delivery when every minute counts.
+                Check stock and delivery times at your address. QuickMeds finds a verified pharmacy for your order.
               </p>
 
               {/* Main Search Box */}
@@ -186,7 +165,7 @@ const Landing = () => {
                   <SearchBar
                     value={searchQuery}
                     onChange={setSearchQuery}
-                    placeholder="Search Dolo 650, Augmentin, Paracetamol, Inhaler..."
+                    placeholder="Search by medicine or generic name"
                     size="lg"
                   />
                 </div>
@@ -215,202 +194,21 @@ const Landing = () => {
                 </Button>
               </div>
 
-              {/* Three Core Benefits */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '1.5rem',
-                  alignItems: 'center',
-                  fontSize: '0.8125rem',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={16} color="var(--secondary-600)" />
-                  <span>Hyperlocal Grid (1–5 km)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={16} color="var(--secondary-600)" />
-                  <span>100% Verified Pharmacies</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Clock size={16} color="var(--primary-600)" />
-                  <span>20–30 Min Target ETA</span>
-                </div>
-              </div>
             </div>
-
-            {/* Right: Live Discovery Illustration Card */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                borderRadius: 'var(--radius-xl)',
-                padding: '1.75rem',
-                boxShadow: 'var(--shadow-xl)',
-                border: '1px solid var(--border-light)',
-                position: 'relative'
-              }}
-              className="animate-fade-in"
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '1.25rem',
-                  paddingBottom: '1rem',
-                  borderBottom: '1px solid var(--border-light)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--secondary-500)'
-                    }}
-                  />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>
-                    Live Hyperlocal Routing Engine
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--primary-700)',
-                    backgroundColor: 'var(--primary-50)',
-                    padding: '3px 10px',
-                    borderRadius: 'var(--radius-full)',
-                    fontWeight: 700
-                  }}
-                >
-                  Near {location.city || 'Connaught Place'}
-                </span>
+            <aside className="quickmeds-discovery">
+              <h2>Browse by need</h2>
+              <div className="discovery-links">
+                {[
+                  ['Pain & Fever', Pill, '/medicines?category=Pain%20%26%20Fever'],
+                  ['First aid', ShieldCheck, '/medicines?category=First%20Aid'],
+                  ['Period care', Store, '/period-care'],
+                  ['SOS essentials', AlertTriangle, '/emergency']
+                ].map(([label, Icon, to]) => <Link to={to} key={to}>
+                  <Icon size={23} aria-hidden="true" /><span>{label}</span>
+                </Link>)}
               </div>
-
-              {/* Candidate Pharmacy Cards with Score Breakdown */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div
-                  style={{
-                    padding: '12px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--primary-50)',
-                    border: '1px solid var(--primary-200)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-600)',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Store size={18} />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <p style={{ fontSize: '0.875rem', fontWeight: 700 }}>Apollo Pharmacy</p>
-                        <Badge variant="success" size="sm">Optimal Pick</Badge>
-                      </div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        0.8 km • Target ETA: 15 mins • Score: 96.2
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--secondary-700)', fontWeight: 800, display: 'block' }}>
-                      In Stock (100%)
-                    </span>
-                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>License Verified</span>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    padding: '12px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--secondary-600)',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Store size={18} />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>MedPlus Chemist</p>
-                        <Badge variant="info" size="sm">Fallback #1</Badge>
-                      </div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        1.4 km • Target ETA: 20 mins • Score: 91.5
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--secondary-700)', fontWeight: 700, display: 'block' }}>
-                      In Stock (95%)
-                    </span>
-                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Ready for Dispatch</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Live Dispatch Bar */}
-              <div
-                style={{
-                  marginTop: '1.25rem',
-                  padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--bg-main)',
-                  border: '1px solid var(--border-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Truck size={18} color="var(--primary-600)" />
-                  <div>
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
-                      Express Doorstep Delivery
-                    </p>
-                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                      Verified Chemists • Fast Dispatch • Pharmacist Verified
-                    </span>
-                  </div>
-                </div>
-                <Button size="sm" variant="primary" onClick={() => navigate('/medicines')}>
-                  Order Now →
-                </Button>
-              </div>
-            </div>
+              <p><MapPin size={16} /> Delivery to {location.address}</p>
+            </aside>
           </div>
         </div>
       </section>

@@ -55,7 +55,7 @@ const PharmacyLayout = () => {
           </div>
 
           <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', minWidth: 0 }}>
-            <Outlet />
+            <React.Suspense fallback={<p className="route-loading" role="status">Loading page…</p>}><Outlet /></React.Suspense>
           </div>
         </main>
       </div>

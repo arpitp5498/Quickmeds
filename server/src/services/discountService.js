@@ -162,7 +162,9 @@ function findPromotionInMap(promoMap, medicineIdStr, category) {
   const direct = promoMap.get(medicineIdStr);
   const categoryPromo = promoMap.get('cat:' + category);
   if (!categoryPromo) return direct || null;
-  return direct && direct.priority >= categoryPromo.priority ? direct : categoryPromo;
+  if (!direct) return categoryPromo;
+  if (direct.priority !== categoryPromo.priority) return direct.priority > categoryPromo.priority ? direct : categoryPromo;
+  return String(direct._id) <= String(categoryPromo._id) ? direct : categoryPromo;
 }
 
 module.exports = {

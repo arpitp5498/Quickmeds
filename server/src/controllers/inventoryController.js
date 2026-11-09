@@ -338,7 +338,19 @@ const getInventoryActivities = async (req, res, next) => {
   }
 };
 
+async function getCatalogPage(req, res, next) {
+  try {
+    const page = Number(req.query.page || 1);
+    const limit = 100;
+    const rows = await Medicine.find({ active: true, isMerged: { $ne: true }, verificationStatus: { $ne: 'MERGED' } })
+      .select('name genericName category brand strength dosageForm mrp image requiresPrescription')
+      .sort({ name: 1, _id: 1 }).skip((page - 1) * limit).limit(limit + 1).lean();
+    return ApiResponse.success(res, { medicines: rows.slice(0, limit), hasMore: rows.length > limit });
+  } catch (error) { next(error); }
+}
+
 module.exports = {
+  getCatalogPage,
   getMyInventory,
   getInventoryStatsEndpoint,
   addInventoryItem,

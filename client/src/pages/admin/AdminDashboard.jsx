@@ -33,7 +33,7 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
         const [statsRes, ordersRes, pharmRes, syncRes] = await Promise.all([
-          api.get('/admin/stats'),
+          api.get('/admin/dashboard'),
           api.get('/admin/orders?limit=5'),
           api.get('/admin/pharmacies?status=PENDING'),
           api.get('/admin/inventory-sync-overview')
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
       >
         <StatCard
           title="Total Gross Revenue (GMV)"
-          value={`₹${stats?.totalGMV?.toLocaleString('en-IN') || '0'}`}
+          value={`₹${stats?.totalRevenue?.toLocaleString('en-IN') || '0'}`}
           icon={TrendingUp}
           color="var(--primary-600)"
           bg="var(--primary-50)"
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
 
         <StatCard
           title="Verified Pharmacies"
-          value={stats?.verifiedPharmaciesCount || 0}
+          value={stats?.verifiedPharmacies || 0}
           icon={Store}
           color="#f59e0b"
           bg="#fef3c7"

@@ -39,7 +39,6 @@ const PharmacyOrderDetail = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [updating, setUpdating] = useState(false);
-  const [simulatingTimeout, setSimulatingTimeout] = useState(false);
   const [assigningRider, setAssigningRider] = useState(false);
 
   const fetchOrder = async () => {
@@ -165,25 +164,6 @@ const PharmacyOrderDetail = () => {
     }
   };
 
-  const handleSimulateTimeout = async () => {
-    try {
-      setSimulatingTimeout(true);
-      const res = await api.post(`/orders/${id}/simulate-timeout`, {
-        reason: 'PHARMACY_CONFIRMATION_TIMEOUT'
-      });
-      if (res.success) {
-        showToast(
-          '⚡ Fallback Routing Triggered: Order successfully reassigned to next candidate pharmacy.',
-          'info'
-        );
-        fetchOrder();
-      }
-    } catch (err) {
-      showToast(err.message || 'Timeout simulation failed', 'error');
-    } finally {
-      setSimulatingTimeout(false);
-    }
-  };
 
   const handleVerifyPrescription = async (status, notes = '') => {
     if (!order.prescriptionId) return;
@@ -296,20 +276,6 @@ const PharmacyOrderDetail = () => {
 
         {/* Workflow Quick Action Buttons */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {/* Simulate Timeout Button */}
-          {order.orderStatus !== 'DELIVERED' && order.orderStatus !== 'CANCELLED' && order.orderStatus !== 'REJECTED' && (
-            <Button
-              variant="outline"
-              size="sm"
-              icon={Timer}
-              loading={simulatingTimeout}
-              onClick={handleSimulateTimeout}
-              title="Simulate 30-second pharmacy response timeout to trigger automatic fallback reassignment"
-            >
-              Simulate Pharmacy Timeout
-            </Button>
-          )}
-
           {(order.orderStatus === 'PLACED' || order.orderStatus === 'PHARMACY_REVIEW') && (
             <>
               <Button variant="danger" size="sm" onClick={() => setRejectModalOpen(true)}>

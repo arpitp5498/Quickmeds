@@ -28,7 +28,6 @@ const PharmacyOrders = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
-  const [simulatingTimeoutId, setSimulatingTimeoutId] = useState(null);
   const [assigningRiderId, setAssigningRiderId] = useState(null);
 
   const { socket } = useSocket();
@@ -130,32 +129,13 @@ const PharmacyOrders = () => {
     }
   };
 
-  const handleSimulateTimeout = async (orderId) => {
-    try {
-      setSimulatingTimeoutId(orderId);
-      const res = await api.post(`/orders/${orderId}/simulate-timeout`, {
-        reason: 'PHARMACY_CONFIRMATION_TIMEOUT'
-      });
-      if (res.success) {
-        showToast(
-          '⚡ Fallback Routing Triggered: 30s confirmation timed out. Order reassigned to next candidate pharmacy.',
-          'info'
-        );
-        fetchOrders();
-      }
-    } catch (err) {
-      showToast(err.message || 'Fallback simulation failed', 'error');
-    } finally {
-      setSimulatingTimeoutId(null);
-    }
-  };
 
   return (
     <div>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Pharmacy Order Processing</h1>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-          Review incoming orders, verify prescriptions, simulate timeouts & fallback routing, and dispatch to riders.
+          Review incoming orders, verify prescriptions, and dispatch to riders.
         </p>
       </div>
 

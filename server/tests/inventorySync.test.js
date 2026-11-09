@@ -297,6 +297,9 @@ describe('Pharmacy Inventory Ecosystem & Sync Service Tests', () => {
       expect(simResult.newStock).toBe(58);
       expect(simResult.quantitySold).toBe(2);
       expect(simResult.source).toBe('BILLING_SYNC');
+      await expect(simulateBillingSale({ pharmacyId: testPharmacy._id, inventoryId: inv._id, quantitySold: 59 }))
+        .rejects.toThrow('Sale quantity exceeds available stock');
+      expect((await PharmacyInventory.findById(inv._id)).stockQuantity).toBe(58);
     });
   });
 });

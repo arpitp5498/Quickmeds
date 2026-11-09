@@ -3,7 +3,7 @@
  * Provides offline caching, background sync, and push notification support.
  */
 
-const CACHE_NAME = 'quickmeds-v2';
+const CACHE_NAME = 'quickmeds-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -47,7 +47,8 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   // Stock and purchase decisions need a current response, including after going offline.
-  if (/^\/api\/(medicines|pharmacies|cart|routing)(\/|$)/.test(url.pathname)) {
+  if (url.pathname.startsWith('/api/') && (request.headers.has('Authorization') ||
+      /^\/api\/(medicines|pharmacies|cart|routing)(\/|$)/.test(url.pathname))) {
     event.respondWith(fetch(request, { cache: 'no-store' }));
     return;
   }
@@ -100,33 +101,24 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          return caches.match('/') || new Response('Offline', { status: 503 });
+          return caches.match('/').then(cached => cached || new Response('Offline', { status: 503 }));
         })
     );
     return;
   }
 
-  // Hashed assets (Vite bundles like /assets/index-ABC123.js): Network-first
-  // These change hash on every build, so stale cache entries cause MIME type errors
-  if (url.pathname.startsWith('/assets/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request).then((cached) => {
-            if (cached) return cached;
-            return new Response('Offline', { status: 503 });
-          });
-        })
-    );
+  // A new Vite build changes these URLs. Reuse matching bundles immediately.
+  if (/^\/assets\/.+-[\w-]{8,}\.(js|css)$/.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok && /javascript|text\/css/.test(response.headers.get('content-type') || '')) {
+        await cache.put(request, response.clone()).catch(() => {});
+      }
+      return response;
+    })());
     return;
   }
 

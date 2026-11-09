@@ -10,7 +10,7 @@ const MainLayout = () => {
       <EmergencyBanner />
       <Navbar />
       <main style={{ flex: 1 }}>
-        <Outlet />
+        <React.Suspense fallback={<p className="route-loading" role="status">Loading page…</p>}><Outlet /></React.Suspense>
       </main>
       <Footer />
     </div>

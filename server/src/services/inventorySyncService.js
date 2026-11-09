@@ -666,7 +666,8 @@ async function simulateBillingSale({ pharmacyId, inventoryId, quantitySold = 1, 
   const qty = Number(quantitySold);
   if (!Number.isSafeInteger(qty) || qty <= 0) throw ApiError.badRequest('Invalid sale quantity');
   const previousStock = inv.stockQuantity;
-  const newStock = Math.max(0, previousStock - qty);
+  if (qty > previousStock) throw ApiError.conflict('Sale quantity exceeds available stock');
+  const newStock = previousStock - qty;
   const isAvailable = newStock > 0;
 
   inv.stockQuantity = newStock;

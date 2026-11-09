@@ -4,7 +4,7 @@ const { findPurchasableInventory } = require('../services/purchasableInventory')
 const Medicine = require('../models/Medicine');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
-const { getPromotionForMedicine, resolveEffectivePrice } = require('../services/discountService');
+const { getActivePromotionsMap, findPromotionInMap, resolveEffectivePrice } = require('../services/discountService');
 
 // Helper to get or create cart
 const getOrCreateCart = async (userId) => {
@@ -20,12 +20,13 @@ const getCart = async (req, res, next) => {
   try {
     const cart = await getOrCreateCart(req.user._id);
 
-    const stockWarnings = [];
-    for (const item of cart.items) {
+    const medicineIds = cart.items.map(item => item.medicineId);
+    const offers = medicineIds.length ? await findPurchasableInventory({ $in: medicineIds }) : [];
+    const stockWarnings = cart.items.filter(item => {
       const pharmacyId = item.pharmacyId || cart.pharmacyId?._id;
-      const offers = pharmacyId && await findPurchasableInventory(item.medicineId, item.quantity, pharmacyId);
-      if (!offers?.length) stockWarnings.push(`"${item.name}" is unavailable in the selected quantity.`);
-    }
+      return !offers.some(offer => offer.medicineId.equals(item.medicineId) &&
+        offer.pharmacyId._id.equals(pharmacyId) && offer.stockQuantity >= item.quantity);
+    }).map(item => `"${item.name}" is unavailable in the selected quantity.`);
 
     return ApiResponse.success(res, { cart, stockWarnings });
   } catch (error) {
@@ -181,10 +182,11 @@ async function quoteCheckout(req, res, next) {
     const route = plan.recommended;
     const lines = route.pharmacies[0].itemsFulfilled;
     const medicines = await Medicine.find({ _id: { $in: lines.map(line => line.medicineId) }, active: true, isMerged: { $ne: true } });
+    const promotions = await getActivePromotionsMap(medicines.map(m => m._id), medicines.map(m => m.category));
     for (const line of lines) {
       const med = medicines.find(m => m._id.equals(line.medicineId));
       if (!med) throw ApiError.conflict('Medicine unavailable');
-      const promo = await getPromotionForMedicine(med._id, med.category);
+      const promo = findPromotionInMap(promotions, String(med._id), med.category);
       line.unitPrice = resolveEffectivePrice(line.unitPrice, med.mrp, promo).effectivePrice;
       line.totalPrice = line.unitPrice * line.requestedQty;
     }

@@ -132,6 +132,7 @@ const MedicineSearch = () => {
 
   useEffect(() => {
     let current = true;
+    const controller = new AbortController();
     const fetchMedicines = async () => {
       try {
         setLoading(true);
@@ -151,7 +152,7 @@ const MedicineSearch = () => {
           url += `&requiresPrescription=true`;
         }
 
-        const res = await api.get(url);
+        const res = await api.get(url, { signal: controller.signal });
         if (!current) return;
         if (!res.success || !Array.isArray(res.data?.medicines)) throw new Error('Invalid catalog response');
         setMedicines(res.data.medicines || []);
@@ -175,7 +176,7 @@ const MedicineSearch = () => {
     };
 
     fetchMedicines();
-    return () => { current = false; };
+    return () => { current = false; controller.abort(); };
   }, [debouncedSearch, category, requiresPrescription, sort, page, location.lat, location.lng]);
 
   const handleCategoryClick = (cat) => {
