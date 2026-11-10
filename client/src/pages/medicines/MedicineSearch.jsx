@@ -38,31 +38,6 @@ import Pagination from '../../components/ui/Pagination';
 import EmptyState from '../../components/ui/EmptyState';
 import { getMedicineImage } from '../../utils/medicineImages';
 
-export const CATEGORIES = [
-  'All',
-  'Pain & Fever',
-  'Oral Rehydration & Electrolytes',
-  'Gastrointestinal Care',
-  'Acidity & Reflux',
-  'Constipation & Diarrhoea',
-  'Allergy & Antihistamines',
-  'Respiratory & Asthma',
-  'Diabetes Care',
-  'Cardiovascular Care',
-  'Dermatological & Skin Care',
-  'Wound Care & Antiseptics',
-  'Eye, Ear & Nasal Care',
-  'Vitamins & Mineral Supplements',
-  'Bone & Nutritional Support',
-  'Women Health & Hygiene',
-  'Pediatric Care',
-  'Essential Outpatient Medicines'
-];
-
-const DEFAULT_CATEGORY_COUNTS = {
-  'All': 109
-};
-
 const MedicineSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
@@ -78,7 +53,7 @@ const MedicineSearch = () => {
 
   const [medicines, setMedicines] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
-  const [categoryCounts, setCategoryCounts] = useState(DEFAULT_CATEGORY_COUNTS);
+  const [browseCategories, setBrowseCategories] = useState([]);
   const [catalogError, setCatalogError] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -157,14 +132,7 @@ const MedicineSearch = () => {
         if (!res.success || !Array.isArray(res.data?.medicines)) throw new Error('Invalid catalog response');
         setMedicines(res.data.medicines || []);
         setPagination(res.data.pagination || { total: 0, pages: 1 });
-        if (res.data.categoryCounts) {
-          const counts = { ...DEFAULT_CATEGORY_COUNTS, ...res.data.categoryCounts };
-          // Total 'All' count
-          counts['All'] = Object.entries(counts)
-            .filter(([k]) => k !== 'All')
-            .reduce((acc, [, v]) => acc + v, 0);
-          setCategoryCounts(counts);
-        }
+        setBrowseCategories(res.data.browseCategories ?? Object.keys(res.data.categoryCounts || {}));
       } catch (err) {
         if (!current) return;
         setCatalogError(true);
@@ -191,11 +159,9 @@ const MedicineSearch = () => {
     setPage(1);
   };
 
-  // Compute category label with count
-  const getCategoryLabel = (cat) => {
-    const count = categoryCounts[cat];
-    return count !== undefined ? `${cat} (${count})` : cat;
-  };
+  const shortcuts = ['All', ...browseCategories.slice(0, 3)];
+  const extraCategories = browseCategories.slice(3);
+  if (!shortcuts.includes(category) && !extraCategories.includes(category)) extraCategories.push(category);
 
   // Descriptive section heading based on state
   const getSectionTitle = () => {
@@ -246,73 +212,19 @@ const MedicineSearch = () => {
         />
       </div>
 
-      {/* Category Discovery Navigation */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Browse Categories
-          </span>
-          {category !== 'All' && (
-            <button
-              onClick={() => handleCategoryClick('All')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '0.75rem',
-                color: 'var(--primary-600)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                padding: '2px 6px'
-              }}
-            >
-              Reset to All ({categoryCounts['All'] || 36})
-            </button>
-          )}
-        </div>
-
-        <div className="category-pill-row">
-          {CATEGORIES.map((cat) => {
-            const isSelected = category === cat;
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => handleCategoryClick(cat)}
-                style={{
-                  padding: '7px 15px',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '0.8125rem',
-                  fontWeight: isSelected ? 700 : 500,
-                  backgroundColor: isSelected ? 'var(--primary-600)' : 'var(--bg-card)',
-                  color: isSelected ? '#ffffff' : 'var(--text-main)',
-                  border: `1px solid ${isSelected ? 'var(--primary-600)' : 'var(--border-medium)'}`,
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 2px 8px rgba(15, 118, 110, 0.25)' : 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>{cat}</span>
-                <span
-                  style={{
-                    fontSize: '0.6875rem',
-                    padding: '1px 6px',
-                    borderRadius: '10px',
-                    backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.25)' : 'var(--bg-subtle)',
-                    color: isSelected ? '#ffffff' : 'var(--text-muted)',
-                    fontWeight: 600
-                  }}
-                >
-                  {categoryCounts[cat] || (cat === 'All' ? 36 : 0)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <nav aria-label="Browse medicine categories" className="medicine-category-nav">
+        {shortcuts.map(name => (
+          <button key={name} type="button" aria-pressed={category === name}
+            onClick={() => handleCategoryClick(name)}>{name}</button>
+        ))}
+        {extraCategories.length > 0 && (
+          <select aria-label="More categories" value={extraCategories.includes(category) ? category : ''}
+            onChange={e => handleCategoryClick(e.target.value)}>
+            <option value="" disabled>More categories</option>
+            {extraCategories.map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
+        )}
+      </nav>
 
       {/* Secondary Filter Bar: Prescription Toggle + Sort Dropdown */}
       <div

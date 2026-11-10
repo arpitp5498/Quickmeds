@@ -460,3 +460,8 @@ img {
 
 .route-loading { padding: 2.5rem 1.25rem; text-align: center; color: var(--text-muted); }
 .search-bar-container:focus-within input { box-shadow: 0 0 0 3px var(--primary-200) !important; }
+
+.medicine-category-nav { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+.medicine-category-nav :is(button,select) { min-height: 40px; max-width: 100%; padding: .45rem .85rem; border: 1px solid var(--border-medium); border-radius: var(--radius-full); background: var(--bg-card); color: var(--text-main); font: inherit; font-size: .875rem; cursor: pointer; }
+.medicine-category-nav button[aria-pressed="true"], .medicine-category-nav select:has(option:checked:not([disabled])) { background: var(--primary-700); color: white; border-color: var(--primary-700); }
+.medicine-category-nav option { background: var(--bg-card); color: var(--text-main); }

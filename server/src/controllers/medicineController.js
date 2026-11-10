@@ -1,3 +1,4 @@
+const { groups, browseCategories } = require('../services/browseCategories');
 const { findDeliveryPharmacies, calculateETA } = require('../services/smartRoutingService');
 const { quoteItem } = require('../services/cartQuote');
 const Medicine = require('../models/Medicine');
@@ -47,7 +48,9 @@ const searchMedicines = async (req, res, next) => {
       const catTrimmed = category.trim();
       const catEscaped = catTrimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-      if (catTrimmed === 'Pain & Fever' || catTrimmed === 'Fever & Pain' || catTrimmed === 'Pain Relief') {
+      if (Object.hasOwn(groups, catTrimmed)) {
+        query.category = { $in: groups[catTrimmed] };
+      } else if (catTrimmed === 'Pain & Fever' || catTrimmed === 'Fever & Pain' || catTrimmed === 'Pain Relief') {
         query.category = { $in: ['Pain & Fever', 'Fever & Pain', 'Pain Relief'] };
       } else if (catTrimmed === 'Oral Rehydration & Electrolytes') {
         query.category = { $in: ['Oral Rehydration & Electrolytes', 'Digestive Care'] };
@@ -198,7 +201,8 @@ const searchMedicines = async (req, res, next) => {
         limit: parseInt(limit, 10),
         pages: Math.ceil(total / limit)
       },
-      categoryCounts
+      categoryCounts,
+      browseCategories: browseCategories(categoryCounts)
     });
   } catch (error) {
     next(error);
