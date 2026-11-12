@@ -6,13 +6,14 @@ import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import LocationPicker from './LocationPicker';
 import NotificationBell from './NotificationBell';
+import SOSLink from './SOSLink';
 import { useAssistant } from './AIAssistantChat';
 import './storefront.css';
 
 const dashboards = { ADMIN: '/admin', PHARMACY: '/pharmacy', DOCTOR: '/doctor', DELIVERY_PARTNER: '/delivery' };
 const careLinks = [
   ['/doctors', 'Consult a doctor'], ['/lab-tests', 'Book a lab test'],
-  ['/emergency', 'First-aid essentials'], ['/period-care', 'Period care'],
+  ['/period-care', 'Period care'],
   ['/pharmacies', 'Nearby pharmacies'], ['/pharmacy-network', 'Pharmacy map'],
   ['/ambulance', 'Ambulance assistance']
 ];
@@ -63,9 +64,12 @@ export default function Navbar() {
   return (
     <header className="qm-header">
       <div className="container qm-nav">
-        <Link to="/" className="qm-wordmark" aria-label="QuickMeds home">
-          <span className="qm-mark"><Pill size={21} aria-hidden="true" /></span>QuickMeds
-        </Link>
+        <div className="qm-brand-nav">
+          <Link to="/" className="qm-wordmark" aria-label="QuickMeds home">
+            <span className="qm-mark"><Pill size={21} aria-hidden="true" /></span>QuickMeds
+          </Link>
+          <SOSLink />
+        </div>
         <div className="qm-delivery-area"><LocationPicker /></div>
         <nav className="qm-primary" aria-label="Primary navigation">
           <NavLink to="/medicines">Medicines</NavLink>
@@ -86,6 +90,7 @@ export default function Navbar() {
             {open && <nav id="qm-navigation" className="qm-popover" aria-label="More navigation">
               <div className="qm-menu-group">
                 <strong>{isAuthenticated ? 'My account' : 'QuickMeds'}</strong>
+                {!isAuthenticated && <Link className="qm-menu-sign-in" to="/login" onClick={() => setOpen(false)}>Sign in</Link>}
                 {isAuthenticated && links([[dashboard, 'Dashboard']])}
                 {links([['/medicines', 'Find medicines']])}
                 {(isCustomer || isAdmin) ? links(accountLinks) : !isAuthenticated && links([['/orders', 'Track an order']])}

@@ -1,28 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronRight, FileUp, MapPin, Package, Search } from 'lucide-react';
+import { ArrowRight, FileUp, Heart, MapPin, Package, Pill, Search, ShieldPlus, Zap } from 'lucide-react';
 import { useLocation } from '../../context/LocationContext';
 import './Landing.css';
 
 const collections = [
-  {
-    label: 'Pain & fever',
-    to: '/medicines?category=Pain%20%26%20fever',
-    image: '/medicines/crocin-500-advance-tablet-netmeds.jpg',
-    tone: 'blue'
-  },
-  {
-    label: 'First aid & SOS',
-    to: '/emergency',
-    image: '/medicines/hansaplast-regular-bandage-strips.png',
-    tone: 'green'
-  },
-  {
-    label: 'Period care',
-    to: '/medicines?category=Period%20care%20%26%20hygiene',
-    image: '/medicines/sanitary-pads-xl-whisper-ultra-clean-netmeds.jpg',
-    tone: 'pink'
-  }
+  { label: 'Pain & fever', category: 'Pain & fever', icon: Pill },
+  { label: 'First aid', category: 'First aid & skin care', icon: ShieldPlus },
+  { label: 'Period care', category: 'Period care & hygiene', icon: Heart }
 ];
 
 export default function Landing() {
@@ -37,60 +22,34 @@ export default function Landing() {
   }
 
   return (
-    <div className="container qm-home">
-      <section className="qm-home-hero" aria-labelledby="home-search-title">
-        <div className="qm-home-search-area">
-          <h1 id="home-search-title">Find your medicines<span>.</span></h1>
-          <p className="qm-home-intro">Search by name to check prices and availability in your area.</p>
+    <section className="qm-home" aria-labelledby="home-search-title">
+      <div className="container qm-home-hero">
+        <div>
+          <h1 id="home-search-title">Find your medicines. <span>Get them delivered.</span></h1>
+          <p className="qm-home-intro">Check stock and delivery times in your area.</p>
           <form className="qm-home-search" role="search" aria-label="Medicine search" onSubmit={handleSearch}>
-            <Search size={21} aria-hidden="true" />
-            <input
-              type="search"
-              aria-label="Medicine or generic name"
-              placeholder="Medicine or generic name"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              enterKeyHint="search"
-            />
+            <label><Search size={20} aria-hidden="true" /><input type="search" aria-label="Medicine or generic name"
+              placeholder="Medicine or generic name" value={searchQuery} onChange={event => setSearchQuery(event.target.value)}
+              enterKeyHint="search" /></label>
             <button type="submit">Find medicine</button>
           </form>
-          {location?.address && (
-            <p className="qm-home-address">
-              <MapPin size={16} aria-hidden="true" />
-              <span>Delivery area <strong>{location.address}</strong></span>
-            </p>
-          )}
+          <nav className="qm-home-shortcuts" aria-label="Order shortcuts">
+            <Link className="qm-home-urgent" to="/emergency"><Zap size={17} />SOS essentials</Link>
+            <Link to="/prescriptions/upload"><FileUp size={17} />Upload a prescription</Link>
+            <Link to="/orders"><Package size={17} />Track an order</Link>
+          </nav>
         </div>
-
-        <nav className="qm-home-actions" aria-label="Prescriptions and orders">
-          <Link to="/prescriptions/upload">
-            <span className="qm-home-action-icon"><FileUp aria-hidden="true" size={23} /></span>
-            <span><strong>Upload a prescription</strong><small>Send a photo or PDF for review</small></span>
-            <ChevronRight aria-hidden="true" size={18} />
-          </Link>
-          <Link to="/orders">
-            <span className="qm-home-action-icon"><Package aria-hidden="true" size={23} /></span>
-            <span><strong>Track an order</strong><small>View your latest order status</small></span>
-            <ChevronRight aria-hidden="true" size={18} />
-          </Link>
+        <nav className="quickmeds-discovery" aria-labelledby="home-browse-title">
+          <h2 id="home-browse-title">Browse by need</h2>
+          <div className="discovery-links">
+            {collections.map(({ label, category, icon: Icon }) => (
+              <Link key={category} to={`/medicines?category=${encodeURIComponent(category)}`}><Icon size={23} />{label}</Link>
+            ))}
+            <Link to="/medicines"><ArrowRight size={23} />All medicines</Link>
+          </div>
+          {location?.address && <p className="qm-home-address"><MapPin size={16} />Delivery area · {location.address}</p>}
         </nav>
-      </section>
-
-      <section className="qm-home-collections" aria-labelledby="home-collections-title">
-        <div className="qm-home-section-heading">
-          <h2 id="home-collections-title">Browse essentials</h2>
-          <Link to="/medicines">All medicines <ArrowRight size={17} aria-hidden="true" /></Link>
-        </div>
-        <div className="qm-home-collection-list">
-          {collections.map(({ label, to, image, tone }) => (
-            <Link key={to} to={to} className={`qm-home-collection qm-home-collection--${tone}`}>
-              <span className="qm-home-product"><img src={image} width="88" height="88" loading="lazy" decoding="async" alt="" /></span>
-              <strong>{label}</strong>
-              <ChevronRight aria-hidden="true" size={17} />
-            </Link>
-          ))}
-        </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

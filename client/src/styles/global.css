@@ -14,7 +14,7 @@ html {
   -webkit-text-size-adjust: 100%;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -25,7 +25,7 @@ body {
   min-height: 100vh;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   transition: background-color var(--transition-normal), color var(--transition-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -37,7 +37,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -482,5 +482,5 @@ body:has(dialog[open]) { overflow: hidden; }
 .qm-chat-log strong { font-size: .78rem; color: var(--text-muted); }
 .qm-chat-form { margin-top: 1rem; display: flex; gap: .5rem; }
 .qm-chat-form input { min-width: 0; flex: 1; padding: .65rem; border-radius: .65rem; border: 1px solid var(--border-medium); background: var(--bg-card); color: var(--text-main); }
-.qm-chat-form button { min-width: 44px; min-height: 44px; border-radius: .65rem; background: #09687a; color: white; }
+.qm-chat-form button { min-width: 44px; min-height: 44px; border-radius: .65rem; background: var(--primary-700); color: white; }
 .qm-chat-form button:disabled { opacity: .55; }

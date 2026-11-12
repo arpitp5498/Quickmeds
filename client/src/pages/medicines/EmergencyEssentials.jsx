@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useLayoutEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap, ShieldCheck } from 'lucide-react';
 import EmergencyEssentialsSection from '../../components/emergency/EmergencyEssentialsSection';
 import Card from '../../components/ui/Card';
@@ -7,9 +7,15 @@ import Button from '../../components/ui/Button';
 
 const EmergencyEssentials = () => {
   const navigate = useNavigate();
+  const { key } = useLocation();
+  const start = useRef(null);
+  useLayoutEffect(() => {
+    start.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [key]);
 
   return (
-    <div className="container" style={{ padding: '2rem 1.25rem 4rem' }}>
+    <section ref={start} tabIndex={-1} aria-label="SOS emergency essentials" className="container" style={{ padding: '2rem 1.25rem 4rem' }}>
       {/* Top Back Nav */}
       <button
         type="button"
@@ -37,7 +43,7 @@ const EmergencyEssentials = () => {
         title="SOS — Emergency Essentials"
         subtitle="Curated access to commonly searched emergency medicines, first aid, and acute relief supplies across QuickMeds' verified pharmacy network."
       />
-    </div>
+    </section>
   );
 };
 
