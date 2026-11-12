@@ -465,3 +465,22 @@ img {
 .medicine-category-nav :is(button,select) { min-height: 40px; max-width: 100%; padding: .45rem .85rem; border: 1px solid var(--border-medium); border-radius: var(--radius-full); background: var(--bg-card); color: var(--text-main); font: inherit; font-size: .875rem; cursor: pointer; }
 .medicine-category-nav button[aria-pressed="true"], .medicine-category-nav select:has(option:checked:not([disabled])) { background: var(--primary-700); color: white; border-color: var(--primary-700); }
 .medicine-category-nav option { background: var(--bg-card); color: var(--text-main); }
+
+body:has(dialog[open]) { overflow: hidden; }
+.app-modal { inset: 0; margin: auto; width: calc(100% - 2rem); max-height: 90dvh; border: 1px solid var(--border-light); border-radius: var(--radius-xl); background: var(--bg-card); color: var(--text-main); box-shadow: var(--shadow-xl); padding: 0; }
+.app-modal::backdrop { background: rgba(15, 23, 42, .65); }
+.app-modal-panel { display: flex; flex-direction: column; max-height: 89dvh; }
+.app-modal-panel > header, .app-modal-footer { display: flex; align-items: center; gap: 12px; padding: .8rem 1.25rem; }
+.app-modal-panel > header { justify-content: space-between; border-bottom: 1px solid var(--border-light); }
+.app-modal-panel > header h2 { font-size: 1.15rem; }
+.app-modal-panel > header button { display: grid; place-items: center; width: 42px; height: 42px; color: var(--text-main); }
+.app-modal-body { overflow: auto; padding: clamp(1rem, 3vw, 1.5rem); }
+.app-modal-footer { justify-content: flex-end; border-top: 1px solid var(--border-light); background: var(--bg-subtle); }
+.qm-chat-note { font-size: .875rem; color: var(--text-muted); }
+.qm-chat-log { max-height: min(40dvh, 320px); overflow: auto; overflow-wrap: anywhere; }
+.qm-chat-log > div { margin-block: .75rem; padding: .65rem; border-radius: .65rem; background: var(--bg-subtle); }
+.qm-chat-log strong { font-size: .78rem; color: var(--text-muted); }
+.qm-chat-form { margin-top: 1rem; display: flex; gap: .5rem; }
+.qm-chat-form input { min-width: 0; flex: 1; padding: .65rem; border-radius: .65rem; border: 1px solid var(--border-medium); background: var(--bg-card); color: var(--text-main); }
+.qm-chat-form button { min-width: 44px; min-height: 44px; border-radius: .65rem; background: #09687a; color: white; }
+.qm-chat-form button:disabled { opacity: .55; }

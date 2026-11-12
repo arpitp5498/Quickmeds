@@ -276,37 +276,22 @@ export const MEDICINE_IMAGE_MAP = {
   "hand sanitizer": "/medicines/dettol-hand-sanitizer.png"
 };
 
-/**
- * Returns the exact unique realistic product photo URL for any medicine object or string.
- * @param {Object|string} medicine - Medicine object or medicine name
- * @returns {string} Image path
- */
+export const medicineImagePlaceholder = '/icons/icon-96x96.svg';
+
 export function getMedicineImage(medicine) {
-  if (!medicine) return '/medicines/dolo-650mg-tablet-netmeds.jpg';
+  if (!medicine) return medicineImagePlaceholder;
+  const item = typeof medicine === 'string' ? { name: medicine } : medicine;
+  const name = (item.name || item.title || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  if (Object.hasOwn(MEDICINE_IMAGE_MAP, name)) return MEDICINE_IMAGE_MAP[name];
+  if (typeof item.image === 'string' && item.image.startsWith('/medicines/')) return item.image;
+  return medicineImagePlaceholder;
+}
 
-  const medicineObj = typeof medicine === 'object' ? medicine : { name: medicine };
-  const rawName = (medicineObj.name || medicineObj.title || '').trim();
-  const normalized = rawName.toLowerCase().replace(/\s+/g, ' ');
-
-  // 1. Direct match in MEDICINE_IMAGE_MAP
-  if (MEDICINE_IMAGE_MAP[normalized]) {
-    return MEDICINE_IMAGE_MAP[normalized];
+export function showMedicineImagePlaceholder(event) {
+  const image = event.currentTarget;
+  if (image.getAttribute('src') !== medicineImagePlaceholder) {
+    image.src = medicineImagePlaceholder;
   }
-
-  // 2. Partial / Key Match (sorted by length descending for best specificity)
-  const keys = Object.keys(MEDICINE_IMAGE_MAP).sort((a, b) => b.length - a.length);
-  for (const key of keys) {
-    if (normalized.startsWith(key) || key.startsWith(normalized) || normalized.includes(key)) {
-      return MEDICINE_IMAGE_MAP[key];
-    }
-  }
-
-  // 3. Fallback to valid medicine object image if specified
-  if (medicineObj.image && (medicineObj.image.startsWith('/medicines/') && !medicineObj.image.endsWith('.svg'))) {
-    return medicineObj.image;
-  }
-
-  return '/medicines/dolo-650mg-tablet-netmeds.jpg';
 }
 
 export default getMedicineImage;

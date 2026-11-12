@@ -47,8 +47,9 @@ const addressSchema = new mongoose.Schema(
     },
     coordinates: {
       type: [Number], // [longitude, latitude]
-      default: [77.209, 28.6139]
+      default: undefined
     },
+    coordinatesConfirmed: Boolean,
     isDefault: {
       type: Boolean,
       default: false

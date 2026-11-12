@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 const Input = forwardRef(
   (
@@ -20,6 +20,8 @@ const Input = forwardRef(
     ref
   ) => {
     const Component = as;
+    const generatedId = useId();
+    const inputId = props.id || generatedId;
 
     return (
       <div
@@ -34,6 +36,7 @@ const Input = forwardRef(
       >
         {label && (
           <label
+            htmlFor={inputId}
             style={{
               fontSize: '0.875rem',
               fontWeight: 500,
@@ -63,6 +66,9 @@ const Input = forwardRef(
           )}
 
           <Component
+            id={inputId}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error || helperText ? inputId + '-hint' : undefined}
             ref={ref}
             type={as === 'input' ? type : undefined}
             style={{
@@ -75,7 +81,6 @@ const Input = forwardRef(
               border: `1px solid ${error ? 'var(--error)' : 'var(--border-medium)'}`,
               borderRadius: 'var(--radius-md)',
               fontSize: '0.9375rem',
-              outline: 'none',
               transition: 'border-color var(--transition-fast)',
               resize: as === 'textarea' ? 'vertical' : 'none',
               ...style
@@ -105,13 +110,13 @@ const Input = forwardRef(
         </div>
 
         {error && (
-          <span style={{ fontSize: '0.75rem', color: 'var(--error)', fontWeight: 500 }}>
+          <span id={inputId + '-hint'} style={{ fontSize: '0.75rem', color: 'var(--error)', fontWeight: 500 }}>
             {error}
           </span>
         )}
 
         {helperText && !error && (
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          <span id={inputId + '-hint'} style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             {helperText}
           </span>
         )}

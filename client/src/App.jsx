@@ -24,8 +24,7 @@ function App() {
                   <ReminderProvider>
                     <EmergencyModeProvider>
                       <ErrorBoundary>
-                        <AppRoutes />
-                        <AIAssistantChat />
+                        <AIAssistantChat><AppRoutes /></AIAssistantChat>
                       </ErrorBoundary>
                     </EmergencyModeProvider>
                   </ReminderProvider>

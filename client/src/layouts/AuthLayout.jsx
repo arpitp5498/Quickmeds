@@ -2,8 +2,10 @@ import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Pill } from 'lucide-react';
 import EmergencyBanner from '../components/common/EmergencyBanner';
+import { useAssistant } from '../components/common/AIAssistantChat';
 
 const AuthLayout = () => {
+  const openAssistant = useAssistant();
   return (
     <div
       style={{
@@ -60,9 +62,6 @@ const AuthLayout = () => {
               QuickMeds
             </span>
           </Link>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Urgent Medicines. Nearby Pharmacies. Faster Access.
-          </p>
         </div>
 
         <div
@@ -79,6 +78,8 @@ const AuthLayout = () => {
         >
           <React.Suspense fallback={<p className="route-loading" role="status">Loading page…</p>}><Outlet /></React.Suspense>
         </div>
+        <button type="button" style={{ marginTop: '1rem', minHeight: '44px', color: 'var(--text-muted)' }}
+          onClick={event => openAssistant(event.currentTarget)}>Chat with QuickMeds</button>
       </div>
     </div>
   );

@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation, ChevronDown, Check } from 'lucide-react';
+import React, { useId, useRef, useState } from 'react';
+import { MapPin, Navigation, ChevronDown, Check, X } from 'lucide-react';
 import { useLocation } from '../../context/LocationContext';
-import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import Input from '../ui/Input';
 
 const POPULAR_LOCATIONS = [
   { name: 'Connaught Place, New Delhi', city: 'New Delhi', lat: 28.629, lng: 77.214 },
@@ -17,169 +15,49 @@ const POPULAR_LOCATIONS = [
   { name: 'Bandra West, Mumbai', city: 'Mumbai', lat: 19.0596, lng: 72.8295 }
 ];
 
-const LocationPicker = () => {
-  const { location, setLocation, detectCurrentLocation, isDetecting, locationError } =
-    useLocation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [manualAddress, setManualAddress] = useState('');
-
-  const handleSelectPreset = (loc) => {
-    setLocation({
-      address: loc.name,
-      city: loc.city,
-      lat: loc.lat,
-      lng: loc.lng
-    });
-    setIsOpen(false);
+export default function LocationPicker({ onSelect, label }) {
+  const { location, setLocation, detectCurrentLocation, isDetecting, locationError } = useLocation();
+  const [query, setQuery] = useState('');
+  const dialog = useRef(null);
+  const id = useId();
+  const matches = POPULAR_LOCATIONS.filter(area => area.name.toLowerCase().includes(query.trim().toLowerCase()));
+  const areaName = location.city === 'Current Area' ? 'Current location' : location.address?.split(',')[0] || location.city;
+  const close = () => dialog.current?.close();
+  const select = area => {
+    if (!dialog.current?.open) return;
+    (onSelect || setLocation)(area);
+    close();
   };
-
-  const handleSaveManual = (e) => {
-    e.preventDefault();
-    if (manualAddress.trim()) {
-      setLocation({
-        address: manualAddress.trim(),
-        city: 'Selected Area',
-        lat: 28.629, // default Delhi coords or geocoded
-        lng: 77.214
-      });
-      setManualAddress('');
-      setIsOpen(false);
-    }
-  };
-
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '6px 12px',
-          backgroundColor: 'var(--bg-subtle)',
-          borderRadius: 'var(--radius-full)',
-          border: '1px solid var(--border-light)',
-          color: 'var(--text-main)',
-          fontSize: '0.8125rem',
-          maxWidth: '220px',
-          cursor: 'pointer',
-          transition: 'all var(--transition-fast)'
-        }}
-        title={location.address}
-      >
-        <MapPin size={15} color="var(--primary-600)" style={{ minWidth: '15px' }} />
-        <span
-          style={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            fontWeight: 500
-          }}
-        >
-          {location.city || 'Set Location'}
-        </span>
-        <ChevronDown size={14} color="var(--text-muted)" />
+      <button type="button" className="qm-area-trigger" aria-label={label || `Change delivery area, ${areaName}`}
+        aria-haspopup="dialog" onClick={() => { setQuery(''); dialog.current.showModal(); }}>
+        <MapPin size={16} /><span>{label || areaName}</span><ChevronDown size={14} />
       </button>
-
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Select Delivery Location">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* GPS Auto-detect Button */}
-          <Button
-            variant="outline"
-            fullWidth
-            onClick={() => {
-              detectCurrentLocation();
-              setIsOpen(false);
-            }}
-            loading={isDetecting}
-            icon={Navigation}
-          >
-            Detect My GPS Location
-          </Button>
-
-          {locationError && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--error)' }}>{locationError}</p>
-          )}
-
-          {/* Manual Address Input */}
-          <form onSubmit={handleSaveManual}>
-            <Input
-              label="Or enter custom address / pincode"
-              placeholder="e.g. 14 Main Ring Road, Lajpat Nagar, 110024"
-              value={manualAddress}
-              onChange={(e) => setManualAddress(e.target.value)}
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              disabled={!manualAddress.trim()}
-              fullWidth
-            >
-              Set Custom Address
-            </Button>
-          </form>
-
-          {/* Quick Hub Presets */}
-          <div>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}
-            >
-              Popular Delivery Hubs
-            </span>
-
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                marginTop: '8px',
-                maxHeight: '200px',
-                overflowY: 'auto'
-              }}
-            >
-              {POPULAR_LOCATIONS.map((loc, i) => {
-                const isSelected = location.address === loc.name;
-                return (
-                  <div
-                    key={i}
-                    onClick={() => handleSelectPreset(loc)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: isSelected ? 'var(--primary-50)' : 'transparent',
-                      color: isSelected ? 'var(--primary-700)' : 'var(--text-main)',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <MapPin
-                        size={14}
-                        color={isSelected ? 'var(--primary-600)' : 'var(--text-muted)'}
-                      />
-                      <span>{loc.name}</span>
-                    </div>
-                    {isSelected && <Check size={16} color="var(--primary-600)" />}
-                  </div>
-                );
-              })}
-            </div>
+      <dialog ref={dialog} className="qm-location-dialog" aria-labelledby={id + '-title'}
+        onClick={event => { if (event.target === dialog.current) close(); }}>
+        <div className="qm-dialog-inner">
+          <div className="qm-dialog-title"><h2 id={id + '-title'}>Delivery area</h2>
+            <button type="button" aria-label="Close delivery area" onClick={close}><X size={20} /></button>
+          </div>
+          <Button variant="outline" fullWidth icon={Navigation} loading={isDetecting}
+            onClick={async () => { const area = await detectCurrentLocation(); if (area) select(area); }}>Use my current location</Button>
+          {locationError && <p role="alert">{locationError}</p>}
+          <label htmlFor={id + '-search'}>Search by area or city</label>
+          <input id={id + '-search'} type="search" value={query} placeholder="e.g. Noida"
+            onKeyDown={event => { if (event.key === 'Enter') event.preventDefault(); }}
+            onChange={event => setQuery(event.target.value)} />
+          <div className="qm-area-options">
+            {matches.map(area => (
+              <button key={area.name} type="button" disabled={isDetecting} onClick={() =>
+                select({ address: area.name, city: area.city, lat: area.lat, lng: area.lng })}>
+                <MapPin size={15} /><span>{area.name}</span>{!onSelect && location.lat === area.lat && location.lng === area.lng && <Check size={16} aria-label="Selected" />}
+              </button>
+            ))}
+            {!matches.length && <p role="status">No matching areas. Use your current location to search nearby.</p>}
           </div>
         </div>
-      </Modal>
+      </dialog>
     </>
   );
-};
-
-export default LocationPicker;
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Plus, Trash2, Edit3, CheckCircle2 } from 'lucide-react';
+import { MapPin, Plus, Trash2, Edit3 } from 'lucide-react';
+import LocationPicker from '../../components/common/LocationPicker';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Card from '../../components/ui/Card';
@@ -19,9 +20,11 @@ const Addresses = () => {
   const [recipientName, setRecipientName] = useState('');
   const [phone, setPhone] = useState('');
   const [street, setStreet] = useState('');
-  const [city, setCity] = useState('New Delhi');
-  const [state, setState] = useState('Delhi');
-  const [pincode, setPincode] = useState('110001');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [point, setPoint] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [landmark, setLandmark] = useState('');
   const [isDefault, setIsDefault] = useState(false);
 
@@ -45,22 +48,25 @@ const Addresses = () => {
     fetchAddresses();
   }, []);
 
-  const openAddModal = () => {
-    setEditingId(null);
-    setLabel('Home');
-    setRecipientName('');
-    setPhone('');
-    setStreet('');
-    setCity('New Delhi');
-    setState('Delhi');
-    setPincode('110001');
-    setLandmark('');
-    setIsDefault(false);
+  const openAddress = (address = {}) => {
+    setEditingId(address._id || null);
+    setLabel(address.label || 'Home');
+    setRecipientName(address.recipientName || '');
+    setPhone(address.phone || '');
+    setStreet(address.street || '');
+    setCity(address.city || '');
+    setState(address.state || '');
+    setPincode(address.pincode || '');
+    setPoint(address.coordinatesConfirmed ? address.coordinates : null);
+    setLandmark(address.landmark || '');
+    setIsDefault(!!address.isDefault);
     setModalOpen(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!point || saving) return;
+    setSaving(true);
     try {
       const payload = {
         label,
@@ -71,6 +77,7 @@ const Addresses = () => {
         state,
         pincode,
         landmark,
+        coordinates: point,
         fullAddress: `${street}, ${landmark ? landmark + ', ' : ''}${city}, ${state} ${pincode}`,
         isDefault
       };
@@ -87,6 +94,8 @@ const Addresses = () => {
       fetchAddresses();
     } catch (err) {
       showToast(err.message || 'Failed to save address', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -119,7 +128,7 @@ const Addresses = () => {
           </p>
         </div>
 
-        <Button variant="primary" icon={Plus} onClick={openAddModal}>
+        <Button variant="primary" icon={Plus} onClick={() => openAddress()}>
           Add New Address
         </Button>
       </div>
@@ -138,7 +147,7 @@ const Addresses = () => {
           title="No Saved Addresses"
           description="Add your home, work, or family address to speed up emergency medicine delivery."
           actionLabel="Add Address"
-          onAction={openAddModal}
+          onAction={() => openAddress()}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -198,6 +207,7 @@ const Addresses = () => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" aria-label={`Edit ${addr.label} address`} onClick={() => openAddress(addr)} style={{ color: 'var(--text-main)', padding: '8px' }}><Edit3 size={16} /></button>
                   <button
                     type="button"
                     onClick={() => handleDelete(addr._id)}
@@ -253,15 +263,15 @@ const Addresses = () => {
           <Input
             label="Street Address / Flat / Building"
             value={street}
-            onChange={(e) => setStreet(e.target.value)}
+            onChange={(e) => { setStreet(e.target.value); setPoint(null); }}
             placeholder="e.g. Flat 402, Block C, Royal Heights"
             required
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-            <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} required />
-            <Input label="State" value={state} onChange={(e) => setState(e.target.value)} required />
-            <Input label="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} required />
+            <Input label="City" value={city} onChange={(e) => { setCity(e.target.value); setPoint(null); }} required />
+            <Input label="State" value={state} onChange={(e) => { setState(e.target.value); setPoint(null); }} required />
+            <Input label="PIN code" value={pincode} onChange={(e) => { setPincode(e.target.value); setPoint(null); }} inputMode="numeric" pattern="[0-9]{6}" required />
           </div>
 
           <Input
@@ -271,7 +281,11 @@ const Addresses = () => {
             placeholder="e.g. Near Metro Station"
           />
 
-          <Button type="submit" variant="primary" fullWidth style={{ marginTop: '1rem' }}>
+          <LocationPicker label={point ? 'Change delivery area' : 'Choose area for this address'} onSelect={area => {
+            setPoint([area.lng, area.lat]);
+            if (area.city !== 'Current Area') setCity(area.city);
+          }} />
+          <Button type="submit" variant="primary" disabled={!point || saving} loading={saving} fullWidth style={{ marginTop: '1rem' }}>
             Save Address
           </Button>
         </form>

@@ -1,979 +1,169 @@
-import { deliveryAvailability } from '../../utils/medicineStock';
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  Search,
-  Filter,
-  Pill,
-  ShieldAlert,
-  Store,
-  MapPin,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  Layers,
-  ShoppingBag,
-  Plus,
-  Minus,
-  Trash2,
-  ExternalLink,
-  ShieldCheck,
-  Info,
-  Clock,
-  ArrowRight,
-  Check,
-  AlertTriangle
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, ChevronDown, MapPin, Pill, Search, SlidersHorizontal, X } from 'lucide-react';
 import api from '../../services/api';
 import { useLocation } from '../../context/LocationContext';
-import { useCart } from '../../context/CartContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import SearchBar from '../../components/ui/SearchBar';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
-import Skeleton from '../../components/ui/Skeleton';
-import Pagination from '../../components/ui/Pagination';
 import EmptyState from '../../components/ui/EmptyState';
-import { getMedicineImage } from '../../utils/medicineImages';
+import Pagination from '../../components/ui/Pagination';
+import Skeleton from '../../components/ui/Skeleton';
+import { getMedicineImage, showMedicineImagePlaceholder } from '../../utils/medicineImages';
+import { MedicineFacts, MedicinePurchase, useMedicineCart } from './MedicinePurchase';
+import './medicine-shop.css';
 
-const MedicineSearch = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const initialQuery = searchParams.get('q') || '';
-  const initialCategory = searchParams.get('category') || 'All';
+function MedicinePreview({ medicine, basket, onClose, catalogUrl }) {
+  const dialog = useRef(null);
+  function closePreview() {
+    dialog.current.close();
+    onClose();
+  }
+  useEffect(() => {
+    const element = dialog.current;
+    element.showModal();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      element.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+  return (
+    <dialog className="med-dialog" ref={dialog} aria-labelledby="med-preview-name" onCancel={event => { event.preventDefault(); closePreview(); }}
+      onClick={event => { if (event.target === dialog.current) closePreview(); }}>
+      <div className="med-dialog-body">
+        <button type="button" className="med-close" aria-label="Close preview" onClick={closePreview}><X size={20} /></button>
+        <div className="med-image med-preview-image"><img src={getMedicineImage(medicine)} onError={showMedicineImagePlaceholder} alt="" /></div>
+        <h2 id="med-preview-name">{medicine.name}</h2>
+        <p className="med-meta">{[medicine.strength, medicine.dosageForm].filter(Boolean).join(' · ')}</p>
+        {medicine.requiresPrescription && <p className="med-rx">Prescription required at checkout</p>}
+        <MedicinePurchase medicine={medicine} basket={basket} />
+        {basket.getItemQuantity(medicine._id) > 0 && <Link className="med-link" to="/cart">View cart ({basket.totalItems}) <ArrowRight size={16} /></Link>}
+        <details className="med-disclosure"><summary>Product information</summary><MedicineFacts medicine={medicine} /></details>
+        <Link to={`/medicines/${medicine._id}`} state={{ catalogUrl }} className="med-link">View full details <ArrowRight size={16} /></Link>
+      </div>
+    </dialog>
+  );
+}
 
-  const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const debouncedSearch = useDebounce(searchTerm, 300);
-
-  const [category, setCategory] = useState(initialCategory);
-  const [requiresPrescription, setRequiresPrescription] = useState('ALL'); // 'ALL' | 'OTC' | 'RX'
-  const [sort, setSort] = useState('popular');
-  const [page, setPage] = useState(1);
-
+export default function MedicineSearch() {
+  const [params, setParams] = useSearchParams();
+  const searchTerm = params.get('q') || '';
+  const query = useDebounce(searchTerm.trim(), 300);
+  const category = params.get('category') || 'All';
+  const rx = ['OTC', 'RX'].includes(params.get('rx')) ? params.get('rx') : 'ALL';
+  const sort = ['price_asc', 'price_desc'].includes(params.get('sort')) ? params.get('sort') : 'popular';
+  const pageParam = Number(params.get('page'));
+  const page = Number.isSafeInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+  const { location } = useLocation();
+  const basket = useMedicineCart();
   const [medicines, setMedicines] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
-  const [browseCategories, setBrowseCategories] = useState([]);
-  const [catalogError, setCatalogError] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [status, setStatus] = useState('loading');
+  const [retry, setRetry] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtered = !!searchTerm || category !== 'All' || rx !== 'ALL' || sort !== 'popular';
+  const filterCount = Number(rx !== 'ALL') + Number(sort !== 'popular');
+  const choices = category !== 'All' && !categories.includes(category) ? [category, ...categories] : categories;
+  const resultsHeading = query ? `Results for “${query}”` : category === 'All' ? 'All medicines' : category;
+  const catalogUrl = '/medicines' + (params.size ? '?' + params.toString() : '');
 
-  const { location } = useLocation();
-  const navigate = useNavigate();
-  const { cart, getItemQuantity, addToCart, updateQuantity, removeFromCart } = useCart();
-  const [selectedMedicine, setSelectedMedicine] = useState(null);
-  const [actionLoadingId, setActionLoadingId] = useState(null);
-
-  const handleAddToCart = async (e, med) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    setActionLoadingId(med._id);
-    try {
-      await addToCart(med, 1, med.lowestPrice || med.mrp);
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  const handleIncreaseQty = async (e, med, currentQty) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    setActionLoadingId(med._id);
-    try {
-      await updateQuantity(med._id, currentQty + 1);
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  const handleDecreaseQty = async (e, med, currentQty) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    setActionLoadingId(med._id);
-    try {
-      if (currentQty <= 1) {
-        await removeFromCart(med._id);
-      } else {
-        await updateQuantity(med._id, currentQty - 1);
-      }
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  // Keep URL in sync
-  useEffect(() => {
-    const params = {};
-    if (debouncedSearch.trim()) params.q = debouncedSearch.trim();
-    if (category && category !== 'All') params.category = category;
-    setSearchParams(params, { replace: true });
-  }, [debouncedSearch, category, setSearchParams]);
+  function change(key, value) {
+    const next = new URLSearchParams(params);
+    if (key !== 'page') next.delete('page');
+    const defaults = { q: '', category: 'All', rx: 'ALL', sort: 'popular', page: 1 };
+    if (value !== defaults[key]) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
+  }
 
   useEffect(() => {
-    let current = true;
     const controller = new AbortController();
-    const fetchMedicines = async () => {
-      try {
-        setLoading(true);
-        setCatalogError(false);
-        setSelectedMedicine(null);
-        let url = `/medicines?page=${page}&limit=24&sort=${sort}&lat=${location.lat}&lng=${location.lng}`;
-
-        if (debouncedSearch.trim()) {
-          url += `&q=${encodeURIComponent(debouncedSearch.trim())}`;
-        }
-        if (category && category !== 'All') {
-          url += `&category=${encodeURIComponent(category)}`;
-        }
-        if (requiresPrescription === 'OTC') {
-          url += `&requiresPrescription=false`;
-        } else if (requiresPrescription === 'RX') {
-          url += `&requiresPrescription=true`;
-        }
-
-        const res = await api.get(url, { signal: controller.signal });
-        if (!current) return;
-        if (!res.success || !Array.isArray(res.data?.medicines)) throw new Error('Invalid catalog response');
-        setMedicines(res.data.medicines || []);
-        setPagination(res.data.pagination || { total: 0, pages: 1 });
-        setBrowseCategories(res.data.browseCategories ?? Object.keys(res.data.categoryCounts || {}));
-      } catch (err) {
-        if (!current) return;
-        setCatalogError(true);
-        setMedicines([]);
-        console.warn('Medicine search error:', err);
-      } finally {
-        if (current) setLoading(false);
-      }
-    };
-
-    fetchMedicines();
-    return () => { current = false; controller.abort(); };
-  }, [debouncedSearch, category, requiresPrescription, sort, page, location.lat, location.lng]);
-
-  const handleCategoryClick = (cat) => {
-    setCategory(cat);
-    setPage(1);
-  };
-
-  const handleResetFilters = () => {
-    setSearchTerm('');
-    setCategory('All');
-    setRequiresPrescription('ALL');
-    setPage(1);
-  };
-
-  const shortcuts = ['All', ...browseCategories.slice(0, 3)];
-  const extraCategories = browseCategories.slice(3);
-  if (!shortcuts.includes(category) && !extraCategories.includes(category)) extraCategories.push(category);
-
-  // Descriptive section heading based on state
-  const getSectionTitle = () => {
-    if (debouncedSearch.trim() && category !== 'All') {
-      return `Results for "${debouncedSearch.trim()}" in ${category}`;
-    }
-    if (debouncedSearch.trim()) {
-      return `Results for "${debouncedSearch.trim()}"`;
-    }
-    if (category !== 'All') {
-      return `${category} Medicines`;
-    }
-    return 'Commonly Searched Medicines';
-  };
-
-  const getSectionSubtitle = () => {
-    if (loading) return 'Checking real-time stock across verified pharmacies...';
-    if (catalogError) return 'Availability Unknown';
-    if (medicines.length === 0) return 'No matching items in this selection.';
-    if (category === 'All' && !debouncedSearch.trim()) {
-      return `Browse all ${pagination.total || medicines.length} master items with live inventory matching.`;
-    }
-    return `Showing ${medicines.length} of ${pagination.total || medicines.length} medicines.`;
-  };
+    setStatus('loading');
+    setSelected(null);
+    const request = { page, limit: 24, sort, lat: location.lat, lng: location.lng };
+    if (query) request.q = query;
+    if (category !== 'All') request.category = category;
+    if (rx !== 'ALL') request.requiresPrescription = rx === 'RX';
+    api.get('/medicines', { params: request, signal: controller.signal }).then(res => {
+      if (controller.signal.aborted) return;
+      if (!res.success || !Array.isArray(res.data?.medicines)) throw new Error('Invalid catalog response');
+      setMedicines(res.data.medicines);
+      setPagination(res.data.pagination || { total: res.data.medicines.length, pages: 1 });
+      setCategories(res.data.browseCategories ?? Object.keys(res.data.categoryCounts || {}));
+      setStatus('ready');
+    }).catch(() => { if (!controller.signal.aborted) setStatus('error'); });
+    return () => controller.abort();
+  }, [page, sort, query, category, rx, location.lat, location.lng, retry]);
 
   return (
-    <div className="container" style={{ padding: '2rem 1.25rem' }}>
-      {/* Title & Location Context */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
-          Search Medicines &amp; Healthcare
-        </h1>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-          Checking delivery to <strong>{location.address}</strong>
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <SearchBar
-          value={searchTerm}
-          onChange={(val) => {
-            setSearchTerm(val);
-            setPage(1);
-          }}
-          placeholder="Search by medicine name (e.g. Dolo 650), salt formula (e.g. Paracetamol), or category..."
-          size="lg"
-        />
-      </div>
-
-      <nav aria-label="Browse medicine categories" className="medicine-category-nav">
-        {shortcuts.map(name => (
-          <button key={name} type="button" aria-pressed={category === name}
-            onClick={() => handleCategoryClick(name)}>{name}</button>
-        ))}
-        {extraCategories.length > 0 && (
-          <select aria-label="More categories" value={extraCategories.includes(category) ? category : ''}
-            onChange={e => handleCategoryClick(e.target.value)}>
-            <option value="" disabled>More categories</option>
-            {extraCategories.map(name => <option key={name} value={name}>{name}</option>)}
-          </select>
-        )}
-      </nav>
-
-      {/* Secondary Filter Bar: Prescription Toggle + Sort Dropdown */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-          padding: '10px 14px',
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-light)'
-        }}
-      >
-        {/* Prescription Type Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            Filter:
-          </span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button
-              type="button"
-              onClick={() => setRequiresPrescription('ALL')}
-              style={{
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: requiresPrescription === 'ALL' ? 'var(--primary-100)' : 'transparent',
-                color: requiresPrescription === 'ALL' ? 'var(--primary-800)' : 'var(--text-muted)'
-              }}
-            >
-              All Items
-            </button>
-            <button
-              type="button"
-              onClick={() => setRequiresPrescription('OTC')}
-              style={{
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: requiresPrescription === 'OTC' ? 'var(--secondary-100)' : 'transparent',
-                color: requiresPrescription === 'OTC' ? 'var(--secondary-700)' : 'var(--text-muted)'
-              }}
-            >
-              OTC (No Rx)
-            </button>
-            <button
-              type="button"
-              onClick={() => setRequiresPrescription('RX')}
-              style={{
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: requiresPrescription === 'RX' ? 'var(--accent-100)' : 'transparent',
-                color: requiresPrescription === 'RX' ? 'var(--accent-700)' : 'var(--text-muted)'
-              }}
-            >
-              Prescription (Rx)
-            </button>
+    <div className="container med-shop">
+      <header className="med-header">
+        <h1>Find a medicine</h1>
+        <p className="med-address"><MapPin size={16} aria-hidden="true" />Delivery to {location.address}</p>
+        <div className="med-tools">
+          <label className="med-search"><Search aria-hidden="true" size={20} />
+            <input type="search" aria-label="Search medicines" placeholder="Search by medicine or generic name" value={searchTerm} onChange={e => change('q', e.target.value)} />
+          </label>
+          <div className="med-select">
+            <select aria-label="Medicine category" value={category} onChange={e => change('category', e.target.value)}>
+              <option value="All">All categories</option>
+              {choices.map(name => <option key={name}>{name}</option>)}
+            </select><ChevronDown aria-hidden="true" size={16} />
           </div>
+          <button className="med-filter-toggle" type="button" aria-expanded={filtersOpen} aria-controls="medicine-filters" onClick={() => setFiltersOpen(!filtersOpen)}>
+            <SlidersHorizontal size={17} aria-hidden="true" /> Filters{filterCount > 0 && ` (${filterCount})`}
+          </button>
         </div>
-
-        {/* Sort selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            Sort:
-          </span>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            style={{
-              padding: '5px 10px',
-              fontSize: '0.8125rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-medium)',
-              backgroundColor: 'var(--bg-card)',
-              color: 'var(--text-main)',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="popular">Most Relevant</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-          </select>
+        <div id="medicine-filters" className="med-filters" hidden={!filtersOpen}>
+          <label>Prescription<select aria-label="Prescription" value={rx} onChange={e => change('rx', e.target.value)}>
+            <option value="ALL">All medicines</option><option value="OTC">No prescription needed</option><option value="RX">Prescription required</option>
+          </select></label>
+          <label>Sort by<select aria-label="Sort by" value={sort} onChange={e => change('sort', e.target.value)}>
+            <option value="popular">Most relevant</option><option value="price_asc">MRP, low to high</option><option value="price_desc">MRP, high to low</option>
+          </select></label>
         </div>
-      </div>
-
-      {/* Section Header */}
-      <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Layers size={18} color="var(--primary-600)" />
-            {getSectionTitle()}
-          </h2>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {getSectionSubtitle()}
-          </p>
+      </header>
+      <section aria-labelledby="medicine-results">
+        {category === 'Period care & hygiene' && <nav className="med-related" aria-label="Period care services">
+          <Link className="med-link" to="/cycle-tracker">Cycle tracker <ArrowRight size={15} /></Link>
+          <Link className="med-link" to="/doctors">Book a consultation <ArrowRight size={15} /></Link>
+        </nav>}
+        <div className="med-results">
+          <h2 id="medicine-results">{resultsHeading}</h2>
+          <span className="med-meta" role="status">{status === 'loading' ? 'Searching…' : status === 'ready' ? `${pagination.total} result${pagination.total === 1 ? '' : 's'}` : ''}</span>
+          {filtered && <button type="button" className="med-reset" onClick={() => setParams({}, { replace: true })}>Clear filters</button>}
         </div>
-
-        {debouncedSearch.trim() && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSearchTerm('')}
-            style={{ fontSize: '0.75rem' }}
-          >
-            Clear Search Text
-          </Button>
+        {status === 'loading' ? (
+          <div className="med-grid" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height="280px" borderRadius="var(--radius-lg)" />)}</div>
+        ) : status === 'error' ? (
+          <EmptyState icon={Pill} title="Medicines couldn’t load" description="Availability is unknown. Try loading the catalog again." actionLabel="Try again" onAction={() => setRetry(r => r + 1)} />
+        ) : !medicines.length ? (
+          <EmptyState icon={Search} title="No medicines found" description="Try a different medicine name or browse all categories." actionLabel={filtered ? 'Clear filters' : undefined} onAction={() => setParams({}, { replace: true })} />
+        ) : (
+          <>
+            <div className="med-grid">
+              {medicines.map(medicine => (
+                <article className="med-card" key={medicine._id}>
+                  <div className="med-image"><img loading="lazy" decoding="async" src={getMedicineImage(medicine)} onError={showMedicineImagePlaceholder} alt="" /></div>
+                  <div className="med-card-info">
+                    <h3><button type="button" className="med-open-preview" onClick={() => setSelected(medicine)} aria-haspopup="dialog">{medicine.name}</button></h3>
+                    <p className="med-meta">{[medicine.strength, medicine.dosageForm].filter(Boolean).join(' · ')}</p>
+                    {medicine.requiresPrescription && <small className="med-rx">Prescription required</small>}
+                  </div>
+                  <MedicinePurchase medicine={medicine} basket={basket} />
+                </article>
+              ))}
+            </div>
+            <Pagination currentPage={page} totalPages={pagination.pages} onPageChange={next => {
+              change('page', next);
+              document.getElementById('medicine-results')?.scrollIntoView({ block: 'start', behavior: 'instant' });
+            }} />
+          </>
         )}
-      </div>
-
-      {/* Medicine Grid */}
-      {loading ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
-            gap: '1.5rem'
-          }}
-        >
-          {[...Array(8)].map((_, idx) => (
-            <div key={idx} style={{ padding: '1.25rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-light)' }}>
-              <Skeleton height="210px" borderRadius="var(--radius-lg)" style={{ marginBottom: '14px' }} />
-              <Skeleton height="22px" width="80%" style={{ marginBottom: '8px' }} />
-              <Skeleton height="14px" width="60%" style={{ marginBottom: '14px' }} />
-              <Skeleton height="38px" />
-            </div>
-          ))}
-        </div>
-      ) : catalogError ? (
-        <EmptyState icon={Pill} title="Availability Unknown" description="The catalog could not be loaded. Please try again." />
-      ) : medicines.length === 0 ? (
-        <EmptyState
-          icon={Pill}
-          title={debouncedSearch.trim() ? "No medicines found" : `No medicines found in ${category}`}
-          description={
-            debouncedSearch.trim()
-              ? `We couldn't find medicines matching "${debouncedSearch}"${category !== 'All' ? ` under ${category}` : ''}. Try searching for a salt formula (e.g. Paracetamol) or check another category.`
-              : `No medicines are currently listed under "${category}". Choose another category above or view all medicines.`
-          }
-          actionLabel={debouncedSearch.trim() ? "Clear Search" : "Show All Medicines"}
-          onAction={handleResetFilters}
-        />
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
-            gap: '1.5rem'
-          }}
-        >
-          {medicines.map((med) => {
-            const qty = getItemQuantity(med._id);
-            const availability = deliveryAvailability(med, qty || 1);
-
-            return (
-              <Card
-                key={med._id}
-                hoverable
-                className="card-healthcare"
-                onClick={() => setSelectedMedicine(med)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  padding: '1.25rem',
-                  borderRadius: 'var(--radius-xl)',
-                  transition: 'all 0.25s ease',
-                  position: 'relative'
-                }}
-              >
-                <div>
-                  {/* Realistic Medicine Product Showcase Box */}
-                  <div
-                    style={{
-                      position: 'relative',
-                      height: '210px',
-                      borderRadius: 'var(--radius-lg)',
-                      overflow: 'hidden',
-                      backgroundColor: '#ffffff',
-                      marginBottom: '14px',
-                      border: '1px solid var(--border-light)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '8px'
-                    }}
-                  >
-                    <img
-                      src={getMedicineImage(med)}
-                      alt={med.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        objectPosition: 'center',
-                        transition: 'transform 0.25s ease'
-                      }}
-                      loading="lazy"
-                    />
-                    {med.requiresPrescription ? (
-                      <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                        <Badge variant="prescription" size="sm">
-                          Rx Required
-                        </Badge>
-                      </div>
-                    ) : (
-                      <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                        <Badge variant="success" size="sm">
-                          OTC
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ fontSize: '0.75rem', color: 'var(--primary-700)', fontWeight: 600, marginBottom: '2px' }}>
-                    {med.category}
-                  </div>
-
-                  <h3
-                    style={{
-                      fontSize: '0.9375rem',
-                      fontWeight: 700,
-                      lineHeight: 1.35,
-                      marginBottom: '4px',
-                      color: 'var(--text-main)'
-                    }}
-                  >
-                    {med.name}
-                  </h3>
-
-                  <p
-                    style={{
-                      fontSize: '0.75rem',
-                      color: 'var(--text-muted)',
-                      marginBottom: '8px',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {med.genericName} • {med.dosageForm}
-                  </p>
-                </div>
-
-                <div>
-                  {/* Availability & Price Summary */}
-                  {(() => {
-                    const price = med.lowestPrice || med.mrp;
-                    const hasDiscount = (med.lowestPrice && med.lowestPrice < med.mrp) || Boolean(med.promotion);
-                    const discountPercent = med.promotion
-                      ? med.promotion.discountPercentage
-                      : (med.lowestPrice && med.lowestPrice < med.mrp
-                          ? Math.round(((med.mrp - med.lowestPrice) / med.mrp) * 100)
-                          : 0);
-                    const savingsAmount = med.promotion
-                      ? med.promotion.discountAmount
-                      : (med.lowestPrice && med.lowestPrice < med.mrp
-                          ? Math.round(med.mrp - med.lowestPrice)
-                          : 0);
-
-                    return (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'baseline',
-                          justifyContent: 'space-between',
-                          marginTop: '8px',
-                          marginBottom: '10px',
-                          borderTop: '1px solid var(--border-light)',
-                          paddingTop: '8px'
-                        }}
-                      >
-                        <div>
-                          <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            ₹{price}
-                          </span>
-                          {hasDiscount && discountPercent > 0 && (
-                            <span
-                              style={{
-                                fontSize: '0.75rem',
-                                color: 'var(--text-muted)',
-                                textDecoration: 'line-through',
-                                marginLeft: '6px'
-                              }}
-                            >
-                              ₹{med.mrp}
-                            </span>
-                          )}
-                          {hasDiscount && discountPercent > 0 && (
-                            <span style={{
-                              display: 'inline-block',
-                              fontSize: '0.6875rem',
-                              fontWeight: 700,
-                              color: '#ffffff',
-                              backgroundColor: '#16a34a',
-                              padding: '1px 6px',
-                              borderRadius: '4px',
-                              marginLeft: '6px'
-                            }}>
-                              {discountPercent}% OFF
-                            </span>
-                          )}
-                        </div>
-
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                            {availability.label}
-                          </div>
-                          {hasDiscount && savingsAmount > 0 && (
-                            <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>
-                              Save ₹{savingsAmount} on MRP ₹{med.mrp}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* E-Commerce Action Area: Prominent Add To Cart or Interactive Quantity Selector */}
-                  <div onClick={(e) => e.stopPropagation()}>
-                    {!availability.available && qty === 0 ? (
-                      <Button variant="outline" size="sm" fullWidth disabled style={{ opacity: 0.6 }}>
-                        {availability.label}
-                      </Button>
-                    ) : qty > 0 ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          backgroundColor: 'var(--primary-50)',
-                          border: '1.5px solid var(--primary-600)',
-                          borderRadius: 'var(--radius-lg)',
-                          padding: '3px 6px',
-                          height: '38px',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => handleDecreaseQty(e, med, qty)}
-                          disabled={actionLoadingId === med._id}
-                          style={{
-                            width: '30px',
-                            height: '30px',
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--primary-200)',
-                            backgroundColor: '#ffffff',
-                            color: qty === 1 ? '#ef4444' : 'var(--primary-700)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                            transition: 'all 0.15s ease'
-                          }}
-                          title={qty === 1 ? 'Remove from cart' : 'Decrease quantity'}
-                          aria-label="Decrease quantity"
-                        >
-                          {qty === 1 ? <Trash2 size={13} /> : <Minus size={13} strokeWidth={2.5} />}
-                        </button>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                            {qty}
-                          </span>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--primary-700)' }}>
-                            in cart
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={(e) => handleIncreaseQty(e, med, qty)}
-                          disabled={actionLoadingId === med._id || !deliveryAvailability(med, qty + 1).available}
-                          style={{
-                            width: '30px',
-                            height: '30px',
-                            borderRadius: 'var(--radius-md)',
-                            border: 'none',
-                            backgroundColor: 'var(--primary-600)',
-                            color: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            boxShadow: '0 1px 2px rgba(37, 99, 235, 0.3)',
-                            transition: 'all 0.15s ease'
-                          }}
-                          title="Add another unit"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus size={13} strokeWidth={2.5} />
-                        </button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        fullWidth
-                        icon={ShoppingBag}
-                        loading={actionLoadingId === med._id}
-                        onClick={(e) => handleAddToCart(e, med)}
-                        style={{
-                          height: '38px',
-                          fontWeight: 700,
-                          borderRadius: 'var(--radius-lg)',
-                          boxShadow: '0 2px 5px rgba(37, 99, 235, 0.18)'
-                        }}
-                      >
-                        Add to Cart
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Quick Details Modal */}
-      {selectedMedicine && (
-        <Modal
-          isOpen={!!selectedMedicine}
-          onClose={() => setSelectedMedicine(null)}
-          title={selectedMedicine.name}
-          size="lg"
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
-            {/* Left: Product Image & Badges */}
-            <div>
-              <div
-                style={{
-                  position: 'relative',
-                  height: '260px',
-                  borderRadius: 'var(--radius-lg)',
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid var(--border-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '12px',
-                  marginBottom: '1rem'
-                }}
-              >
-                <img
-                  src={getMedicineImage(selectedMedicine)}
-                  alt={selectedMedicine.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-                {selectedMedicine.requiresPrescription ? (
-                  <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                    <Badge variant="prescription" size="sm">Rx Required</Badge>
-                  </div>
-                ) : (
-                  <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                    <Badge variant="success" size="sm">OTC Medicine</Badge>
-                  </div>
-                )}
-              </div>
-
-              {/* Price Banner */}
-              {(() => {
-                const modalPrice = selectedMedicine.lowestPrice || selectedMedicine.mrp;
-                const hasDiscount = (selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp) || Boolean(selectedMedicine.promotion);
-                const discountPercent = selectedMedicine.promotion
-                  ? selectedMedicine.promotion.discountPercentage
-                  : (selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp
-                      ? Math.round(((selectedMedicine.mrp - selectedMedicine.lowestPrice) / selectedMedicine.mrp) * 100)
-                      : 0);
-                const savingsAmount = selectedMedicine.promotion
-                  ? selectedMedicine.promotion.discountAmount
-                  : (selectedMedicine.lowestPrice && selectedMedicine.lowestPrice < selectedMedicine.mrp
-                      ? Math.round(selectedMedicine.mrp - selectedMedicine.lowestPrice)
-                      : 0);
-
-                return (
-                  <div
-                    style={{
-                      backgroundColor: 'var(--bg-subtle)',
-                      border: '1.5px solid var(--primary-100)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px 16px',
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-700)', display: 'block' }}>
-                        BEST NETWORK PRICE
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                          ₹{modalPrice}
-                        </span>
-                        {hasDiscount && discountPercent > 0 && (
-                          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                            MRP ₹{selectedMedicine.mrp}
-                          </span>
-                        )}
-                        {hasDiscount && discountPercent > 0 && (
-                          <span style={{
-                            display: 'inline-block',
-                            fontSize: '0.6875rem',
-                            fontWeight: 700,
-                            color: '#ffffff',
-                            backgroundColor: '#16a34a',
-                            padding: '1px 6px',
-                            borderRadius: '4px'
-                          }}>
-                            {discountPercent}% OFF
-                          </span>
-                        )}
-                      </div>
-                      {hasDiscount && savingsAmount > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, marginTop: '2px' }}>
-                          Save ₹{savingsAmount} ({discountPercent}%)
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-700)', fontWeight: 600 }}>
-                      {deliveryAvailability(selectedMedicine, getItemQuantity(selectedMedicine._id) || 1).label}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Right: Detailed Information */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              <div>
-                <Badge variant="primary" size="sm" style={{ marginBottom: '6px' }}>
-                  {selectedMedicine.category}
-                </Badge>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, lineHeight: 1.3 }}>
-                  {selectedMedicine.name}
-                </h2>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px', marginBottom: 0 }}>
-                  <strong>Generic:</strong> {selectedMedicine.genericName}
-                </p>
-              </div>
-
-              {/* Specs Grid */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '8px',
-                  padding: '10px 12px',
-                  backgroundColor: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.8125rem'
-                }}
-              >
-                <div>
-                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Strength:</span>
-                  <strong style={{ color: 'var(--text-main)' }}>{selectedMedicine.strength || 'Standard'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Dosage Form:</span>
-                  <strong style={{ color: 'var(--text-main)' }}>{selectedMedicine.dosageForm || 'Tablet'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Manufacturer:</span>
-                  <strong style={{ color: 'var(--text-main)' }}>{selectedMedicine.manufacturer || 'Verified Partner'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)', display: 'block' }}>Regulation:</span>
-                  <strong style={{ color: selectedMedicine.requiresPrescription ? 'var(--accent-600)' : 'var(--secondary-600)' }}>
-                    {selectedMedicine.prescriptionSchedule || (selectedMedicine.requiresPrescription ? 'Schedule H' : 'OTC')}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Description */}
-              {selectedMedicine.description && (
-                <div>
-                  <h5 style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
-                    Description &amp; Uses
-                  </h5>
-                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                    {selectedMedicine.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Safety Warning */}
-              <div
-                style={{
-                  backgroundColor: selectedMedicine.requiresPrescription ? 'var(--accent-50)' : 'var(--secondary-50)',
-                  border: `1px solid ${selectedMedicine.requiresPrescription ? 'var(--accent-100)' : 'var(--secondary-100)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  padding: '8px 12px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '8px',
-                  fontSize: '0.75rem',
-                  color: selectedMedicine.requiresPrescription ? 'var(--accent-700)' : 'var(--secondary-700)'
-                }}
-              >
-                <ShieldAlert size={16} style={{ minWidth: '16px', marginTop: '2px' }} />
-                <span>
-                  {selectedMedicine.requiresPrescription
-                    ? 'Doctor prescription is mandatory for dispensing this medicine. Upload or attach at checkout.'
-                    : 'Over-the-counter medicine. Use as advised and follow package directions.'}
-                </span>
-              </div>
-
-              {/* Actions Area */}
-              <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {(() => {
-                  const modalQty = getItemQuantity(selectedMedicine._id);
-                  return modalQty > 0 ? (
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          backgroundColor: 'var(--primary-50)',
-                          border: '1.5px solid var(--primary-600)',
-                          borderRadius: 'var(--radius-lg)',
-                          padding: '4px 8px',
-                          height: '42px',
-                          flex: '0 0 140px',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => handleDecreaseQty(e, selectedMedicine, modalQty)}
-                          disabled={actionLoadingId === selectedMedicine._id}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--primary-200)',
-                            backgroundColor: '#ffffff',
-                            color: modalQty === 1 ? '#ef4444' : 'var(--primary-700)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer'
-                          }}
-                          aria-label="Decrease quantity"
-                        >
-                          {modalQty === 1 ? <Trash2 size={14} /> : <Minus size={14} />}
-                        </button>
-                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                          {modalQty}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleIncreaseQty(e, selectedMedicine, modalQty)}
-                          disabled={actionLoadingId === selectedMedicine._id || !deliveryAvailability(selectedMedicine, modalQty + 1).available}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: 'var(--radius-md)',
-                            border: 'none',
-                            backgroundColor: 'var(--primary-600)',
-                            color: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer'
-                          }}
-                          aria-label="Increase quantity"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                      <Button
-                        variant="primary"
-                        size="md"
-                        fullWidth
-                        icon={ShoppingBag}
-                        onClick={() => {
-                          setSelectedMedicine(null);
-                          navigate('/cart');
-                        }}
-                        style={{ height: '42px', fontWeight: 700 }}
-                      >
-                        View Cart ({cart.totalItems})
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="primary"
-                      size="md"
-                      fullWidth
-                      icon={ShoppingBag}
-                      loading={actionLoadingId === selectedMedicine._id}
-                      disabled={!deliveryAvailability(selectedMedicine).available}
-                      onClick={(e) => handleAddToCart(e, selectedMedicine)}
-                      style={{ height: '42px', fontWeight: 700 }}
-                    >
-                      {deliveryAvailability(selectedMedicine).available ? `Add to Cart • ₹${selectedMedicine.lowestPrice || selectedMedicine.mrp}` : deliveryAvailability(selectedMedicine, getItemQuantity(selectedMedicine._id) || 1).label}
-                    </Button>
-                  );
-                })()}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  fullWidth
-                  icon={ExternalLink}
-                  onClick={() => {
-                    const id = selectedMedicine._id;
-                    setSelectedMedicine(null);
-                    navigate(`/medicines/${id}`);
-                  }}
-                >
-                  View Full Detail &amp; Pharmacy Availability Page
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <Pagination
-          currentPage={pagination.page || page}
-          totalPages={pagination.pages || 1}
-          onPageChange={setPage}
-        />
-      )}
+      </section>
+      {selected && <MedicinePreview medicine={selected} basket={basket} catalogUrl={catalogUrl} onClose={() => setSelected(null)} />}
     </div>
   );
-};
-
-export default MedicineSearch;
+}

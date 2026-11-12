@@ -1,6 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, CheckCircle, X, AlertCircle } from 'lucide-react';
-import Button from './Button';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { UploadCloud, FileText, X, AlertCircle } from 'lucide-react';
 
 const FileUpload = ({
   onFileSelect,
@@ -14,6 +13,17 @@ const FileUpload = ({
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState(null);
   const inputRef = useRef(null);
+  const uploadId = useId();
+
+  useEffect(() => {
+    if (!selectedFile?.type.startsWith('image/')) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
 
   const handleFiles = (files) => {
     if (!files || files.length === 0) return;
@@ -26,13 +36,6 @@ const FileUpload = ({
 
     setError(null);
     setSelectedFile(file);
-
-    if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    } else {
-      setPreviewUrl(null);
-    }
 
     if (onFileSelect) {
       onFileSelect(file);
@@ -69,6 +72,7 @@ const FileUpload = ({
     <div style={{ width: '100%', marginBottom: '1.25rem' }}>
       {label && (
         <label
+          htmlFor={uploadId}
           style={{
             display: 'block',
             fontSize: '0.875rem',
@@ -81,8 +85,19 @@ const FileUpload = ({
         </label>
       )}
 
+      <input
+        id={uploadId}
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        hidden
+        onChange={(e) => handleFiles(e.target.files)}
+      />
       {!selectedFile ? (
-        <div
+        <button
+          type="button"
+          aria-label={label || 'Choose a file'}
+          aria-describedby={uploadId + '-help'}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
@@ -93,20 +108,14 @@ const FileUpload = ({
             borderRadius: 'var(--radius-lg)',
             padding: '2rem 1.5rem',
             textAlign: 'center',
+            width: '100%',
+            color: 'var(--text-main)',
             backgroundColor: dragActive ? 'var(--primary-50)' : 'var(--bg-subtle)',
             cursor: 'pointer',
             transition: 'all var(--transition-fast)'
           }}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={accept}
-            style={{ display: 'none' }}
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-
-          <div
+          <span
             style={{
               width: '48px',
               height: '48px',
@@ -120,13 +129,11 @@ const FileUpload = ({
             }}
           >
             <UploadCloud size={24} />
-          </div>
+          </span>
 
-          <h5 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '4px' }}>
-            Click or drag & drop prescription file here
-          </h5>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{helper}</p>
-        </div>
+          <strong style={{ display: 'block', fontSize: '0.9375rem', marginBottom: '4px' }}>Choose a file or drop it here</strong>
+          <span id={uploadId + '-help'} style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{helper}</span>
+        </button>
       ) : (
         <div
           style={{
@@ -170,7 +177,7 @@ const FileUpload = ({
             )}
 
             <div>
-              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>
+              <p style={{ overflowWrap: 'anywhere', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>
                 {selectedFile.name}
               </p>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -195,7 +202,7 @@ const FileUpload = ({
       )}
 
       {error && (
-        <div
+        <div role="alert"
           style={{
             display: 'flex',
             alignItems: 'center',

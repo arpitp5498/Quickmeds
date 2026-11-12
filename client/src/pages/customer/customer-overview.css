@@ -1,0 +1,25 @@
+.qm-overview { max-width: 960px; margin-inline: auto; display: grid; gap: 1.25rem; }
+.qm-overview-header, .qm-active-order, .qm-section-head, .qm-account-row, .qm-account-shortcuts, .qm-overview-header nav { display: flex; align-items: center; gap: .75rem; }
+.qm-overview-header, .qm-section-head { justify-content: space-between; flex-wrap: wrap; }
+.qm-overview-header h1 { font-size: clamp(1.65rem, 4vw, 2.3rem); letter-spacing: -.045em; }
+.qm-overview-header nav, .qm-account-shortcuts { flex-wrap: wrap; }
+.qm-overview-header nav a, .qm-active-order a, .qm-section-head a, .qm-account-shortcuts a { display: inline-flex; gap: .45rem; align-items: center; font-size: .88rem; font-weight: 600; color: var(--text-main); min-height: 42px; }
+.qm-overview-header nav a { padding: .6rem .9rem; border: 1px solid var(--border-medium); background: var(--bg-card); border-radius: .7rem; }
+.qm-overview-header nav a:first-child { background: #0a6171; color: white; border-color: transparent; }
+.qm-active-order { padding: clamp(1rem, 3vw, 1.75rem); border-radius: 1rem; background: #134e59; color: white; flex-wrap: wrap; }
+.qm-active-order h2 { color: inherit; font-size: 1.18rem; }
+.qm-active-order p { font-size: .85rem; margin-top: .25rem; color: #def0ee; }
+.qm-active-order a { margin-left: auto; color: white; text-decoration: underline; text-underline-offset: 4px; }
+.qm-account-section { padding: .9rem clamp(.9rem, 3vw, 1.5rem); background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 1rem; }
+.qm-section-head h2 { font-size: 1.15rem; }
+.qm-section-head a { color: var(--text-muted); }
+.qm-account-section p { padding: .5rem 0; font-size: .9rem; color: var(--text-muted); }
+.qm-account-row { padding-block: .8rem; border-top: 1px solid var(--border-light); color: var(--text-main); }
+.qm-account-row > span:first-of-type { flex: 1; }
+.qm-account-row strong, .qm-account-row small { display: block; }
+.qm-account-row small { font-size: .84rem; color: var(--text-muted); }
+.qm-account-row svg { flex-shrink: 0; }
+.qm-status { text-transform: capitalize; font-size: .8rem; }
+.qm-account-shortcuts { gap: .4rem 1.3rem; }
+.qm-account-shortcuts a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 480px) { .qm-overview-header nav { gap: .4rem; } .qm-overview-header nav a { font-size: .82rem; padding-inline: .7rem; } }

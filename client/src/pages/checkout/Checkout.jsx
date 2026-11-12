@@ -1,590 +1,309 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  MapPin,
-  FileCheck,
-  CreditCard,
-  Banknote,
-  ShieldCheck,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  Plus
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Banknote, Clock, FileCheck, MapPin, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from '../../context/LocationContext';
 import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Input from '../../components/ui/Input';
 import FileUpload from '../../components/ui/FileUpload';
-import BasketOptimizationBreakdown from '../../components/routing/BasketOptimizationBreakdown';
+import LocationPicker from '../../components/common/LocationPicker';
+import EmptyState from '../../components/ui/EmptyState';
+import '../cart/basket.css';
+
+function isPrice(value) {
+  return Number.isFinite(value) && value >= 0;
+}
+
+function validateQuote(plan, items) {
+  const fees = plan?.priceBreakdown;
+  const lines = plan?.pharmacies?.[0]?.itemsFulfilled;
+  return plan?.type === 'SINGLE_STORE' && plan.basketCoverage === 1 &&
+    [plan.totalOrderValue, fees?.itemsSubtotal, fees?.deliveryFee, fees?.platformFee].every(isPrice) &&
+    Array.isArray(lines) && lines.length === items.length &&
+    items.every(([id, quantity]) => lines.some(line =>
+      line.medicineId === id && line.requestedQty === quantity && isPrice(line.totalPrice)));
+}
 
 const Checkout = () => {
-  const { cart, refreshCart } = useCart();
+  const { cart, refreshCart, loading: cartLoading } = useCart();
   const { user } = useAuth();
   const { location } = useLocation();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [quote, setQuote] = useState(null);
-  const [quoteAttempt, setQuoteAttempt] = useState(0);
-
-  const [savedAddresses, setSavedAddresses] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [useCustomAddress, setUseCustomAddress] = useState(false);
-  const [customStreet, setCustomStreet] = useState(location.address || '');
-  const [customCity, setCustomCity] = useState(location.city || 'New Delhi');
-  const [customPincode, setCustomPincode] = useState('110001');
-
+  const [savedAddresses, setSavedAddresses] = useState(null);
+  const [addressId, setAddressId] = useState('');
+  const [addressError, setAddressError] = useState(false);
+  const [customStreet, setCustomStreet] = useState('');
+  const [orderArea, setOrderArea] = useState(location.confirmed ? { addressId: '', area: location } : null);
+  const [customCity, setCustomCity] = useState(location.confirmed && location.city !== 'Current Area' ? location.city : '');
+  const [customState, setCustomState] = useState('');
+  const [customPincode, setCustomPincode] = useState('');
   const [prescriptionFile, setPrescriptionFile] = useState(null);
   const [existingPrescriptions, setExistingPrescriptions] = useState([]);
-  const [selectedPrescriptionId, setSelectedPrescriptionId] = useState(null);
-
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [selectedPrescriptionId, setSelectedPrescriptionId] = useState('');
+  const [prescriptionError, setPrescriptionError] = useState(false);
+  const [optionalPrescription, setOptionalPrescription] = useState(false);
+  const [quote, setQuote] = useState(null);
+  const [quoteAttempt, setQuoteAttempt] = useState(0);
   const [placingOrder, setPlacingOrder] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [addrRes, rxRes] = await Promise.all([
-          api.get('/users/addresses'),
-          api.get('/prescriptions')
-        ]);
-
-        if (addrRes.success && addrRes.data) {
-          const addresses = addrRes.data.addresses || [];
-          setSavedAddresses(addresses);
-          const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
-          if (defaultAddr) setSelectedAddress(defaultAddr);
-          else setUseCustomAddress(true);
-        }
-
-        if (rxRes.success && rxRes.data) {
-          setExistingPrescriptions(rxRes.data.prescriptions || []);
-        }
-      } catch (err) {
-        console.warn('Checkout init error:', err);
+    let current = true;
+    api.get('/users/addresses').then(response => {
+      if (!current) return;
+      const addresses = response.data?.addresses;
+      if (!Array.isArray(addresses)) throw new Error('Addresses unavailable');
+      setSavedAddresses(addresses);
+      setAddressId((addresses.find(address => address.isDefault) || addresses[0])?._id || '');
+    }).catch(() => {
+      if (current) {
+        setAddressError(true);
+        setSavedAddresses([]);
       }
-    };
-
-    fetchData();
+    });
+    return () => { current = false; };
   }, []);
 
-  const coordinates = useCustomAddress || !selectedAddress
-    ? [location.lng, location.lat] : selectedAddress.coordinates;
-  const quoteKey = JSON.stringify([coordinates, cart.items.map(i => [i.medicineId, i.quantity]), quoteAttempt]);
-  const optimizedPlan = quote?.key === quoteKey ? quote.plan : null;
-  const quoteError = quote?.key === quoteKey ? quote.error : null;
+  const showPrescription = cart.hasPrescriptionRequiredItems || optionalPrescription;
+  useEffect(() => {
+    if (!showPrescription) return;
+    let current = true;
+    api.get('/prescriptions').then(response => {
+      if (!current) return;
+      const prescriptions = response.data?.prescriptions;
+      if (!Array.isArray(prescriptions)) throw new Error('Prescriptions unavailable');
+      setExistingPrescriptions(prescriptions.filter(rx =>
+        !rx.orderId && ['UPLOADED', 'APPROVED'].includes(rx.status)));
+    }).catch(() => { if (current) setPrescriptionError(true); });
+    return () => { current = false; };
+  }, [showPrescription]);
+
+  const selectedAddress = savedAddresses?.find(address => address._id === addressId);
+  const chosenArea = orderArea?.addressId === addressId ? orderArea.area : null;
+  const coordinates = chosenArea ? [chosenArea.lng, chosenArea.lat] :
+    selectedAddress?.coordinatesConfirmed ? selectedAddress.coordinates : null;
+  function selectOrderArea(area) {
+    setOrderArea({ addressId, area });
+    if (!addressId && area.city !== 'Current Area') setCustomCity(area.city);
+  }
+  const items = cart.items.map(item => [item.medicineId?._id || item.medicineId, item.quantity]);
+  const quoteKey = coordinates && savedAddresses && !cartLoading && items.length
+    ? JSON.stringify([coordinates, items, quoteAttempt]) : null;
 
   useEffect(() => {
+    if (!quoteKey) return;
     let current = true;
-    const [destination, items] = JSON.parse(quoteKey);
-    if (items.length) {
-      api.post('/cart/quote', { coordinates: destination }).then(response => {
-        if (current) setQuote({ key: quoteKey, plan: response.data });
-      }).catch(error => {
-        if (current) setQuote({ key: quoteKey, error: error.message || 'Delivery quote unavailable' });
-      });
+    const controller = new AbortController();
+    const [destination, orderedItems] = JSON.parse(quoteKey);
+    async function loadQuote() {
+      try {
+        if (!Array.isArray(destination) || destination.length !== 2 || !destination.every(Number.isFinite)) {
+          throw new Error('Choose a delivery address with a location to check delivery.');
+        }
+        const response = await api.post('/cart/quote', { coordinates: destination }, { signal: controller.signal });
+        const plan = response.data?.recommended;
+        if (!validateQuote(plan, orderedItems)) throw new Error('We couldn’t confirm this total. Please try again.');
+        if (current) setQuote({ key: quoteKey, plan });
+      } catch (error) {
+        if (current) setQuote({ key: quoteKey, error: error.message || 'We couldn’t check delivery. Please try again.' });
+      }
     }
-    return () => { current = false; };
+    loadQuote();
+    return () => {
+      current = false;
+      controller.abort();
+    };
   }, [quoteKey]);
 
-  const handlePlaceOrder = async () => {
-    if (!optimizedPlan?.recommended) return;
-    let deliveryAddressPayload = null;
+  const plan = quote?.key === quoteKey ? quote?.plan : null;
+  const quoteError = quote?.key === quoteKey ? quote?.error : null;
 
-    if (useCustomAddress || !selectedAddress) {
-      if (!customStreet.trim()) {
-        showToast('Please enter your delivery street address', 'warning');
-        return;
-      }
-      deliveryAddressPayload = {
-        label: 'Current Location',
-        street: customStreet,
-        city: customCity,
-        state: 'Delhi',
-        pincode: customPincode,
-        fullAddress: `${customStreet}, ${customCity} ${customPincode}`,
-        coordinates: [location.lng, location.lat]
-      };
-    } else {
-      deliveryAddressPayload = {
-        label: selectedAddress.label,
-        street: selectedAddress.street,
-        city: selectedAddress.city,
-        state: selectedAddress.state,
-        pincode: selectedAddress.pincode,
-        landmark: selectedAddress.landmark,
-        fullAddress: selectedAddress.fullAddress,
-        coordinates: selectedAddress.coordinates
-      };
-    }
-
-    let finalPrescriptionId = selectedPrescriptionId;
-
-    // If prescription file newly uploaded, upload it first
-    if (cart.hasPrescriptionRequiredItems && prescriptionFile) {
-      try {
-        const formData = new FormData();
-        formData.append('prescription', prescriptionFile);
-        formData.append('patientName', user.name);
-
-        const uploadRes = await api.post('/prescriptions/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
-        if (uploadRes.success && uploadRes.data) {
-          finalPrescriptionId = uploadRes.data.prescription._id;
-        }
-      } catch (err) {
-        showToast(err.message || 'Prescription upload failed', 'error');
-        return;
-      }
-    }
-
-    if (cart.hasPrescriptionRequiredItems && !finalPrescriptionId) {
-      showToast(
-        'Please upload or select a valid doctor prescription for your prescription medicines.',
-        'warning'
-      );
+  async function handlePlaceOrder(event) {
+    event.preventDefault();
+    if (!plan || placingOrder) return;
+    if (cart.hasPrescriptionRequiredItems && !selectedPrescriptionId && !prescriptionFile) {
+      showToast('Attach a prescription for the medicines in your cart.', 'warning');
+      document.getElementById('checkout-prescription')?.focus();
       return;
     }
 
+    const deliveryAddress = selectedAddress ? {
+      label: selectedAddress.label,
+      street: selectedAddress.street,
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      pincode: selectedAddress.pincode,
+      landmark: selectedAddress.landmark,
+      fullAddress: selectedAddress.fullAddress,
+      coordinates
+    } : {
+      label: 'Delivery address',
+      street: customStreet.trim(),
+      city: customCity.trim(),
+      state: customState.trim(),
+      pincode: customPincode.trim(),
+      fullAddress: `${customStreet.trim()}, ${customCity.trim()}, ${customState.trim()} ${customPincode.trim()}`,
+      coordinates
+    };
+    setPlacingOrder(true);
     try {
-      setPlacingOrder(true);
-      const res = await api.post('/orders', {
-        confirmedTotal: optimizedPlan.recommended.totalOrderValue,
-        deliveryAddress: deliveryAddressPayload,
-        prescriptionId: finalPrescriptionId,
-        paymentMethod
-      });
-
-      if (res.success && res.data) {
-        showToast('Order placed successfully! Redirecting to live tracking...', 'success');
-        refreshCart();
-        navigate(`/orders/${res.data.order._id}`);
+      let prescriptionId = selectedPrescriptionId || null;
+      if (prescriptionFile) {
+        const formData = new FormData();
+        formData.append('prescription', prescriptionFile);
+        formData.append('patientName', user.name);
+        const response = await api.post('/prescriptions/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const uploaded = response.data?.prescription;
+        if (!uploaded?._id) throw new Error('Prescription upload failed. Please try again.');
+        prescriptionId = uploaded._id;
+        setExistingPrescriptions(previous => [uploaded, ...previous]);
+        setSelectedPrescriptionId(uploaded._id);
+        setPrescriptionFile(null);
       }
-    } catch (err) {
-      setQuoteAttempt(n => n + 1);
-      showToast(err.message || 'Failed to place order', 'error');
+      const response = await api.post('/orders', {
+        confirmedTotal: plan.totalOrderValue, deliveryAddress, prescriptionId, paymentMethod: 'COD'
+      });
+      if (!response.data?.order?._id) throw new Error('Order confirmation unavailable. Check your orders before retrying.');
+      showToast('Order placed', 'success');
+      refreshCart();
+      navigate(`/orders/${response.data.order._id}`);
+    } catch (error) {
+      setQuoteAttempt(previous => previous + 1);
+      showToast(error.message || 'Couldn’t place your order. Please try again.', 'error');
     } finally {
       setPlacingOrder(false);
     }
-  };
+  }
 
-  const deliveryFee = 25;
-  const platformFee = 5;
-  const total = cart.subtotal + deliveryFee + platformFee;
+  if (!cart.items.length) {
+    return (
+      <div className="basket-page basket-empty">
+        {cartLoading ? <p role="status">Loading your cart…</p> : (
+          <EmptyState icon={ShoppingBag} title="Your cart is empty" description="Add a medicine before checking out."
+            actionLabel="Find medicines" onAction={() => navigate('/medicines')} />
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="container" style={{ padding: '2rem 1.25rem' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '1.5rem' }}>
-        Complete Your Order
-      </h1>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '2rem',
-          alignItems: 'flex-start'
-        }}
-      >
-        {/* Left: Multi-step checkout details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* 1. Delivery Address Card */}
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--primary-600)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.8125rem',
-                  fontWeight: 700
-                }}
-              >
-                1
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Select Delivery Address</h3>
-            </div>
-
-            {savedAddresses.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1rem' }}>
-                {savedAddresses.map((addr) => {
-                  const isSelected = !useCustomAddress && selectedAddress?._id === addr._id;
-                  return (
-                    <div
-                      key={addr._id}
-                      onClick={() => {
-                        setSelectedAddress(addr);
-                        setUseCustomAddress(false);
-                      }}
-                      style={{
-                        padding: '12px',
-                        borderRadius: 'var(--radius-md)',
-                        border: `1px solid ${isSelected ? 'var(--primary-600)' : 'var(--border-light)'}`,
-                        backgroundColor: isSelected ? 'var(--primary-50)' : 'transparent',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <MapPin size={18} color={isSelected ? 'var(--primary-600)' : 'var(--text-muted)'} />
-                        <div>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>{addr.label}</span>
-                          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                            {addr.fullAddress}
-                          </p>
-                        </div>
-                      </div>
-                      {isSelected && <CheckCircle2 size={18} color="var(--primary-600)" />}
-                    </div>
-                  );
-                })}
+    <div className="basket-page">
+      <Link to="/cart" className="basket-link basket-back"><ArrowLeft size={16} /> Back to cart</Link>
+      <div className="basket-page-heading"><h1>Checkout</h1></div>
+      <form onSubmit={handlePlaceOrder} className="basket-layout">
+        <fieldset disabled={placingOrder} className="basket-fields">
+          <section className="basket-panel">
+            <h2 className="basket-section-title"><MapPin size={20} /> Delivery address</h2>
+            {savedAddresses === null && <p role="status" className="basket-muted">Loading addresses…</p>}
+            {addressError && <p role="status" className="basket-muted">Saved addresses are unavailable. Enter your delivery details below.</p>}
+            {savedAddresses?.length > 0 && (
+              <label className="basket-field">Deliver to
+                <select value={addressId} onChange={event => setAddressId(event.target.value)}>
+                  {savedAddresses.map(address => (
+                    <option key={address._id} value={address._id}>{address.label} · {address.street}</option>
+                  ))}
+                  <option value="">Use another address in my delivery area</option>
+                </select>
+              </label>
+            )}
+            {selectedAddress && <p className="basket-muted">{selectedAddress.fullAddress}</p>}
+            {savedAddresses && !selectedAddress?.coordinatesConfirmed && <div>
+              {chosenArea && <p className="basket-muted">Delivery area · {chosenArea.address}</p>}
+              <LocationPicker label={chosenArea ? 'Change area for this order' : 'Choose delivery area for this order'} onSelect={selectOrderArea} />
+            </div>}
+            {savedAddresses && !selectedAddress && (
+              <div className="basket-address">
+                <label className="basket-field">House number and street
+                  <input autoComplete="address-line1" required pattern=".*\S.*" value={customStreet} onChange={event => setCustomStreet(event.target.value)} />
+                </label>
+                <div className="basket-address-row">
+                  <label className="basket-field">City
+                    <input autoComplete="address-level2" required pattern=".*\S.*" value={customCity} onChange={event => {
+                      setCustomCity(event.target.value);
+                      if (chosenArea && chosenArea.city !== 'Current Area') setOrderArea(null);
+                    }} />
+                  </label>
+                  <label className="basket-field">State
+                    <input autoComplete="address-level1" required pattern=".*\S.*" value={customState} onChange={event => setCustomState(event.target.value)} />
+                  </label>
+                  <label className="basket-field">PIN code
+                    <input autoComplete="postal-code" inputMode="numeric" required pattern="[0-9]{6}" maxLength={6}
+                      title="Enter a six-digit PIN code" value={customPincode} onChange={event => setCustomPincode(event.target.value)} />
+                  </label>
+                </div>
               </div>
             )}
+          </section>
 
-            <button
-              type="button"
-              onClick={() => setUseCustomAddress(!useCustomAddress)}
-              style={{
-                fontSize: '0.8125rem',
-                color: 'var(--primary-600)',
-                fontWeight: 600,
-                marginBottom: useCustomAddress ? '1rem' : 0,
-                display: 'block'
-              }}
-            >
-              {useCustomAddress ? 'Use a saved address ↑' : '+ Use a different custom address'}
+          {showPrescription ? (
+            <section className="basket-panel" aria-labelledby="checkout-prescription">
+              <h2 id="checkout-prescription" tabIndex={-1} className="basket-section-title"><FileCheck size={20} />
+                {cart.hasPrescriptionRequiredItems ? 'Prescription required' : 'Prescription (optional)'}
+              </h2>
+              {cart.hasPrescriptionRequiredItems && <p className="basket-muted">A pharmacist will review your prescription before dispensing these medicines.</p>}
+              {prescriptionError && <p role="status" className="basket-muted">Saved prescriptions are unavailable. You can upload a file below.</p>}
+              {existingPrescriptions.length > 0 && (
+                <label className="basket-field">Prescription to attach
+                  <select value={selectedPrescriptionId} onChange={event => {
+                    setSelectedPrescriptionId(event.target.value);
+                    setPrescriptionFile(null);
+                  }}>
+                    <option value="">Upload a file</option>
+                    {existingPrescriptions.map(rx => <option key={rx._id} value={rx._id}>
+                      {rx.originalName || rx.doctorName || 'Digital prescription'}
+                    </option>)}
+                  </select>
+                </label>
+              )}
+              {!selectedPrescriptionId && <FileUpload label="Upload prescription" onFileSelect={setPrescriptionFile} />}
+            </section>
+          ) : (
+            <button type="button" className="basket-link basket-optional" onClick={() => setOptionalPrescription(true)}>
+              <FileCheck size={16} /> Attach a prescription (optional)
             </button>
+          )}
+          <section className="basket-panel basket-payment">
+            <Banknote size={22} aria-hidden="true" />
+            <div><h2>Payment</h2><p>Cash on delivery</p></div>
+          </section>
+        </fieldset>
 
-            {useCustomAddress && (
-              <div
-                style={{
-                  marginTop: '10px',
-                  padding: '12px',
-                  backgroundColor: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-md)'
-                }}
-              >
-                <Input
-                  label="Street Address / Landmark"
-                  value={customStreet}
-                  onChange={(e) => setCustomStreet(e.target.value)}
-                  placeholder="e.g. Flat 301, Silver Tower, CP"
-                />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <Input
-                    label="City"
-                    value={customCity}
-                    onChange={(e) => setCustomCity(e.target.value)}
-                  />
-                  <Input
-                    label="Pincode"
-                    value={customPincode}
-                    onChange={(e) => setCustomPincode(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* 2. Prescription Upload (Mandatory if Cart has Rx medicines) */}
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--primary-600)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.8125rem',
-                  fontWeight: 700
-                }}
-              >
-                2
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>
-                Doctor's Prescription{' '}
-                {cart.hasPrescriptionRequiredItems ? (
-                  <span style={{ color: 'var(--accent-600)', fontSize: '0.8125rem' }}>
-                    (Mandatory for your medicines)
-                  </span>
-                ) : (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                    (Optional for OTC orders)
-                  </span>
-                )}
-              </h3>
+        <aside className="basket-panel basket-summary" aria-labelledby="checkout-summary">
+          <h2 id="checkout-summary">Order summary</h2>
+          {plan ? (
+            <>
+              {Number.isFinite(plan.etaMinutes) && <p className="basket-detail-note"><Clock size={17} /> Estimated delivery in {plan.etaMinutes} min</p>}
+              <details className="basket-breakdown">
+                <summary>Medicines ({cart.totalItems})</summary>
+                <ul>{plan.pharmacies[0].itemsFulfilled.map(line => (
+                  <li className="basket-price-row" key={line.medicineId}>
+                    <span>{line.name} × {line.requestedQty}</span><span>₹{line.totalPrice.toLocaleString('en-IN')}</span>
+                  </li>
+                ))}</ul>
+              </details>
+              <dl className="basket-bill">
+                <div><dt>Medicines</dt><dd>₹{plan.priceBreakdown.itemsSubtotal.toLocaleString('en-IN')}</dd></div>
+                <div><dt>Delivery</dt><dd>₹{plan.priceBreakdown.deliveryFee.toLocaleString('en-IN')}</dd></div>
+                <div><dt>Packaging &amp; handling</dt><dd>₹{plan.priceBreakdown.platformFee.toLocaleString('en-IN')}</dd></div>
+                <div className="basket-total"><dt>Total payable</dt><dd>₹{plan.totalOrderValue.toLocaleString('en-IN')}</dd></div>
+              </dl>
+            </>
+          ) : (
+            <div role="status">
+              <p className="basket-muted">{quoteError || (savedAddresses && !coordinates ? 'Choose a delivery area to see your total.' : 'Checking stock and delivery for your address…')}</p>
+              {quoteError && <button type="button" className="basket-link" onClick={() => setQuoteAttempt(previous => previous + 1)}>Try again</button>}
             </div>
-
-            {/* Statutory Disclaimer */}
-            <div
-              style={{
-                backgroundColor: 'var(--accent-50)',
-                border: '1px solid var(--accent-100)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 14px',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '8px'
-              }}
-            >
-              <ShieldCheck size={16} color="var(--accent-600)" style={{ minWidth: '16px', marginTop: '2px' }} />
-              <span style={{ fontSize: '0.75rem', color: '#9f1239', lineHeight: 1.4, fontWeight: 600 }}>
-                Statutory Requirement: Under Indian Pharmacy Practice Regulations, all Schedule H/X drugs require licensed pharmacist verification. (Secure Verification).
-              </span>
-            </div>
-
-            {existingPrescriptions.length > 0 && (
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Attach a previously verified prescription:
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
-                  {existingPrescriptions.map((rx) => {
-                    const isSelected = selectedPrescriptionId === rx._id;
-                    return (
-                      <div
-                        key={rx._id}
-                        onClick={() => {
-                          setSelectedPrescriptionId(isSelected ? null : rx._id);
-                          setPrescriptionFile(null);
-                        }}
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: 'var(--radius-md)',
-                          border: `1px solid ${isSelected ? 'var(--primary-600)' : 'var(--border-light)'}`,
-                          backgroundColor: isSelected ? 'var(--primary-50)' : 'transparent',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          fontSize: '0.8125rem'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FileCheck size={16} color="var(--primary-600)" />
-                          <span>{rx.originalName} ({rx.doctorName || 'Consultation'})</span>
-                        </div>
-                        {isSelected && <CheckCircle2 size={16} color="var(--primary-600)" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <FileUpload
-              label="Or upload a new Prescription (Photo / PDF)"
-              onFileSelect={(file) => {
-                setPrescriptionFile(file);
-                if (file) setSelectedPrescriptionId(null);
-              }}
-            />
-          </Card>
-
-          {/* 3. Payment Method */}
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--primary-600)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.8125rem',
-                  fontWeight: 700
-                }}
-              >
-                3
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Select Payment Method</h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${paymentMethod === 'COD' ? 'var(--primary-600)' : 'var(--border-light)'}`,
-                  backgroundColor: paymentMethod === 'COD' ? 'var(--primary-50)' : 'transparent',
-                  cursor: 'pointer'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Banknote size={20} color="var(--secondary-600)" />
-                  <div>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>
-                      Cash on Delivery (COD)
-                    </span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Pay with cash or QR at your doorstep upon delivery.
-                    </p>
-                  </div>
-                </div>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="COD"
-                  checked={paymentMethod === 'COD'}
-                  onChange={() => setPaymentMethod('COD')}
-                />
-              </label>
-
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${paymentMethod === 'ONLINE' ? 'var(--primary-600)' : 'var(--border-light)'}`,
-                  backgroundColor: paymentMethod === 'ONLINE' ? 'var(--primary-50)' : 'transparent',
-                  cursor: 'pointer'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <CreditCard size={20} color="var(--primary-600)" />
-                  <div>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>
-                      UPI / Online Payment (currently unavailable)
-                    </span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Pay via Google Pay, PhonePe, Paytm, or Cards.
-                    </p>
-                  </div>
-                </div>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="ONLINE" disabled
-                  checked={paymentMethod === 'ONLINE'}
-                  onChange={() => setPaymentMethod('ONLINE')}
-                />
-              </label>
-            </div>
-          </Card>
-        </div>
-
-        {/* Right: Smart Fulfilment Routing Breakdown & Order Action */}
-        <div style={{ position: 'sticky', top: '90px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {optimizedPlan ? <BasketOptimizationBreakdown optimizationData={optimizedPlan} showPricingBreakdown /> :
-            <Card><p role="status">{quoteError || 'Checking fulfilment for your delivery address…'}</p>
-              {quoteError && <Button onClick={() => setQuoteAttempt(n => n + 1)}>Retry quote</Button>}
-            </Card>}
-
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>
-                Order Summary
-              </h3>
-              <Badge variant="primary" size="sm">
-                {paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment'}
-              </Badge>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' }}>
-              {optimizedPlan?.recommended.pharmacies[0].itemsFulfilled.map((item) => (
-                <div
-                  key={item.medicineId}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8125rem'
-                  }}
-                >
-                  <span style={{ color: 'var(--text-main)' }}>
-                    {item.name} × {item.requestedQty}
-                  </span>
-                  <span style={{ fontWeight: 600 }}>₹{item.totalPrice}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.875rem', borderTop: '1px solid var(--border-light)', paddingTop: '10px', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Medicine Subtotal</span>
-                <span style={{ fontWeight: 600 }}>₹{optimizedPlan?.recommended?.priceBreakdown?.itemsSubtotal ?? cart.subtotal}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Hyperlocal Delivery</span>
-                <span style={{ fontWeight: 600 }}>₹{optimizedPlan?.recommended?.priceBreakdown?.deliveryFee || deliveryFee}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Safety & Packaging</span>
-                <span style={{ fontWeight: 600 }}>₹{optimizedPlan?.recommended?.priceBreakdown?.platformFee || platformFee}</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '1.2rem',
-                  fontWeight: 800,
-                  color: 'var(--primary-700)',
-                  borderTop: '1px solid var(--border-light)',
-                  paddingTop: '8px'
-                }}
-              >
-                <span>Total Payable</span>
-                <span>₹{optimizedPlan?.recommended?.totalOrderValue ?? total}</span>
-              </div>
-            </div>
-
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              onClick={handlePlaceOrder}
-              disabled={!optimizedPlan?.recommended}
-              loading={placingOrder}
-              icon={CheckCircle2}
-            >
-              Place Order (₹{optimizedPlan?.recommended?.totalOrderValue ?? total})
-            </Button>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                marginTop: '1rem',
-                fontSize: '0.75rem',
-                color: 'var(--secondary-700)',
-                fontWeight: 600
-              }}
-            >
-              <ShieldCheck size={14} color="var(--secondary-600)" />
-              <span>Prescriptions verified by Licensed Pharmacist</span>
-            </div>
-          </Card>
-        </div>
-      </div>
+          )}
+          <Button type="submit" fullWidth size="lg" loading={placingOrder} disabled={!plan}>
+            {placingOrder ? 'Placing order…' : 'Place order'}
+          </Button>
+        </aside>
+      </form>
     </div>
   );
 };

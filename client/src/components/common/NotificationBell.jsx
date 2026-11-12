@@ -87,6 +87,7 @@ const NotificationBell = () => {
           transition: 'background-color var(--transition-fast)'
         }}
         aria-label="Notifications"
+        aria-expanded={isOpen}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -129,7 +130,7 @@ const NotificationBell = () => {
             zIndex: 1000,
             overflow: 'hidden'
           }}
-          className="animate-fade-in"
+          className="animate-fade-in qm-notifications"
         >
           <div
             style={{

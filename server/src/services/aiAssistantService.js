@@ -2,6 +2,7 @@ const env = require('../config/env');
 const logger = require('../utils/logger');
 
 let GoogleGenerativeAI = null;
+const unavailableMessage = 'Chat is currently unavailable. You can still search medicines or book a consultation.';
 try {
   ({ GoogleGenerativeAI } = require('@google/generative-ai'));
 } catch (e) {
@@ -20,28 +21,28 @@ exports.generateResponse = async (message, conversationHistory, medicines) => {
     const hasOpenaiKey = !!env.OPENAI_API_KEY;
 
     if (!hasGeminiKey && !hasOpenaiKey) {
-      return "Hello! I am the QuickMeds AI assistant. To enable AI consultations, please configure GEMINI_API_KEY in the environment. In the meantime, you can search our medicine catalog directly or consult a registered doctor on our platform.";
+      return unavailableMessage;
     }
 
     if (provider === 'gemini' || (hasGeminiKey && !hasOpenaiKey)) {
       if (!GoogleGenerativeAI) {
-        return "The AI assistant service package is currently not available on this server instance. Please consult a licensed doctor for medical inquiries.";
+        return unavailableMessage;
       }
 
       const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       // Grounding data context
-      let medicineContext = "Available medicines context:\n";
+      let medicineContext = "Catalog entries. Local stock and delivery are checked in the catalog:\n";
       if (medicines && medicines.length > 0) {
-        medicineContext += medicines.map(m => `- ${m.name} (${m.category}): ₹${m.price}`).join('\n');
+        medicineContext += medicines.map(m => `- ${m.name} (${m.category})`).join('\n');
       }
 
       const prompt = `${SYSTEM_PROMPT}\n\n${medicineContext}\n\nUser: ${message}\nAssistant:`;
       const result = await model.generateContent(prompt);
       return result.response.text();
     } else {
-      return "AI Provider configured to OpenAI. Please ensure the provider is configured or use Gemini.";
+      return unavailableMessage;
     }
   } catch (error) {
     logger.error('Error generating AI response', error);

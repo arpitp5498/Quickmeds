@@ -1,327 +1,116 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  ShoppingBag,
-  Trash2,
-  Plus,
-  Minus,
-  ArrowRight,
-  ShieldCheck,
-  AlertTriangle,
-  Store,
-  FileCheck
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, FileCheck, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { useLocation } from '../../context/LocationContext';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Modal from '../../components/ui/Modal';
 import EmptyState from '../../components/ui/EmptyState';
-import BasketOptimizationBreakdown from '../../components/routing/BasketOptimizationBreakdown';
-import { getMedicineImage } from '../../utils/medicineImages';
+import { getMedicineImage, showMedicineImagePlaceholder } from '../../utils/medicineImages';
+import './basket.css';
 
 const Cart = () => {
-  const {
-    cart,
-    stockWarnings,
-    updateQuantity,
-    removeFromCart,
-    clearCart
-  } = useCart();
-  const { location } = useLocation();
-  const coordinates = useMemo(() => [location.lng, location.lat], [location.lng, location.lat]);
-  const [optimizedPlan, setOptimizedPlan] = useState(null);
+  const { cart, stockWarnings, loading, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
   const [pendingItem, setPendingItem] = useState(null);
+
   async function changeCart(key, operation) {
     setPendingItem(key);
-    try { await operation(); }
-    finally { setPendingItem(null); }
+    try {
+      await operation();
+    } finally {
+      setPendingItem(null);
+    }
   }
 
-  const deliveryFee = 25;
-  const platformFee = 5;
-  const total = cart.subtotal + (cart.items.length > 0 ? deliveryFee + platformFee : 0);
-
-  if (!cart.items || cart.items.length === 0) {
+  if (!cart.items.length) {
     return (
-      <div className="container" style={{ padding: '3.5rem 1.25rem', maxWidth: '600px' }}>
-        <EmptyState
-          icon={ShoppingBag}
-          title="Your Shopping Cart is Empty"
-          description="You haven't added any medicines yet. Search medicines to build your basket."
-          actionLabel="Find Medicines"
-          onAction={() => navigate('/medicines')}
-        />
+      <div className="basket-page basket-empty">
+        {loading ? <p role="status">Loading your cart…</p> : (
+          <EmptyState icon={ShoppingBag} title="Your cart is empty"
+            description="Find a medicine to get started."
+            actionLabel="Find medicines" onAction={() => navigate('/medicines')} />
+        )}
       </div>
     );
   }
 
+  const savings = cart.items.reduce((sum, item) =>
+    sum + Math.max(0, (item.mrp ?? item.price) - item.price) * item.quantity, 0);
+  const subtotal = Number.isFinite(cart.subtotal) ? cart.subtotal :
+    cart.items.reduce((sum, item) => Number.isFinite(item.price) ? sum + item.price * item.quantity : NaN, 0);
+
   return (
-    <div className="container" style={{ padding: '2rem 1.25rem' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Shopping Cart</h1>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-          Fulfilment: <strong style={{ color: 'var(--primary-700)' }}>Automatically Evaluated &amp; Selected by QuickMeds</strong>
-        </p>
+    <div className="basket-page">
+      <div className="basket-page-heading">
+        <h1>Your cart</h1>
+        <Link to="/medicines" className="basket-link"><Plus size={16} /> Add medicines</Link>
       </div>
 
-      {/* Stock Warnings Banner if any item has low inventory */}
-      {stockWarnings && stockWarnings.length > 0 && (
-        <div
-          style={{
-            backgroundColor: '#fef3c7',
-            border: '1px solid #fde68a',
-            borderRadius: 'var(--radius-md)',
-            padding: '12px 16px',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px'
-          }}
-        >
-          <AlertTriangle size={18} color="#b45309" style={{ minWidth: '18px', marginTop: '2px' }} />
-          <div>
-            <h5 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#92400e' }}>
-              Stock Availability Notice
-            </h5>
-            <ul style={{ fontSize: '0.8125rem', color: '#b45309', paddingLeft: '1.25rem', marginTop: '4px' }}>
-              {stockWarnings.map((w, i) => (
-                <li key={i}>{w}</li>
-              ))}
-            </ul>
+      {stockWarnings?.length > 0 && (
+        <div className="basket-notice" role="status">
+          <AlertTriangle size={20} aria-hidden="true" />
+          <div><strong>Check your quantities</strong>
+            <ul>{stockWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
           </div>
         </div>
       )}
 
-      {/* Prescription Notice Banner */}
-      {cart.hasPrescriptionRequiredItems && (
-        <div
-          style={{
-            backgroundColor: 'var(--accent-50)',
-            border: '1px solid var(--accent-100)',
-            borderRadius: 'var(--radius-md)',
-            padding: '12px 16px',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}
-        >
-          <FileCheck size={20} color="var(--accent-600)" />
-          <span style={{ fontSize: '0.8125rem', color: '#9f1239', fontWeight: 600 }}>
-            Your cart contains prescription medicines (Schedule H). You will be prompted to attach a valid prescription at checkout.
-          </span>
-        </div>
-      )}
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '2rem',
-          alignItems: 'flex-start'
-        }}
-      >
-        {/* Left: Cart Items List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {cart.items.map((item) => (
-            <Card
-              key={item.medicineId}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '1rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div
-                  style={{
-                    width: '72px',
-                    height: '72px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid var(--border-light)',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minWidth: '72px',
-                    padding: '6px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                  }}
-                >
-                  <img
-                    src={getMedicineImage(item)}
-                    alt={item.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  />
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>{item.name}</h4>
-                    {item.requiresPrescription && <Badge variant="prescription" size="sm">Rx</Badge>}
+      <div className="basket-layout">
+        <section className="basket-panel" aria-label="Medicines in your cart" aria-busy={pendingItem !== null}>
+          <ul className="basket-items">
+            {cart.items.map((item) => {
+              const id = item.medicineId?._id || item.medicineId;
+              return (
+                <li key={id} className="basket-item">
+                  <img src={getMedicineImage(item)} onError={showMedicineImagePlaceholder} alt="" className="basket-image" />
+                  <div className="basket-item-name">
+                    <h2>{item.name}</h2>
+                    {item.strength && <p>{item.strength}</p>}
+                    {item.requiresPrescription && <small>Prescription required</small>}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {item.strength} • ₹{item.price} each
-                  </span>
-                  {item.mrp && item.mrp > item.price && (
-                    <div style={{ fontSize: '0.6875rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: 'var(--text-muted)', textDecoration: 'line-through' }}>MRP ₹{item.mrp}</span>
-                      <span style={{ color: '#16a34a', fontWeight: 700 }}>
-                        Save {Math.round(((item.mrp - item.price) / item.mrp) * 100)}%
-                      </span>
-                    </div>
-                  )}
-                  {item.pharmacyName && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                      <Store size={12} color="var(--primary-600)" />
-                      <span style={{ fontSize: '0.72rem', color: 'var(--primary-700)', fontWeight: 600 }}>
-                        Fulfilled by: {item.pharmacyName}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                {/* Quantity Controls */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    backgroundColor: 'var(--bg-subtle)',
-                    padding: '4px 8px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)'
-                  }}
-                >
-                  <button
-                    type="button"
-                    disabled={pendingItem !== null}
-                    onClick={() => changeCart(item.medicineId, () => item.quantity === 1 ? removeFromCart(item.medicineId) : updateQuantity(item.medicineId, item.quantity - 1))}
-                    style={{ padding: '2px', cursor: 'pointer', display: 'flex' }}
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus size={14} />
+                  <div className="basket-quantity">
+                    <button type="button" aria-label={`Decrease quantity of ${item.name}`}
+                      disabled={pendingItem !== null}
+                      onClick={() => changeCart(id, () => item.quantity === 1 ? removeFromCart(id) : updateQuantity(id, item.quantity - 1))}>
+                      <Minus size={16} aria-hidden="true" />
+                    </button>
+                    <span aria-live="polite">{pendingItem === id ? '…' : item.quantity}</span>
+                    <button type="button" aria-label={`Increase quantity of ${item.name}`}
+                      disabled={pendingItem !== null || item.quantity >= 100}
+                      onClick={() => changeCart(id, () => updateQuantity(id, item.quantity + 1))}>
+                      <Plus size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="basket-item-price">
+                    <strong>{Number.isFinite(item.price) ? `₹${(item.price * item.quantity).toLocaleString('en-IN')}` : 'Price at checkout'}</strong>
+                    {Number.isFinite(item.price) && item.quantity > 1 && <small>₹{item.price} each</small>}
+                  </div>
+                  <button type="button" className="basket-remove" aria-label={`Remove ${item.name}`}
+                    disabled={pendingItem !== null} onClick={() => changeCart(id, () => removeFromCart(id))}>
+                    <Trash2 size={17} aria-hidden="true" />
                   </button>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700, minWidth: '18px', textAlign: 'center' }}>
-                    {pendingItem === item.medicineId ? <span role="status" aria-label="Updating quantity">…</span> : item.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={pendingItem !== null}
-                    onClick={() => changeCart(item.medicineId, () => updateQuantity(item.medicineId, item.quantity + 1))}
-                    style={{ padding: '2px', cursor: 'pointer', display: 'flex' }}
-                    aria-label="Increase quantity"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
+                </li>
+              );
+            })}
+          </ul>
+          <button className="basket-link basket-clear" type="button" disabled={pendingItem !== null}
+            onClick={() => changeCart('clear', clearCart)}>
+            {pendingItem === 'clear' ? 'Clearing…' : 'Clear cart'}
+          </button>
+        </section>
 
-                {/* Item Total */}
-                <span style={{ fontSize: '1rem', fontWeight: 800, minWidth: '60px', textAlign: 'right' }}>
-                  ₹{item.price * item.quantity}
-                </span>
-
-                {/* Remove button */}
-                <button
-                  type="button"
-                  disabled={pendingItem !== null}
-                    onClick={() => changeCart(item.medicineId, () => removeFromCart(item.medicineId))}
-                  style={{
-                    color: 'var(--accent-600)',
-                    padding: '4px',
-                    borderRadius: 'var(--radius-sm)'
-                  }}
-                  aria-label="Remove item"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </Card>
-          ))}
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-            <button
-              type="button"
-              disabled={pendingItem !== null}
-              loading={pendingItem === 'clear'}
-              onClick={() => changeCart('clear', clearCart)}
-              style={{ fontSize: '0.8125rem', color: 'var(--accent-600)', fontWeight: 500 }}
-            >
-              Clear Cart
-            </button>
-            <Link
-              to="/medicines"
-              style={{ fontSize: '0.8125rem', color: 'var(--primary-600)', fontWeight: 600 }}
-            >
-              + Add More Medicines
-            </Link>
+        <aside className="basket-panel basket-summary" aria-labelledby="cart-summary">
+          <h2 id="cart-summary">Order summary</h2>
+          <div className="basket-price-row basket-total"><span>Medicines</span>
+            <strong>{Number.isFinite(subtotal) ? `₹${subtotal.toLocaleString('en-IN')}` : 'Price at checkout'}</strong>
           </div>
-        </div>
-
-        {/* Right: Smart Fulfilment Routing & Checkout CTA */}
-        <div style={{ position: 'sticky', top: '90px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {cart.items.some(item => item.mrp && item.mrp > item.price) && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 12px',
-              backgroundColor: '#dcfce7',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '1rem',
-              fontSize: '0.8125rem',
-              color: '#166534',
-              fontWeight: 600
-            }}>
-              🎉 You save ₹{cart.items.reduce((sum, item) => sum + ((item.mrp && item.mrp > item.price) ? (item.mrp - item.price) * item.quantity : 0), 0)} on this order!
-            </div>
+          {savings > 0 && <p className="basket-saving">₹{savings.toLocaleString('en-IN')} saved on MRP</p>}
+          <p className="basket-muted">Delivery and packaging fees are calculated at checkout.</p>
+          {cart.hasPrescriptionRequiredItems && (
+            <p className="basket-detail-note"><FileCheck size={18} /> Attach your prescription at checkout.</p>
           )}
-
-          <BasketOptimizationBreakdown
-            cartItems={cart.items}
-            coordinates={coordinates}
-            onPlanOptimized={setOptimizedPlan}
-            showPricingBreakdown={true}
-          />
-
-          <Card style={{ backgroundColor: 'var(--bg-card)' }}>
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={pendingItem !== null}
-              onClick={() => navigate('/checkout')}
-              icon={ArrowRight}
-              iconPosition="right"
-            >
-              Proceed to Checkout (₹{optimizedPlan?.recommended?.totalOrderValue || total})
-            </Button>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                marginTop: '1rem',
-                fontSize: '0.75rem',
-                color: 'var(--secondary-700)',
-                fontWeight: 600
-              }}
-            >
-              <ShieldCheck size={14} color="var(--secondary-600)" />
-              <span>Verified Pharmacy Direct Dispense • Target 20–30 min delivery</span>
-            </div>
-          </Card>
-        </div>
+          <Button fullWidth size="lg" disabled={pendingItem !== null} icon={ArrowRight}
+            iconPosition="right" onClick={() => navigate('/checkout')}>Continue to checkout</Button>
+        </aside>
       </div>
     </div>
   );

@@ -9,6 +9,28 @@ const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const { getActivePromotionsMap, getPromotionForMedicine, calculatePromotionalPrice, findPromotionInMap, resolveEffectivePrice } = require('../services/discountService');
 
+// Use the same delivery area and quantity limits on the listing and detail pages.
+function deliverySummary(offers, nearbyIds, lat, lng, mrp) {
+  const pricedOffers = nearbyIds
+    ? offers.filter(offer => nearbyIds.has(String(offer.pharmacyId._id))) : offers;
+  const lowestPrice = pricedOffers.length ? Math.min(...pricedOffers.map(offer => offer.price)) : mrp;
+  if (!nearbyIds) return { lowestPrice, deliveryOptions: null, isAvailableNearby: null };
+
+  const distances = pricedOffers.map(offer => {
+    const [storeLng, storeLat] = offer.pharmacyId.location.coordinates;
+    return calculateDistance(lat, lng, storeLat, storeLng);
+  });
+  return {
+    lowestPrice,
+    isAvailableNearby: pricedOffers.length > 0,
+    deliveryOptions: pricedOffers.map((offer, index) => ({
+      maxQuantity: Math.min(offer.stockQuantity, 100),
+      etaMinutes: calculateETA(distances[index]).totalMinutes
+    })),
+    ...(distances.length ? { nearestDistanceKm: Math.min(...distances) } : {})
+  };
+}
+
 // @desc    Search medicines with filters, pagination, and stock checks
 // @route   GET /api/medicines
 // @access  Public
@@ -108,7 +130,7 @@ const searchMedicines = async (req, res, next) => {
         { $group: { _id: '$category', count: { $sum: 1 } } }
       ])
     ]);
-    const nearbyIds = new Set(nearby?.map(p => String(p._id)));
+    const nearbyIds = nearby ? new Set(nearby.map(p => String(p._id))) : null;
     let medicines;
     if (sort === 'popular') {
       const pharmacyIds = nearby ? nearby.map(p => p._id) : await Pharmacy.distinct('_id', eligiblePharmacy);
@@ -150,26 +172,7 @@ const searchMedicines = async (req, res, next) => {
 
       medObj.stockStatus = stockStatus(med._id);
       medObj.availablePharmaciesCount = activeInventories.length;
-      const localOffers = hasAddress
-        ? activeInventories.filter(i => nearbyIds.has(String(i.pharmacyId._id))) : [];
-      medObj.isAvailableNearby = hasAddress ? localOffers.length > 0 : null;
-      medObj.deliveryOptions = hasAddress ? localOffers.map(i => {
-        const [pLng, pLat] = i.pharmacyId.location.coordinates;
-        const distance = calculateDistance(Number(lat), Number(lng), pLat, pLng);
-        return { maxQuantity: Math.min(i.stockQuantity, 100), etaMinutes: calculateETA(distance).totalMinutes };
-      }) : null;
-      const pricedOffers = hasAddress ? localOffers : activeInventories;
-      if (pricedOffers.length > 0) {
-        medObj.lowestPrice = Math.min(...pricedOffers.map(i => i.price));
-        if (hasAddress) {
-          medObj.nearestDistanceKm = Math.min(...localOffers.map(i => {
-            const [pLng, pLat] = i.pharmacyId.location.coordinates;
-            return calculateDistance(Number(lat), Number(lng), pLat, pLng);
-          }));
-        }
-      } else {
-        medObj.lowestPrice = med.mrp;
-      }
+      Object.assign(medObj, deliverySummary(activeInventories, nearbyIds, Number(lat), Number(lng), med.mrp));
 
       // Apply platform promotion if available
       const promo = findPromotionInMap(promoMap, med._id.toString(), med.category);
@@ -231,15 +234,21 @@ const getMedicineById = async (req, res, next) => {
 
     if (!medicine.active || medicine.isMerged || medicine.verificationStatus === 'MERGED') throw ApiError.notFound('Medicine not found');
 
-    // Find all verified pharmacies stocking this medicine
-    const { offers: inventoryList, stockStatus } = await getCatalogInventory([medicine._id]);
-
-    const userLat = lat ? parseFloat(lat) : null;
-    const userLng = lng ? parseFloat(lng) : null;
-
-    // Check for active platform promotion
-    const promo = await getPromotionForMedicine(medicine._id, medicine.category);
+    const userLat = typeof lat === 'string' && lat.trim() ? Number(lat) : null;
+    const userLng = typeof lng === 'string' && lng.trim() ? Number(lng) : null;
+    const hasAddress = Number.isFinite(userLat) && Math.abs(userLat) <= 90 &&
+      Number.isFinite(userLng) && Math.abs(userLng) <= 180;
+    const [{ offers: inventoryList, stockStatus }, nearby, promo] = await Promise.all([
+      getCatalogInventory([medicine._id]),
+      hasAddress ? findDeliveryPharmacies(userLng, userLat) : null,
+      getPromotionForMedicine(medicine._id, medicine.category)
+    ]);
+    const nearbyIds = nearby ? new Set(nearby.map(p => String(p._id))) : null;
+    const delivery = deliverySummary(inventoryList, nearbyIds, userLat, userLng, medicine.mrp);
     const promoResult = promo ? calculatePromotionalPrice(medicine.mrp, promo) : null;
+    if (promoResult && promoResult.promotionalPrice < delivery.lowestPrice) {
+      delivery.lowestPrice = promoResult.promotionalPrice;
+    }
 
     const pharmaciesWithStock = inventoryList
       .filter((item) => item.pharmacyId)
@@ -310,7 +319,7 @@ const getMedicineById = async (req, res, next) => {
       });
 
     return ApiResponse.success(res, {
-      medicine: { ...medicine.toObject(), stockStatus: stockStatus(medicine._id), availablePharmaciesCount: inventoryList.length },
+      medicine: { ...medicine.toObject(), ...delivery, stockStatus: stockStatus(medicine._id), availablePharmaciesCount: inventoryList.length },
       pharmacies: pharmaciesWithStock,
       promotion: promoResult ? {
         id: promoResult.promotionId,
@@ -341,7 +350,8 @@ const getCategories = async (req, res, next) => {
       count: c.count
     }));
 
-    return ApiResponse.success(res, { categories: formatted });
+    const counts = Object.fromEntries(formatted.filter(c => c.name).map(c => [c.name, c.count]));
+    return ApiResponse.success(res, { categories: formatted, browseCategories: browseCategories(counts) });
   } catch (error) {
     next(error);
   }
